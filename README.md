@@ -5,3 +5,5 @@ Frank Edwards
 School of Criminal Justice
 
 Rutgers-Newark
+
+frank.edwards@rutgers.edu
