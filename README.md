@@ -1,9 +1,11 @@
-Course page for intermediate statistics, 27:202:543
+This is the course page for intermediate statistics in the School of Criminal Justice at Rutgers-Newark. 
 
-Frank Edwards
+SYLLABUS HERE
 
-School of Criminal Justice
+##Software
 
-Rutgers-Newark
+All instruction will be done using the free and open source R statistical programming language, and the RStudio integrated development environment. You can download R [https://cran.r-project.org/]here and RStudio [https://www.rstudio.com/]here. If you prefer (I think it's a great option), you can sign up for an [https://rstudio.cloud/]RStudio Cloud account to write and execute your programs on a cloud server through your web browser. 
 
-frank.edwards@rutgers.edu
+I also strongly encourage you to learn and publish your assignments using markdown SUMMARISE MARKDOWN HERE
+
+Questions? frank.edwards@rutgers.edu
