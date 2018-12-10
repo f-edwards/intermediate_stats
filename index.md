@@ -34,15 +34,15 @@ Wickham R Data Science
 |2/1| Motivation, diverse data: limits of OLS | HW1 Due|
 |2/8| Introducing MLE | HW2 due|
 |2/15| Logit 1 | |
-|2/22| Logit 2 | HW3 due |
-|3/1| Count 1 | |
-|3/8| Count 2 | |
-|3/15| Multinom | |
+|2/22| Logit 2 | HW 3 due|
+|3/1| Count 1 | HW 4 due|
+|3/8| Count 2 | HW 5 due|
+|3/15| Multinom | HW 6 due|
 |3/22| Spring Break | |
 |3/29| Gamma and others | |
 |4/5| Topics1 (MI) | |
-|4/12| PAA| |
-|4/19| D...| |
-|4/26| Topcis2 | |
+|4/12| PAA (Move class?)| |
+|4/19| D... (Move class?)| |
+|4/26| Topics2 | |
 |5/3| Presentations | |
 
