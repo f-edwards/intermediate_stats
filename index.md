@@ -30,19 +30,19 @@ Wickham R Data Science
 
 ## Course topics and schedule
 
-|1/25| |
-|2/1| |
-|2/8| |
-|2/15| |
-|2/22| | 
-|3/1| |
-|3/8| |
-|3/15| |
-|3/22| Spring Break |
-|3/29| |
-|4/5| |
-|4/12| PAA|
-|4/19| D's b-day...|
-|4/26| |
-|5/3| |
+|1/25| Intro to course, review OLS | |
+|2/1| Motivation, diverse data: limits of OLS | HW1 Due|
+|2/8| Introducing MLE | HW2 due|
+|2/15| Logit 1 | |
+|2/22| Logit 2 | HW3 due |
+|3/1| Count 1 | |
+|3/8| Count 2 | |
+|3/15| Multinom | |
+|3/22| Spring Break | |
+|3/29| Gamma and others | |
+|4/5| Topics1 (MI) | |
+|4/12| PAA| |
+|4/19| D...| |
+|4/26| Topcis2 | |
+|5/3| Presentations | |
 
