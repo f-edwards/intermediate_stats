@@ -1,3 +1,8 @@
+---
+layout: markdown
+title: "Intermediate Statistics"
+---
+
 SYLLABUS HERE
 
 ##Software
