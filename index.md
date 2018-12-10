@@ -1,3 +1,6 @@
+---
+title:"Intermediate Statistics"
+---
 SYLLABUS HERE
 
 ##Software
