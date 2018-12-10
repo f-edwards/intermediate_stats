@@ -15,5 +15,7 @@ This is the course syllabus for Intermediate Statistics, Spring 2019. In this co
 ## Important links
 
 [Slack](https://ru-intermed-stats.slack.com)
+
 [RStudio Cloud](https://rstudio.cloud/)
-[Install and setup R on your computer](/docs/install)
+
+[Install and setup R on your computer](/docs/install.md)
