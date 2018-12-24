@@ -4,13 +4,23 @@ layout: default
 
 |Intermediate Statistics   | 27:202:543  |  
 |Friday, 2:00-4:40   | Room: CLJ-574  |
-|frank.edwards@rutgers.edu | |
+|frank.edwards@rutgers.edu | Office hours by appointment|
 
+# Course description
 
-This is the course syllabus for Intermediate Statistics, Spring 2019. In this course we will:
+This is the course syllabus for Intermediate Statistics, Spring 2019. Continuous outcomes that meet the assumptions of ordinary least squares regression are relatively rare in the social sciences. This course focuses our attention on how to estimate regression models for discrete outcomes including binary, categorical, and count variables. 
 
-1. Learn about maximum likelihood estimation and master it's application through a variety of generalized linear models
-2. Learn advanced statistical programming and data visualization techniques
+# Course goals
+
+1. Master maximum likelihood estimation and it's application through a variety of generalized linear models
+2. Develop expertise in advanced statistical programming and data visualization 
+3. Develop the ability to design and conduct quantitative criniological resaerch
+
+## Prerequisites
+
+A prior graduate-level course in statistics is required and students should be comfortable with matrix algebra and basic calculus. Students are also expected to be comfortable writing code for statistical analysis.
+
+All instruction will be conducted in the R statistical programming language. Students are welcome to conduct their analyses and homeworks with Stata or other software, but I will not be able to provide technical support for languages other than R.
 
 ## Important links
 
