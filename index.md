@@ -10,11 +10,11 @@ layout: default
 
 This is the course syllabus for Intermediate Statistics, Spring 2019. Continuous outcomes that meet the assumptions of ordinary least squares regression are relatively rare in the social sciences. This course focuses our attention on how to estimate regression models for discrete outcomes including binary, categorical, and count variables. We use maximum likelihood estimation, a flexible tool that allows us to specify functional formats for our regression models to match 
 
-## Important links
+## Communication
 
-[Slack](https://ru-intermed-stats.slack.com)
+I've set up a Slack page for us to communicate about the course. This can be a resource for you to collaborate and ask me questions about homework, and will also be a spot where course announcements are posted.
 
-[RStudio Cloud](https://rstudio.cloud/)
+[Course Slack](https://ru-intermed-stats.slack.com)
 
 ## Course goals
 
