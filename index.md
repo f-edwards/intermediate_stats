@@ -70,7 +70,7 @@ Problem sets provide you an opportunity to directly apply what we've learned to 
 
 I expect to see your code, code output, and your interpretations of the results for each question. RMarkdown is a great way to complete your homeworks, and seamlessly intergrates text, code, and code output into a single document, though I will accept submissions in other formats (Word, LaTeX, etc). 
 
-Homework should be submitted to me via email (frank.edwards@rutgers.edu) by 10AM on the due date. Late work is penalized according to an exponential decay function where your maximum grade is calculated as *y*=*e*<sup>-*x*/20</sup> where *x* is the number of days an assignment is turned in late. Late work is never worth zero points. Each student is allowed one 3-day extension wihtout penalty for a homework due-date over the semester. 
+Homework should be submitted to me via email by 10AM on the due date. Late work is penalized according to an exponential decay function where your maximum grade is calculated as *y*=*e*<sup>-*x*/20</sup> where *x* is the number of days an assignment is turned in late. Late work is never worth zero points. Each student is allowed one 3-day extension wihtout penalty for a homework due-date over the semester. 
 
 ### Final project
 
@@ -82,14 +82,14 @@ Students will propose the topic for their analysis by the second week of class, 
 
 While I encourage you to work with any data you like that is appropriate for the assignment, I recognize that at this stage of your graduate career you may not yet have a clear project in mind. Here are a few datasets/archives that I think could lead to strong empirical papers:
 
-The (National Archive of Criminal Justice Data)[https://www.icpsr.umich.edu/icpsrweb/content/NACJD/learning-data-guides.html] hosts vast amounts of publicly accessible crime and criminal justice data, along with bibliographies of papers published using each dataset. The National Crime Victimization Survey might be a good place to start.
+The [National Archive of Criminal Justice Data](https://www.icpsr.umich.edu/icpsrweb/content/NACJD/learning-data-guides.html) hosts vast amounts of publicly accessible crime and criminal justice data, along with bibliographies of papers published using each dataset. The National Crime Victimization Survey might be a good place to start.
 
 Here are some newer datasets you could work with. They might require substantial cleaning to get ready for analysis, but haven't been widely used yet in criminology so might present interesting opportunities for new insights.
 
-- (Stanford Open Policing Project)[https://openpolicing.stanford.edu/]
-- (NJ police use-of-force data)[https://www.propublica.org/datastore/dataset/police-use-of-force-new-jersey]
-- (NYPD Stop and Frisk data)[https://www1.nyc.gov/site/nypd/stats/reports-analysis/stopfrisk.page]
-- (Fatal Encounters)[https://www.fatalencounters.org/]
+- [Stanford Open Policing Project](https://openpolicing.stanford.edu/)
+- [NJ police use-of-force data](https://www.propublica.org/datastore/dataset/police-use-of-force-new-jersey)
+- [NYPD Stop and Frisk data](https://www1.nyc.gov/site/nypd/stats/reports-analysis/stopfrisk.page)
+- [Fatal Encounters](https://www.fatalencounters.org/)
 
 For any new dataset you wish to use, I strongly recommend that you seek out prior academic research that has used these data for insights into their potential, structure, and limitations.
 
