@@ -106,9 +106,9 @@ For any new dataset you wish to use, I strongly recommend that you seek out prio
 |3/22| Spring Break | |
 |3/29| Poisson and negative binomial regression | HW 6 due |
 |4/5| Visualizing GLMs | HW 7 due|
-|4/12| Multievel data structures | |
+|4/12| Multievel data structures (reschedule) | |
 |4/19| Introduction to multilevel models (reschedule) | |
-|4/26| Missing data and multiple imputation (reschedule)| |
+|4/26| Missing data and multiple imputation | |
 |5/3| Presentations on research in progress| |
 |5/10| No class | Final paper due |
 
