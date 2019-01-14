@@ -40,17 +40,17 @@ A prior graduate-level course in statistics is required. This course assumes stu
 
 ### Review resources
 
-These (math camp)[https://github.com/math-camp/course] materials from UChicago neatly covers the math you'll need for the course if you need a refresher.
+These [math camp](https://github.com/math-camp/course) materials from UChicago neatly covers the math you'll need for the course if you need a refresher.
 
-Jenny Bryan's (STAT 545)[http://stat545.com/] course at UBC provides a very comprehensive overview of the computing skills you'll need for the course.
+Jenny Bryan's [STAT 545](http://stat545.com/) course at UBC provides a very comprehensive overview of the computing skills you'll need for the course.
 
 ## Software
 
 All instruction will be conducted in the R statistical programming language. Students are welcome to conduct their analyses and homeworks with Stata or other software, but I will not be able to provide technical support for languages other than R. R is free and open-source, and can be downloaded [here](https://cran.r-project.org/).
 
-I strongly recommend using the [RStudio IDE](https://www.rstudio.com/products/rstudio/download/). RStudio provides a powerful text editor and useful built-in compiling and help file capabilities. It also is a great tool for writing reports, papers, and slides using (RMarkdown)[https://rmarkdown.rstudio.com/lesson-1.html]. This syllabus, most of my course materials, and most of my academic papers are based on RMarkdown and occasionally (LaTeX)[https://www.overleaf.com/learn/latex/Learn_LaTeX_in_30_minutes].
+I strongly recommend using the [RStudio IDE](https://www.rstudio.com/products/rstudio/download/). RStudio provides a powerful text editor and useful built-in compiling and help file capabilities. It also is a great tool for writing reports, papers, and slides using [RMarkdown](https://rmarkdown.rstudio.com/lesson-1.html). This syllabus, most of my course materials, and most of my academic papers are based on RMarkdown and occasionally [LaTeX](https://www.overleaf.com/learn/latex/Learn_LaTeX_in_30_minutes).
 
-Lastly, I recommend learning some form of version control to ensure your work is a) backed up, b) easily accessible to collaborators and c) reproducible. Git and GitHub are great and flexible tools for software development that have powerful applications for researchers. Here's a useful (intro to GitHub)[https://happygitwithr.com/] for R users.
+Lastly, I recommend learning some form of version control to ensure your work is a) backed up, b) easily accessible to collaborators and c) reproducible. Git and GitHub are great and flexible tools for software development that have powerful applications for researchers. Here's a useful [intro to GitHub](https://happygitwithr.com/) for R users.
 
 ## Books
 
@@ -58,7 +58,7 @@ We will work primarily from two books. You are not required to purchase either t
 
 Gelman and Hill's *Data Analysis Using Regression and Multilevel/Hierarchical Models* is a wonderful reference book to have on your shelf as a quantitative researcher, though a second edition is due out soon. I will have a copy available for reference for those of you who prefer not to purchase it.
 
-Wickham's (R for Data Science)[https://r4ds.had.co.nz/] is available for free online textbook, though there are print versions available if you prefer to purchase a copy.
+Wickham's [R for Data Science](https://r4ds.had.co.nz/) is available for free online textbook, though there are print versions available if you prefer to purchase a copy.
 
 ## Assignments and grading
 
