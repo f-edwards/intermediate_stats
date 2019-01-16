@@ -8,7 +8,7 @@ layout: default
 
 ## Course description
 
-This is the course syllabus for Intermediate Statistics, Spring 2019. Continuous outcomes that meet the assumptions of ordinary least squares regression are relatively rare in the social sciences. This course focuses our attention on how to estimate regression models for discrete outcomes including binary, categorical, and count variables. We use maximum likelihood estimation, to estimate a series of generalized linear models. These flexible tools allow us to more accurately model discrete outcomes.
+This is the course syllabus for Intermediate Statistics, Spring 2019. Continuous outcomes that meet the assumptions of ordinary least squares regression are relatively rare in the social sciences. This course focuses our attention on how to estimate regression models for discrete outcomes including binary, categorical, and count variables. We use maximum likelihood estimation, to estimate a series of generalized linear models. These flexible tools allow us to more accurately model a wide range of outcomes.
 
 ## Communication
 
@@ -26,13 +26,13 @@ I've set up a Slack page for us to communicate about the course. This can be a r
 
 - Come prepared. This is a relatively small and advanced course. I expect everyone to participate actively in course discussions.
 
-- Complete work on time. Please complete and submit assignments on time. However, I understand that life can get complicated. I will allow each student one opportunity to push the due-date for a homework back by 3 days.
+- Please complete and submit assignments on time. 
 
 - Be respectful and professional. Be mindful of the space you take up in the classroom. Food and drink are allowed, but please keep the cell phone use and non-course related computer use to a minimum. 
 
 - Bring your computer. Most of the work we'll be doing involves writing code, so bring a computer with you to class. Let me know if access to a laptop is an issue.
 
-- Collaborate with your colleagues. I expect and encourage you all to work together to complete assignments. However, I do expect you each to submit your own homework writeups. 
+- Collaborate with your colleagues. I encourage you all to work together to complete assignments. However, I do expect you each to submit your own homework writeups. 
 
 ## Prerequisites
 
