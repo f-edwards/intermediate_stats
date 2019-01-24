@@ -1,0 +1,305 @@
+---
+title: "Intermediate statistics: introduction"
+author: "Frank Edwards"
+institute: School of Criminal Justice, Rutgers - Newark
+date: "1/25/2019"
+output: binb::metropolis
+---
+
+## Basics
+
+*Contact:* frank.edwards@rutgers.edu
+
+*Office hours:* email for appointments
+
+*Course webpage and syllabus:* https://f-edwards.github.io/intermediate_stats/
+
+*Slack:* https://ru-intermed-stats.slack.com/messages
+
+## Before we begin
+
+Remember: All models are wrong, some are useful.
+
+Linear regression is a hammer. This course provides a variety of other tools to add to your toolbox. None of them are direct reperesentations of the real phenomena we investigate in the social sciences. 
+
+However, they can be incredibly useful ways to abstractly represent complex processes.
+
+## What we will cover
+
+- How to program in R
+- How to explore, visualize, and model diverse kinds of data
+- How to design and write quantitative social science
+
+# Quick assessment of where we're at with programming
+
+## 1. Explain what this code does and expected output
+
+```{r eval=FALSE}
+k<-2
+for(i in 1:10){
+  k<-i*k
+}
+```
+
+## 2. Explain what this code does and expected output
+
+```{r eval=FALSE}
+a<-c(1, 2, 3)
+b<-c(2, 3, 4)
+a*b
+```
+
+## 3. Explain what this code does and expected output
+
+```{r eval=FALSE}
+whatsitdo<-function(x){
+  a<-min(x)
+  return(1/a)
+}
+z<-c(4,5,6)
+whatsitdo(z)
+```
+
+## 4. Explain what this code does and expected output
+
+```{r eval=FALSE}
+library(dplyr)
+dat<-data.frame("var1" = c(1,2,3), 
+                "var2" = c(4, 5, 6))
+dat%>%
+  summarise(total = sum(var1 + var2))
+```
+
+## 5. Explain what z is and what m1 is
+
+```{r eval=FALSE}
+y<-c(1,2,3,4,5)
+x<-c(3,4,5,6,7)
+z<-solve(t(x)%*%x)%*%t(x)%*%y
+m1<-lm(y~x)
+```
+
+## Discussion on how we could proceed with programming in the course
+
+*Self assessment:* 
+
+\begin{center}Were these problems easy? Hard? Completely foreign? Which parts were most unfamiliar? \end{center} \pause
+
+*Question for the class:* 
+
+\centering{Would it be helfpul to cover basic programming concepts (i.e. functions, loops)? \pause
+  Using the tidyverse packages? \pause
+  Using RMarkdown? \pause} 
+
+## Review the syllabus
+
+https://f-edwards.github.io/intermediate_stats/
+
+## How I will run seminars
+
+- Basic statistical theory \pause
+- Applied data analysis and modeling in R 
+
+## Expectations
+
+- Bring a laptop: we will be writing code in class \pause
+
+- Make space for everyone: respect varying levels of comfort with statistics and programming \pause
+
+- Come prepared and complete assignments on time
+
+## My general approach to data analysis
+
+1. Explore and visualize data \pause
+2. Fit models \pause
+3. Assess model fit \pause
+4. Interpret and describe results through simulation
+
+# The Generalized Linear Model
+
+## The linear model
+
+We know we can model data as:
+
+$$y = \beta_0 + \beta_1x_1 \cdots \beta_nx_n + \varepsilon$$ \pause
+
+Or, more succinctly:
+
+$$ y =  \mathbf{X} \mathbf{\beta} + \varepsilon $$ \pause
+
+Where the likelihood for the outcome conditional on the data takes the form:
+
+$$ Y|X \sim Normal(\mu, \sigma^2) $$ 
+
+## Generalzing the linear model
+
+The linear model: 
+
+$$ Y|X \sim Normal(\mu, \sigma^2) $$
+
+Can be written as a more general formulation for a likelihood function $f$
+
+$$ Y|X \sim f(\mu, \sigma^2) $$
+
+Now we can extend the (very) useful linear model to data with discrete outcomes
+
+## Generalizing the linear model
+
+A linear predictor $\eta$:
+
+$$ \eta = \mathbf{X} \mathbf{\beta} $$ 
+
+A link function $g$
+
+$$ g(E(Y|X)) = \eta $$ 
+
+A mean expectation $E(Y|X) = \mu$
+
+$$ \mu =  g^{-1}(\eta) $$
+
+## From OLS to GLM
+
+OLS:
+
+$$ Y|X \sim Normal(\mu, \sigma^2) $$ 
+
+GLM: 
+
+$$ Y|X \sim f(\mu, \sigma^2) $$
+
+## Diverse likelihood functions
+
+- Binary data: linear probability and logistic models \pause
+- Categorical data: Multinomial model \pause
+- Count data: Poisson and negative binomial models \pause
+- Positive continuous data: Gamma model
+
+# Getting started: software
+
+## Required installations
+
+All software we are using is free and open source.
+
+*Install R*:
+
+https://cran.r-project.org/
+
+*Install RStudio*:
+
+https://www.rstudio.com/products/rstudio/download/
+
+## Recommended software: Git and GitHub
+
+Git and GitHub are powerful tools for backing up and sharing your research. 
+
+All course materials, source code, and most of my research are hosted on GitHub (https://github.com/f-edwards).
+
+*Install Git*:
+
+https://git-scm.com/
+
+*Set up a GitHub account*:
+
+https://github.com/
+
+*Using GitHub for social science*:
+
+https://happygitwithr.com/
+
+## Recommended software: LaTeX
+
+\LaTeX is a powerful typesetting tool that works well with RMarkdown. It makes very attractive academic papers and slides. 
+
+Install it here: *Install TexLive*: 
+https://tug.org/texlive/acquire-netinstall.html
+
+# Questions so far? 
+
+# Break
+
+# Returning to the linear model
+
+## What do we know about the linear regression model?
+
+$$ y =  \mathbf{X} \mathbf{\beta} + \varepsilon $$
+$$\varepsilon \sim Normal(0, \sigma^2)$$
+
+## Review
+
+1. What forms can y take?
+2. What assumptions does the linear regression model require?
+3. What are some contexts where the linear regression model can be misleading?
+
+## Let's build some models to review
+
+I'm showing you the code and R output using Markdown - you'll learn how to do this as we keep going.
+
+```{r}
+library(tidyverse)
+
+```
+
+From the help file (access help on anything in R with ?, e.g. ?USArrests, ?data, etc.):
+
+Violent Crime Rates by US State
+
+Description
+
+This data set contains statistics, in arrests per 100,000 residents for assault, murder, and rape in each of the 50 US states in 1973. Also given is the percent of the population living in urban areas.
+
+## Evaluate the structure of the data
+
+```{r}
+str(USArrests)
+```
+
+## R relies heavily on data frames
+
+```{r}
+head(USArrests)
+```
+
+## Descriptives
+
+Call individual variables (columns) in a data frame with \$, like \texttt{USArrests$Murder}
+
+```{r}
+summary(USArrests$Murder)
+sd(USArrests$Murder)
+```
+
+## R has powerful tools for plotting data
+
+```{r}
+hist(USArrests$Murder)
+```
+
+## R has powerful tools for plotting data
+
+```{r}
+plot(USArrests$Murder, USArrests$UrbanPop)
+```
+
+## Fitting a linear model
+```{r}
+model_1<-lm(Murder ~ 
+              UrbanPop,
+            data = USArrests)
+```
+
+## Display the model fit
+
+```{r}
+summary(model_1)
+```
+
+## Visualize the model fit
+
+```{r fig.width=6, fig.height=2.5}
+library(ggplot2)
+ggplot(USArrests,
+       aes(x=UrbanPop, y=Murder))+
+  geom_smooth(method = "lm", 
+              formula = y~x)
+```
+

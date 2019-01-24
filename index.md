@@ -60,6 +60,12 @@ Gelman and Hill's *Data Analysis Using Regression and Multilevel/Hierarchical Mo
 
 Wickham's [R for Data Science](https://r4ds.had.co.nz/) is available for free online textbook, though there are print versions available if you prefer to purchase a copy.
 
+These books are also very useful, and some examples are pulled from them:
+
+Healy, *Data Visualization: A Practical Introduction*
+
+McElrath, *Statistical Rethinking: A Bayesian Course with Examples in R and Stan*
+
 ## Assignments and grading
 
 Course grading is based on a combination of course participation (20 percent), homework assignments (40 percent) and a final project (40 percent). 
