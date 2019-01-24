@@ -230,13 +230,26 @@ $$\varepsilon \sim Normal(0, \sigma^2)$$
 2. What assumptions does the linear regression model require?
 3. What are some contexts where the linear regression model can be misleading?
 
-## Let's build some models to review
+# Let's build some models to review
 
-I'm showing you the code and R output using Markdown - you'll learn how to do this as we keep going.
+## Two ways to access this data
 
+- All data is accessible through the the course website (see the data link, or data folder on the GitHub page)
+- *Recommended approach:* In a terminal (terminal.app on mac, Git Bash on windows): 
+
+\texttt{git clone https://github.com/f-edwards/intermediate_stats.git}
+
+Before beginning your work each session, pull updates I've pushed to the repo with:
+
+\texttt{git pull}
+
+## Read in the data
 ```{r}
 library(tidyverse)
-
+### directly from the web
+cj_budgets<-read_csv("https://github.com/f-edwards/intermediate_stats/raw/master/data/revenue_dat.csv")
+### from a project directory root
+cj_budgets<-read_csv("~/data/revenue_dat.csv")
 ```
 
 From the help file (access help on anything in R with ?, e.g. ?USArrests, ?data, etc.):
