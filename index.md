@@ -9,6 +9,7 @@ layout: default
 ## Quick links
 
 [Lecture slides](https://github.com/f-edwards/intermediate_stats/tree/master/slides)
+
 [Data used in class](https://github.com/f-edwards/intermediate_stats/tree/master/data)
 
 ## Course description
@@ -45,15 +46,17 @@ A prior graduate-level course in statistics is required. This course assumes stu
 
 ### Review resources
 
-These [math camp](https://github.com/math-camp/course) materials from UChicago neatly covers the math you'll need for the course if you need a refresher.
+These [math camp](https://github.com/math-camp/course) materials from UChicago neatly cover the math you need for graduate-level statistics courses.
 
-Jenny Bryan's [STAT 545](http://stat545.com/) course at UBC provides a very comprehensive overview of the computing skills you'll need for the course.
+Jenny Bryan's [STAT 545](http://stat545.com/) course at UBC provides a very comprehensive overview of programming in R and efficient data science workflows.
 
 ## Software
 
-All instruction will be conducted in the R statistical programming language. Students are welcome to conduct their analyses and homeworks with Stata or other software, but I will not be able to provide technical support for languages other than R. R is free and open-source, and can be downloaded [here](https://cran.r-project.org/).
+All instruction will be conducted in the R statistical programming language. R is free and open-source, and can be downloaded [here](https://cran.r-project.org/).
 
-I strongly recommend using the [RStudio IDE](https://www.rstudio.com/products/rstudio/download/). RStudio provides a powerful text editor and useful built-in compiling and help file capabilities. It also is a great tool for writing reports, papers, and slides using [RMarkdown](https://rmarkdown.rstudio.com/lesson-1.html). This syllabus, most of my course materials, and most of my academic papers are based on Markdown and occasionally [LaTeX](https://www.overleaf.com/learn/latex/Learn_LaTeX_in_30_minutes).
+We will be using the [RStudio integrated development environment](https://www.rstudio.com/products/rstudio/download/). RStudio provides a powerful text editor and a range of very useful utilities. 
+
+In addition to writing code, it is a great tool for writing reports, papers, and slides using [RMarkdown](https://rmarkdown.rstudio.com/lesson-1.html). This syllabus, most of my course materials, and most of my academic papers are based on Markdown and occasionally [LaTeX](https://www.overleaf.com/learn/latex/Learn_LaTeX_in_30_minutes). I strongly recommend that you use RMarkdown to complete course assignments. Other plaintext editors (emacs, vim, sublime, atom, etc) are acceptable substitutes for RStudio, but try to avoid using MS Word or other WSIWYG editors for assignments.  
 
 Lastly, I recommend learning some form of version control to ensure your work is a) backed up, b) easily accessible to collaborators and c) reproducible. Git and GitHub are great and flexible tools for software development that have powerful applications for researchers. Here's a useful [intro to GitHub](https://happygitwithr.com/) for R users.
 
@@ -79,7 +82,7 @@ Course grading is based on a combination of course participation (20 percent), h
 
 Problem sets provide you an opportunity to directly apply what we've learned to real-world data analysis and statistical problems. 
 
-I expect to see your code, code output, and your interpretations of the results for each question. RMarkdown is a great way to complete your homeworks, and seamlessly intergrates text, code, and code output into a single document, though I will accept submissions in other formats (Word, LaTeX, etc). 
+I expect to see your code, code output, and your interpretations of the results for each question. RMarkdown is a great way to complete your homeworks, and seamlessly intergrates text, code, and code output into a single document. You can submit your compiled homeworks in either .html or .pdf format.
 
 Homework should be submitted to me via email by 10AM on the due date. Late work is penalized according to an exponential decay function where your maximum grade is calculated as *y*=*e*<sup>-*x*/20</sup> where *x* is the number of days an assignment is turned in late. Late work is never worth zero points. Each student is allowed one 3-day extension wihtout penalty for a homework due-date over the semester. 
 
@@ -107,16 +110,16 @@ For any new dataset you wish to use, I strongly recommend that you seek out prio
 ## Course topics and schedule
 
 |1/25| Intro to course, review part 1| |
-|2/1| Moving beyond continuous data | HW1 Due |
-|2/8| Introducing MLE | Paper proposal due |
-|2/15| Binary outcomes | |
-|2/22| Logistic regression | HW 2 due |
-|3/1| Categorical outcomes| HW 3 due|
-|3/8| Multinomial regression | HW 4 due |
-|3/15| Count variables | HW 5 due |
+|2/1| The linear model | HW1 Due |
+|2/8| Diverse data, intro to MLE | HW2 due |
+|2/15| Binary outcomes | Complete paper proposal due |
+|2/22| Logistic regression | HW 3 due |
+|3/1| Categorical outcomes| HW 4 due|
+|3/8| Multinomial regression | HW 5 due |
+|3/15| Count variables | HW 6 due |
 |3/22| Spring Break | |
-|3/29| Poisson and negative binomial regression | HW 6 due |
-|4/5| Visualizing GLMs | HW 7 due|
+|3/29| Poisson and negative binomial regression | HW 7 due |
+|4/5| Visualizing GLMs | HW 8 due|
 |4/12| Multievel data structures (reschedule) | |
 |4/19| Introduction to multilevel models (reschedule) | |
 |4/26| Missing data and multiple imputation | |

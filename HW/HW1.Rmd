@@ -30,3 +30,11 @@ Use the data in revenue_dat.csv in the course repository.
 ## Question 4
 
 Describe and interpret the results from the interaction model. Explain the meaning of the coefficients. Use graphs to help explain the findings. 
+
+## Question 5
+
+Propose a topic for your final paper. You may use one of the recommended datasets in the syllabus or any other dataset that you have access to. Identify an outcome for your focal analysis. Outcomes may be categorical, binary, counts, or continuous. Provide me with a concise research question and a brief statement explaining the theoretical importance of the question. 
+
+Don't select a dataset that requires restricted access if you do not currently have approval for this research. Semesters move fast, and I don't want you to be delayed by IRB or data archive approval processes.
+
+This proposal should be about 200 words. 
