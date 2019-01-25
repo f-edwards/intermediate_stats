@@ -26,7 +26,7 @@ I've set up a Slack page for us to communicate about the course. This can be a r
 
 1. Master maximum likelihood estimation and its application through a variety of generalized linear models
 2. Develop expertise in advanced statistical programming and data visualization 
-3. Develop the ability to design and conduct quantitative criminological resaerch
+3. Develop the ability to design and conduct quantitative criminological research
 
 ## Expectations
 
@@ -82,9 +82,9 @@ Course grading is based on a combination of course participation (20 percent), h
 
 Problem sets provide you an opportunity to directly apply what we've learned to real-world data analysis and statistical problems. 
 
-I expect to see your code, code output, and your interpretations of the results for each question. RMarkdown is a great way to complete your homeworks, and seamlessly intergrates text, code, and code output into a single document. You can submit your compiled homeworks in either .html or .pdf format.
+I expect to see your code, code output, and your interpretations of the results for each question. RMarkdown is a great way to complete your homeworks, and seamlessly integrates text, code, and code output into a single document. You can submit your compiled homeworks in either .html or .pdf format.
 
-Homework should be submitted to me via email by 10AM on the due date. Late work is penalized according to an exponential decay function where your maximum grade is calculated as *y*=*e*<sup>-*x*/20</sup> where *x* is the number of days an assignment is turned in late. Late work is never worth zero points. Each student is allowed one 3-day extension wihtout penalty for a homework due-date over the semester. 
+Homework should be submitted to me via email by 10AM on the due date. Late work is penalized according to an exponential decay function where your maximum grade is calculated as *y*=*e*<sup>-*x*/20</sup> where *x* is the number of days an assignment is turned in late. Late work is never worth zero points. Each student is allowed one 3-day extension without penalty for a homework due-date over the semester. 
 
 ### Final project
 
@@ -120,7 +120,7 @@ For any new dataset you wish to use, I strongly recommend that you seek out prio
 |3/22| Spring Break | |
 |3/29| Poisson and negative binomial regression | HW 7 due |
 |4/5| Visualizing GLMs | HW 8 due|
-|4/12| Multievel data structures (reschedule) | |
+|4/12| Multilevel data structures (reschedule) | |
 |4/19| Introduction to multilevel models (reschedule) | |
 |4/26| Missing data and multiple imputation | |
 |5/3| Presentations on research in progress| |

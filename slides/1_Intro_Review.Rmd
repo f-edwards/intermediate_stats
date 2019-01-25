@@ -36,9 +36,9 @@ Remember: All models are wrong, some are useful.
 
 ## What we will cover
 
-- How to explore, visualize, and model diverse kinds of data with an emphasis on generalized linear models
-- How to program in R
-- Developing a workflow for producing replicable quantitative social science
+- How to explore, visualize, and model diverse kinds of data with an emphasis on generalized linear models \pause
+- How to program in R \pause
+- Developing a workflow for producing replicable quantitative social science \pause
 - Some advanced topics that are relevant for the kinds of data we're dealing with in the course, subject to class interest
 
 # Quick assessment of where we're at with programming
@@ -46,9 +46,8 @@ Remember: All models are wrong, some are useful.
 ## 1. Explain what this code does and expected output
 
 ```{r eval=FALSE}
-k<-2
 for(i in 1:10){
-  k<-i*k
+  print(i^2)
 }
 ```
 
@@ -150,19 +149,19 @@ $$ Y|X \sim Normal(\mu, \sigma^2) $$
 
 Can be written as a more general formulation for a likelihood function $f$
 
-$$ Y|X \sim f(\mu, \sigma^2) $$
+$$ Y|X \sim f(\mu, \sigma^2) $$ \pause
 
 Now we can extend the (very) useful linear model to data with discrete outcomes
 
 ## Generalizing the linear model
 
-A linear predictor $\eta$:
+A linear predictor $\eta$: 
 
-$$ \eta = \mathbf{X} \mathbf{\beta} $$ 
+$$ \eta = \mathbf{X} \mathbf{\beta} $$ \pause
 
 A link function $g$
 
-$$ g(E(Y|X)) = \eta $$ 
+$$ g(E(Y|X)) = \eta $$ \pause
 
 A mean expectation $E(Y|X) = \mu$
 
@@ -174,13 +173,13 @@ OLS:
 
 $$ Y|X \sim Normal(\mu, \sigma^2) $$ 
 
-GLM: 
+GLM, for a likelihood function $f$ with parameters $\theta$: 
 
-$$ Y|X \sim f(\mu, \sigma^2) $$
+$$ Y|X \sim f(\theta) $$
 
 ## Diverse likelihood functions
 
-- Binary data: linear probability and logistic models \pause
+- Binary data: linear probability (Normal/Gaussian) and logistic models \pause
 - Categorical data: Multinomial model \pause
 - Count data: Poisson and negative binomial models \pause
 - Positive continuous data: Gamma model
@@ -255,7 +254,7 @@ $$\varepsilon \sim Normal(0, \sigma^2)$$
 - All data is accessible through the the course website (see the data link, or data folder on the GitHub page)
 - *Recommended approach:* In a terminal (terminal.app on mac, Git Bash on windows): 
 
-\texttt{git clone https://github.com/f-edwards/intermediate_stats.git}
+\texttt{git clone} https://github.com/f-edwards/intermediate_stats.git
 
 Before beginning your work each session, pull updates I've pushed to the repo with:
 
@@ -371,7 +370,11 @@ ggplot(cj_budgets,
 ## Residuals vs fitted
 
 ```{r}
-plot()
+sd_outcome<-sd(cj_budgets$pop_pct_deep_pov)
+plot_dat<-data.frame(resid = model_1$residuals, yhat = model_1$fitted.values)
+ggplot(plot_dat, aes(y = resid, x = yhat)) + 
+  geom_point() + 
+  geom_hline(yintercept = sd_outcome, lty=2) + geom_hline(yintercept = -sd_outcome, lty=2)
 ```
 
 # Can we fit a better model?
@@ -393,6 +396,6 @@ HW 1 asks you to apply some basic programming, data wrangling, and data visualiz
 ## HW tips
 
 - Work together!
-- Check the Wickham text from the syllabus
+- Check the Wickham text from the syllabus or other online R courses
 - Google it: StackOverflow will become your best friend
 - Accept that this is hard and you will probably struggle with it
