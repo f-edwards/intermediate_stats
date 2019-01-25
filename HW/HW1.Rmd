@@ -3,7 +3,7 @@ title: "HW1"
 subtitle: "Intermediate Statistics"
 author: "Frank Edwards"
 date: "1/25/2019"
-output: html_document
+output: pdf_document
 ---
 
 ## Question 1
