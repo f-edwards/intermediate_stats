@@ -237,13 +237,18 @@ $$\varepsilon \sim Normal(0, \sigma^2)$$
 
 ## Review
 
-1. What forms can y take?
+1. What forms can y take? \pause
 2. What assumptions does the linear regression model require?
-3. What are some contexts where the linear regression model can be misleading?
 
-# Let's build some models to review
+## Assumptions of linear regression model
 
-## 
+1. Validity of data relative to the research question \pause
+2. Additive, linear functional form \pause
+3. Independent errors \pause
+4. Equal variance of errors \pause
+5. Normality of errors \pause
+
+# Let's analyze some data?
 
 ## Two ways to access course data
 
@@ -363,4 +368,31 @@ ggplot(cj_budgets,
   geom_point()
 ```
 
+## Residuals vs fitted
+
+```{r}
+plot()
+```
+
 # Can we fit a better model?
+
+# Homework programming prep
+
+## Needed concepts / syntax
+
+HW 1 asks you to apply some basic programming, data wrangling, and data visualization to common linear regression challenges.
+
+- Reading data
+- Loops
+- Lists
+- Matrix and data frame indexing
+- dplyr::mutate
+- ggplot2
+- RMarkdown
+
+## HW tips
+
+- Work together!
+- Check the Wickham text from the syllabus
+- Google it: StackOverflow will become your best friend
+- Accept that this is hard and you will probably struggle with it
