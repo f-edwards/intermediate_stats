@@ -18,7 +18,7 @@ library(tidyverse)
 
 ## Question 1
 
-For this problem, we will use data built into R. Load the data using the console command data(anscombe)}. 
+For this problem, we will use data built into R. Load the data using the console command data(anscombe). 
 
 Describe the relationships between y1 and x1, y2 and x2, y3 and x3, and y4 and x4 in sequence. Construct linear regression models and any descriptive statistics or visuals that you find helpful. Compare results across the y~x pairs. Do you notice anything interesting across your results? If so, describe the implications of your findings.
 
