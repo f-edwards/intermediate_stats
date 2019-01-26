@@ -12,6 +12,10 @@ layout: default
 
 [Data used in class](https://github.com/f-edwards/intermediate_stats/tree/master/data)
 
+### Homeworks
+
+[HW1](./HW/HW1.html)
+
 ## Course description
 
 This is the course syllabus for Intermediate Statistics, Spring 2019. Continuous outcomes that meet the assumptions of ordinary least squares regression are relatively rare in the social sciences. This course focuses our attention on how to estimate regression models for discrete outcomes including binary, categorical, and count variables. We use maximum likelihood estimation to estimate a series of generalized linear models. These flexible tools allow us to more accurately model a wide range of outcomes.
