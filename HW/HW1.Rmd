@@ -91,7 +91,7 @@ lm( y ~ x1 * x2)
 
 6. Display your results
 
-use summary() to show these results. You can also use the sweep() function from library(broom) for a tidier presentation.
+use summary() to show these results. You can also use the tidy() function from library(broom) for a tidier presentation.
 
 ## Question 4
 
