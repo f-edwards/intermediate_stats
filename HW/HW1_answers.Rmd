@@ -1,0 +1,191 @@
+---
+title: "HW1"
+subtitle: "Intermediate Statistics"
+author: "Frank Edwards"
+date: "1/25/2019"
+output: html_document
+---
+
+To compile your RMarkdown document, click the 'Knit' button at the top of the script editing pane. This will make an html document that you can open in any web browser (or Word). I recommend directly completing your homework in this RMarkdown document (HW1.Rmd)
+
+*Remember to run install.packages("tidyverse") directly on the console (see the console tab on your terminal pane) before proceeding.* 
+
+You only have to do this once on your computer. Then make sure to include library(tidyverse) before any other R code in your markdown document. Tidyverse loads the packages readr, dplyr, ggplot2 and a few others into the working environment.
+
+```{r}
+library(tidyverse)
+```
+
+## Question 1
+
+For this problem, we will use data built into R. Load the data using the console command data(anscombe). 
+
+Describe the relationships between y1 and x1, y2 and x2, y3 and x3, and y4 and x4 in sequence. Construct linear regression models and any descriptive statistics or visuals that you find helpful. Compare results across the y~x pairs. Do you notice anything interesting across your results? If so, describe the implications of your findings.
+
+The general code you will want to use to run a linear model is:
+
+```{r}
+data(anscombe)
+model_1<-lm(y1~x1, data = anscombe)
+```
+
+Also, explore the data with the summary() and ggplot() functions.
+
+You can embed a scatterplot in RMarkdown with code like this. Note that anything following # is a comment and is not executed by R. We use comments to document our code and make it more clear what we are trying to do. I recommend using comments frequently.
+
+```{r}
+### Plot x1,y1, add an OLS line fit to the data
+### Not that I've formatted the code this way to make it readable. It could all be on one line if you wanted
+### The line breaks and tabs don't have any inherent meaning in R code.
+ggplot(data = anscombe, ### Tell ggplot what data we are using
+       aes(x = x1, y = y1)) + ### give ggplot the 'aesthetic' variables we're using
+  geom_point() + ### add a scatterplot using the aes() variables
+  geom_smooth( ### add a fitted line using the aes() variables
+    method = "lm", ### use an OLS method, there are others available
+    formula = y~x) ### provide it with a regression formula to estimate
+
+```
+
+**SOLUTION**
+
+I am showing you a solution that relies on loops to accomplish the task. We've got four pairs of data that yield identical linear models, but have wildly different distributions. Always plot your data!
+
+```{r}
+for(i in 1:4){
+  new_dat<-data.frame(x = anscombe[,i], y = anscombe[,i+4])
+  model<-lm(y~x, data = new_dat)
+  print(summary(model))
+  print(ggplot(new_dat, 
+         aes(x = x, y = y)) + 
+    geom_point() +
+    geom_smooth(method = "lm",
+                formula = y~x))
+}
+```
+
+
+## Question 2
+
+Use the data in revenue_dat.csv in the course repository. 
+
+1. Load in the data
+
+```{r}
+### you can read the data directly from the web
+cj_budgets<-read_csv("https://github.com/f-edwards/intermediate_stats/raw/master/data/revenue_dat.csv")
+### or clone the git repo 
+### if git is installed, go to your terminal tab in RMarkdown and type
+### git clone https://github.com/f-edwards/intermediate_stats.git
+```
+
+2. Use the mutate() function in the dplyr package to construct a new variable for property tax revenue per capita called prop_tax_pc using the variables rev_prop_tax and tot_pop.
+
+```{r}
+### general syntax to use mutate() to create new variables
+cj_budgets<-cj_budgets%>%
+  mutate(temp_variable = 1 + rev_prop_tax / 2) 
+# any operation on a vector (column) or scalar (single value) works. 
+# you can use multiple vectors in a mutate() assignment
+```
+
+**SOLUTION**
+
+```{r}
+cj_budgets<-cj_budgets%>%
+  mutate(prop_tax_pc = rev_prop_tax / pop_tot)
+```
+
+
+3. Transform prop_tax_pc into a binary variable equal to TRUE if property tax revenues per capita are greater than or equal to the median value of the variable, FALSE otherwise
+
+```{r}
+### using >, <, >= or <= returns TRUE or FALSE, and can handle vectors
+a<-c(1,2,3)
+b<-c(2,1,3)
+a>=b
+```
+
+**SOLUTION**
+
+```{r}
+cj_budgets<-cj_budgets%>%
+  mutate(prop_tax_pc = prop_tax_pc>=median(prop_tax_pc))
+```
+
+
+4. Run a linear regression model of the proportion of the population in deep poverty (pop_pct_deep_pov) as a function of property tax revenues per capita (your binary measure).
+
+**SOLUTION**
+
+```{r}
+model1<-lm(pop_pct_deep_pov ~ 
+             prop_tax_pc, 
+           data = cj_budgets)
+```
+
+
+See code from the lecture slides for an example of this syntax.
+
+5. Add an interaction term. Interact your property tax indicator with the racial composition of the county (pct_blk = pop_blk / pop_tot)
+
+```{r}
+cj_budgets<-cj_budgets%>%
+  mutate(pct_blk = pop_blk/pop_tot)
+
+model2<-lm(pop_pct_deep_pov ~ 
+             prop_tax_pc * pct_blk, 
+           data = cj_budgets)
+```
+
+
+You can add interactions to a model with syntax like this:
+
+lm( y ~ x1 * x2)
+
+6. Display your results
+
+use summary() to show these results. You can also use the tidy() function from library(broom) for a tidier presentation.
+
+**Solution**
+
+```{r}
+library(broom)
+tidy(model1)
+tidy(model2)
+```
+
+## Question 4
+
+Describe and interpret the results from the interaction model. Explain the meaning of the intercept and estimated beta coefficients in the regression model.
+
+**SOLUTION**
+
+Model 1: $\beta_0 =$ `r round(coef(model1)[1],3)`, indicating the exepcted deep poverty rate for a county with below median property tax revenue per capita. $\beta_1 = $ `r round(coef(model1)[2],3)`, the difference in deep poverty rates in counties with at or above median property tax revenue. For a high property tax revenue county, we expect the deep poverty rate to be $\beta_0 + \beta_1$ = `r round(coef(model1)[1] + coef(model1)[2],3)`
+
+Model 2: $\beta_0 = $ `r round(coef(model2)[1])`, which is the expected deep poverty rate for a county with below median property tax revenue and zero Black population. $\beta_1 = $ `r round(coef(model2)[2])` is the difference in expected deep poverty when a county has above the median property tax revenue. When a county has zero Black population and above median property tax revenue, $\hat{y} = \beta_0 + \beta_1 = $ `r round(coef(model2)[1] + coef(model2)[2],3)`. $\beta_3$ is the linear slope for percent Black population. Moving from zero Black population to one hundred percent Black population, we expect an increase in the proportion of people living in deep poverty of `r round(coef(model2)[3],3)` in counties with lower than median property tax revenue. $\beta_4$ give us the difference in slopes for percent Black population when property tax revenues are high. For high revenue counties, the expected change in deep poverty for a once percent increase in the Black population is $\beta_3 + \beta_4$. 
+
+*Not needed for solution, but interesting*
+
+We can more easily see these results using predictions.
+
+```{r}
+pct_blk<-rep(seq(0,1,length=100),2)
+prop_tax_pc<-c(rep(TRUE, 100), rep(FALSE, 100))
+fake_data<-data.frame(pct_blk, 
+                      prop_tax_pc)
+fake_data<-fake_data%>%
+  mutate(yhat = predict(model2, newdata = fake_data))
+ggplot(fake_data, 
+       aes(x = pct_blk, y = yhat, color = prop_tax_pc)) + 
+  geom_line()
+
+```
+
+
+## Question 5
+
+Propose a topic for your final paper. You may use one of the recommended datasets in the syllabus or any other dataset that you have access to. Provide me with a concise research question and a brief statement explaining the theoretical importance of the question. 
+
+Don't select a dataset that requires restricted access if you do not currently have approval for this research. Semesters move fast, and I don't want you to be delayed by IRB or data archive approval processes.
+
+This proposal should be between 100-200 words.
