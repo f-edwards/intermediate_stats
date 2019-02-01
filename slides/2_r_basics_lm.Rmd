@@ -2,7 +2,7 @@
 title: "Manipulating and visualizing data in R"
 author: "Frank Edwards"
 institute: School of Criminal Justice, Rutgers - Newark
-date: "1/25/2019"
+date: "2/1/2019"
 output: binb::metropolis
 ---
 
