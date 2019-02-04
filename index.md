@@ -15,6 +15,7 @@ layout: default
 ### Homeworks
 
 HW1: [html](https://f-edwards.github.io/intermediate_stats/HW/HW1.html), [Rmd](https://f-edwards.github.io/intermediate_stats/HW/HW1.Rmd)
+HW2: [pdf](https://f-edwards.github.io/intermediate_stats/HW/HW2.pdf), [Rmd](https://f-edwards.github.io/intermediate_stats/HW/HW2.Rmd)
 
 ## Course description
 
