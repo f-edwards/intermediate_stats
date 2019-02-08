@@ -18,6 +18,8 @@ HW1: [html](https://f-edwards.github.io/intermediate_stats/HW/HW1.html), [Rmd](h
 
 HW2: [pdf](https://f-edwards.github.io/intermediate_stats/HW/HW2.pdf), [Rmd](https://f-edwards.github.io/intermediate_stats/HW/HW2.Rmd)
 
+HW3: [pdf](https://f-edwards.github.io/intermediate_stats/HW/HW3.pdf), [Rmd](https://f-edwards.github.io/intermediate_stats/HW/HW3.Rmd)
+
 ## Course description
 
 This is the course syllabus for Intermediate Statistics, Spring 2019. Continuous outcomes that meet the assumptions of ordinary least squares regression are relatively rare in the social sciences. This course focuses our attention on how to estimate regression models for discrete outcomes including binary, categorical, and count variables. We use maximum likelihood estimation to estimate a series of generalized linear models. These flexible tools allow us to more accurately model a wide range of outcomes.
@@ -76,9 +78,9 @@ Wickham's [R for Data Science](https://r4ds.had.co.nz/) is available for free on
 
 These books are also very useful, and some examples are pulled from them:
 
-Healy, *Data Visualization: A Practical Introduction*
+Healy, [*Data Visualization: A Practical Introduction*](http://socviz.co/index.html) 
 
-McElrath, *Statistical Rethinking: A Bayesian Course with Examples in R and Stan*
+McElreath, *Statistical Rethinking: A Bayesian Course with Examples in R and Stan*
 
 ## Assignments and grading
 
