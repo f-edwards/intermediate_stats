@@ -1,0 +1,366 @@
+---
+title: "3: Basic Theory and Practice of Data Visualization"
+author: "Frank Edwards"
+date: "2/8/2019"
+output: binb::metropolis
+---
+
+```{r echo=FALSE, message=FALSE}
+library(tidyverse)
+library(xtable)
+options(xtable.comment = FALSE)
+theme_set(theme_minimal())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+```
+
+## Data visualization
+
+- What makes a good visual?
+- Why visualize?
+- How to use ggplot to make visuals in R
+
+## Why do we visualize data?
+
+```{r echo=FALSE}
+### prep anscombe for small multiple plotting
+### need a long dataframe with x,y,varname columns
+data(anscombe)
+plot_anscombe<-bind_cols(
+  anscombe%>%
+    select(x1,x2,x3,x4)%>%
+    gather()%>%
+    rename(x = value)%>%
+    select(x),
+  anscombe%>%
+    select(y1,y2,y3,y4)%>%
+    gather()%>%
+    rename(y = value,
+           var = key))
+  
+ggplot(plot_anscombe, 
+       aes(x = x, y = y)) + 
+  geom_smooth(method = "lm", 
+              formula = y~ x) + 
+  geom_point() + 
+  facet_wrap(~var, scales = "free")
+
+```
+
+# Principles of good data visuals
+
+## Good data visuals
+
+- Are clearly labeled 
+- Avoid deception
+- Use repetition to invite comparisons
+- Minimize 'chartjunk'
+
+## Find the chartjunk
+\begin{center}
+		\includegraphics[width=\textwidth]{vis/excel_3d.pdf}
+\end{center}
+
+## The importance of axes
+```{r echo = FALSE}
+plot_dat<-data.frame("time" = 1:10,
+                     "grade" = c(4, 3.9, 3.93, 3.9, 
+                                 3.95,3.9, 3.88, 3.85, 
+                                 3.8, 3.78))
+ggplot(plot_dat, 
+       aes(x = time, y = grade)) + 
+  geom_line()
+```
+
+## The importance of axes 
+
+```{r echo = FALSE}
+ggplot(plot_dat, 
+       aes(x = time, y = grade)) + 
+  geom_line() + 
+  coord_cartesian(ylim = c(3,4))
+```
+
+## The importance of aspect ratio
+
+\begin{center}
+  \includegraphics[width=\textwidth]{./vis/aspect_demo2.pdf}
+\end{center}
+
+# Why Visualize Data? 
+
+## Why do we visualize data?
+
+- Visuals can quickly reveal patterns in data
+- Visuals are a (more) effective way to communicate quantitative information
+
+# Geographic Data
+
+##
+```{r results = 'asis', echo = FALSE, size = "tiny"}
+### load 1973 arrest rate data, built into R
+data("USArrests")
+### merge it onto map shape file
+library(maps)
+states<-map_data("state")
+states<-left_join(states, 
+                  USArrests%>%
+                    mutate(region = 
+                             tolower(
+                               rownames(USArrests))))
+
+tab_out<-as.data.frame(cbind(row.names(USArrests), USArrests$Murder))
+xtable(tab_out)
+```
+
+##
+```{r echo = FALSE}
+ggplot(states, 
+       aes(x = long, y = lat, 
+           group = group, fill = Murder)) + 
+  theme_minimal() + 
+  geom_polygon()
+```
+
+# Which is most effective? Why?
+
+# Time Series
+
+## 
+```{r echo = FALSE, results='asis', size = 'tiny'}
+fe<-read_csv("./data/fe_1_25_19.csv")
+fe_ts<-fe%>%
+  group_by(`Date (Year)`)%>%
+  summarise(deaths = n())%>%
+  filter(`Date (Year)`<=2018)%>%
+  mutate(`Date (Year)` = as.integer(`Date (Year)`))
+xtable(fe_ts)
+```
+
+##
+```{r echo = FALSE}
+ggplot(fe_ts,
+       aes(x = `Date (Year)`, y = deaths)) + 
+  geom_line()
+```
+
+# Which is most effective? Why?
+
+# Model results
+
+## 
+
+\begin{center}
+		\includegraphics[width=\textwidth]{vis/ugly_table.png}
+	\end{center}
+
+## Reduced format: focal variable sign and significance 
+
+\begin{table}[]
+	\centering
+	\tiny{
+	\begin{tabular}{llllll}
+	                                & Parameter        & All  & Violent & Drug  & Quality of life \\
+	                                \hline
+	Total                           & Between counties & +       & +           & +        & +                   \\
+	                                & Within county    & +       & +           & +        & +                  \\
+	African American                & Between counties & +       & +           & +        & +                   \\
+	                                & Within county    & +       & +           & +        & +                   \\
+	Asian-Pacific Islander          & Between counties & +       & +           & +        & +                   \\
+	                                & Within county    & +       & +           &          & +                   \\
+	American Indian / Alaska Native & Between counties & +       & +           & +        & +                   \\
+	                                & Within county    & +       & +           & +        & +                   \\
+	White                           & Between counties & +       & +           & +        & +                   \\
+	                                & Within county    & +       & +           & +        & +                   \\
+	                                \hline
+	\end{tabular}
+	}
+	\end{table}
+
+## Plot summary
+\begin{center}
+		\includegraphics[width=\textwidth]{vis/forest1.pdf}
+	\end{center}
+	
+## Plot summary
+\begin{center}
+		\includegraphics[width=\textwidth]{vis/forest5.pdf}
+	\end{center}
+	
+# Which is most effective? Why?
+
+# Break
+
+# Using ggplot2 to visualize data in R
+
+## The importance of tidy (long) data for ggplot
+
+Data is generally either wide or long
+
+- In wide format, column position may indicate a variables value
+- In long format, each variable has its own column
+
+## Example of long data: each column is a variable
+
+```{r}
+head(iris)
+```
+
+## Example of the same data in wide format
+
+```{r echo = FALSE, size = "tiny"}
+species<-unique(iris$Species)
+for(i in 1:length(species)){
+  if(i==1){
+    out<-iris%>%
+      filter(Species==species[i])%>%
+      select(-Species)
+    names(out)<-paste(species[i],names(out), sep=".")
+  }
+  if(i>1){
+    temp<-iris%>%
+      filter(Species==species[i])%>%
+      select(-Species)
+    names(temp)<-paste(species[i],names(temp), sep=".")
+    out<-bind_cols(out, temp)
+  }
+}
+
+head(out)
+
+```
+
+## Tidy data lets us efficiently feed aesthetic parameters to ggplot.
+
+- Tidy data is harder for humans to read in a spreadsheet, but much easier to program with. Tidyverse packages are built around making and keeping our R objects in tidy (long data.frame) format
+
+- Try to keep your data tidy - all variables should be variables, not embedded in column names. 
+
+**Frequent untidy variables:**
+
+- Time (i.e. year)
+- Group
+
+# Basic anatomy of a ggplot command
+
+## Give it data
+
+```{r}
+data("iris")
+my_plot<-ggplot(data = iris)
+```
+
+## Add a single aesthetic parameter
+
+```{r fig.height = 2, fig.width = 4, size = "scriptsize"}
+ggplot(data = iris,
+                aes(x = Petal.Width))
+```
+
+## Add a geom
+
+```{r fig.height = 3, fig.width = 6, size = "scriptsize"}
+ggplot(data = iris,
+                aes(x = Petal.Width)) + 
+  geom_histogram()
+```
+
+## Add two aesthetic parameters and a geom
+
+```{r fig.height = 3, fig.width = 6, size = "scriptsize"}
+ggplot(data = iris,
+       aes(x = Petal.Width, 
+           y = Petal.Length)) + 
+  geom_point()
+```
+
+## Three variables: two continuous, one categorical 
+
+```{r fig.height = 3, fig.width = 6, size = "scriptsize"}
+ggplot(data = iris,
+       aes(x = Petal.Width, 
+           y = Petal.Length,
+           color = Species)) +  
+  geom_point()
+```
+
+## Three variables: two continuous, one categorical 
+
+```{r fig.height = 3, fig.width = 6, size = "scriptsize"}
+ggplot(data = iris,
+       aes(x = Petal.Width, 
+           y = Petal.Length,
+           shape = Species)) +  
+  geom_point()
+```
+
+## Multiple geoms
+
+```{r fig.height = 3, fig.width = 6, size = "scriptsize"}
+ggplot(data = iris,
+       aes(x = Petal.Width, 
+           y = Petal.Length,
+           color = Species)) +  
+  geom_point() + 
+  geom_smooth(method = "lm")
+```
+
+## To review
+
+ggplot needs three things to make a graphic
+
+1. Data
+2. Aesthetic paramaters
+3. Geoms
+
+# More advanced plots
+
+## Boxplots (one continuous, one categorical)
+
+```{r fig.height = 3, fig.width = 6, size = "scriptsize"}
+ggplot(data = iris,
+       aes(y = Petal.Width, 
+           x = Species)) +  
+  geom_boxplot()
+```
+
+## Violin plot 
+
+```{r fig.height = 3, fig.width = 6, size = "scriptsize"}
+ggplot(data = iris,
+       aes(y = Petal.Width, 
+           x = Species)) +  
+  geom_violin()
+```
+
+## Small multiples (facets)
+
+```{r fig.height = 3, fig.width = 6, size = "scriptsize"}
+ggplot(data = iris,
+       aes(x = Petal.Width, 
+           y = Petal.Length)) +  
+  geom_point() + 
+  geom_smooth(method = "lm") + 
+  facet_wrap(~ Species)
+```
+
+## Small multiples are very powerful
+
+\begin{center}
+  \includegraphics[width = \textwidth]{./vis/CI_ineq_map.pdf}
+\end{center}
+
+## Maps
+```{r fig.height = 2, fig.width = 4, size = "tiny"}
+data <- data.frame(murder = USArrests$Murder, 
+                   state = tolower(rownames(USArrests)))
+map <- map_data("state")
+ggplot(data, aes(fill = murder)) + 
+  geom_map(aes(map_id = state), map = map) +
+  expand_limits(x = map$long, y = map$lat) 
+```
+
