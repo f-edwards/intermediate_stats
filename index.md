@@ -118,20 +118,20 @@ For any new dataset you wish to use, I strongly recommend that you seek out prio
 ## Course topics and schedule
 
 |1/25| Intro to course, review part 1| |
-|2/1| The linear model | HW1 Due |
-|2/8| Diverse data, intro to MLE | HW2 due |
-|2/15| Binary outcomes | Complete paper proposal due |
-|2/22| Logistic regression | HW 3 due |
-|3/1| Categorical outcomes| HW 4 due|
-|3/8| Multinomial regression | HW 5 due |
-|3/15| Count variables | HW 6 due |
+|2/1| The linear model |  |
+|2/8| Visualzing data | |
+|2/15| Reshaping data Binary outcomes | |
+|2/22| Logistic regression |  |
+|3/1| Categorical outcomes| Complete paper proposal due|
+|3/8| Multinomial regression |  |
+|3/15| Count variables |  |
 |3/22| Spring Break | |
-|3/29| Poisson and negative binomial regression | HW 7 due |
-|4/5| Visualizing GLMs | HW 8 due|
-|4/12| Multilevel data structures (reschedule) | |
+|3/29| Poisson and negative binomial regression |  |
+|4/5| Presentations on research in progress | |
+|4/12| Class canceled - PAA | |
 |4/19| Introduction to multilevel models (reschedule) | |
 |4/26| Missing data and multiple imputation | |
-|5/3| Presentations on research in progress| |
+|5/3| Recap | |
 |5/10| No class | Final paper due |
 
 
