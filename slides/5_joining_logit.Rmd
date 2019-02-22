@@ -42,7 +42,7 @@ tail(gapminder)
 ```
 
 ## 
-```{r}
+```{r size = "scriptsize"}
 new_data<-data.frame("country" = "Zimbabwe", "continent" = "Africa",
                      "year" = 2012, lifeExp = 50.2, pop = 12345678, 
                      gdpPercap = 500)
@@ -419,6 +419,14 @@ plot(x[,2], pr_y, xlab = "GPA")
 log_odds<-predict(m1)
 pr_y<-predict(m1, type = "response")
 ```
+
+```{r, echo = FALSE, fig.height=3, size = "scriptsize"}
+par(mfrow=c(1,2))
+plot(x[,2], log_odds, xlab = "GPA")
+plot(x[,2], pr_y, xlab = "GPA")
+```
+
+## What does this model tell us about admissions and GPA?
 
 ```{r, echo = FALSE, fig.height=3, size = "scriptsize"}
 par(mfrow=c(1,2))

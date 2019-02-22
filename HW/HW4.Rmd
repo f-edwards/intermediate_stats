@@ -5,22 +5,9 @@ date: "2/22/2019"
 output: html_document
 ---
 
-## Question 1
-
 Use the gapminder data -- library(gapminder) -- for this question
 
 1. Create an annual global measure of GDP Per Capita using group_by and summarize
 2. Attach this new measure to the gapminder data
 3. Create a measure that is equal to the ratio of a country-year's GDP per capita to this global average.
 4. Visualize the how this ratio of national GDP to global GDP variable varies across continents and over time. You may need to summarize the data first.
-
-## Question 2
-
-Use the graduate admissions data available at https://stats.idre.ucla.edu/stat/data/binary.csv
-
-1. Visualize the data in any manner that you think is appropriate to understand its distribution
-2. Fit a linear regression of the probability of admision as a function of other variables in the data. You may specify any functional form you like. Explain the theory behind your modeling decisions. You should include the GRE and GPA variables.
-3. Fit a logistic regression with the same set of predictors you used in 2.2
-4. Create a counterfactual where GPA is held at the mean, but GRE varies incrementally from the observed minimum to the observed maximum.
-5. Generate regression predictions for the models in 2.2 and 2.3 on a probability scale.
-6. Visualize and describe each set of predicted probabilities. What do these models tell us about the relationship between GRE and admission probability?
