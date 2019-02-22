@@ -426,16 +426,10 @@ plot(x[,2], log_odds, xlab = "GPA")
 plot(x[,2], pr_y, xlab = "GPA")
 ```
 
-## What does this model tell us about admissions and GPA?
+## Next week
 
-```{r, echo = FALSE, fig.height=3, size = "scriptsize"}
-par(mfrow=c(1,2))
-plot(x[,2], log_odds, xlab = "GPA")
-plot(x[,2], pr_y, xlab = "GPA")
-```
-
-## Reminder
+- More on using and interpreting the logit model
 
 - Complete paper proposal due next week: Provide me with a 200 - 500 word abstract that describes your proposed research. This proposal should be accompanied by a description or visualization of key variables if available. If not available, explain your plans for obtaining and working with the data in a timely fashion.
 
-- Hw 4 is also due next week. Sorry to double up!
+- Hw 4 is also due next week. It's relatively short.
