@@ -1,5 +1,5 @@
 ---
-title: "Recoding variables - Interpreting logistic models"
+title: "Interpreting logistic models"
 author: "Frank Edwards"
 date: "2/22/2019"
 output: binb::metropolis
