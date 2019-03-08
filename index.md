@@ -12,13 +12,7 @@ layout: default
 
 [Data used in class](https://github.com/f-edwards/intermediate_stats/tree/master/data)
 
-### Homeworks
-
-HW1: [html](https://f-edwards.github.io/intermediate_stats/HW/HW1.html), [Rmd](https://f-edwards.github.io/intermediate_stats/HW/HW1.Rmd)
-
-HW2: [pdf](https://f-edwards.github.io/intermediate_stats/HW/HW2.pdf), [Rmd](https://f-edwards.github.io/intermediate_stats/HW/HW2.Rmd)
-
-HW3: [pdf](https://f-edwards.github.io/intermediate_stats/HW/HW3.pdf), [Rmd](https://f-edwards.github.io/intermediate_stats/HW/HW3.Rmd)
+[Homeworks](https://github.com/f-edwards/intermediate_stats/tree/master/HW)
 
 ## Course description
 
