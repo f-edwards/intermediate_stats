@@ -28,7 +28,7 @@ knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
 
 *A string is an ordered sequence of characters*
 
-- Strings are generally stored verbatim, and have no mathmatical meaning (ie math operations will return errors)
+- Strings are generally stored verbatim, and have no mathematical meaning (ie math operations will return errors)
 - In R, these are character objects
 - Generally wrapped in ""
 - In R, can use as.character to convert any value to character
@@ -293,9 +293,9 @@ grep("the Countess", titanic$name)
 Both use regular expressions to match patterns in strings. 
 
 - grep() returns the index of matches (ie row number)
-- grepl() retunrs TRUE or FALSE for matches
+- grepl() returns TRUE or FALSE for matches
 - Regular expressions (or regex) are super powerful and super confusing. 
-- Here's a cheatsheet (https://www.rstudio.com/wp-content/uploads/2016/09/RegExCheatsheet.pdf)
+- Here's a cheat sheet (https://www.rstudio.com/wp-content/uploads/2016/09/RegExCheatsheet.pdf)
 - Most of the time, we don't need to worry about regex. But special characters can trip you up.
 
 *Special characters in regex*
