@@ -1,7 +1,6 @@
 ---
 title: "Working with categorical variables"
 author: "Frank Edwards"
-date: "2/22/2019"
 output: binb::metropolis
 ---
 
@@ -67,7 +66,7 @@ What happened? Why?
 ## Summary of strings in R
 
 - R will coerce vectors to string when strings are included
-- Strings are the most complex variable type in order: (logical, numeric, factor, character)
+- Strings are the most complex variable type (in order: logical, numeric, factor, character)
 - Strings can only be compared to strings
 - You should generally treat all categorical variables as strings in R (unless order matters! then use factor())
 
@@ -104,6 +103,9 @@ word<-"banana"
 word_length<-str_length(word)
 word%>%
   str_sub(1, 1)
+```
+\pause
+```{r}
 for(i in 1:word_length){
   print(str_sub(word, i, i))
 }
@@ -114,6 +116,9 @@ for(i in 1:word_length){
 word<-"banana"
 word%>%
   str_sub(1, 3)
+```
+\pause
+```{r}
 for(i in 1:word_length){
   print(str_sub(word, 1, i))
 }
@@ -139,9 +144,18 @@ What happened here?
 ```{r}
 phrase<-"bananas are the tastiest"
 toupper(phrase)
+```
+\pause
+```{r}
 tolower(toupper(phrase))
+```
+\pause
+```{r}
 library(tools)
 toTitleCase(phrase)
+```
+\pause
+```{r}
 odd<-"   bananas are the tastiest     "
 trimws(odd)
 ```
@@ -150,20 +164,36 @@ trimws(odd)
 
 ```{r, size = "tiny"}
 str_split(phrase, pattern = " ")
+```
+\pause
+```{r, size = "tiny"}
 str_split(phrase, pattern = "a")
 ```
 
 ## Splitting a string to a fixed matrix
 ```{r, size = "tiny"}
 str_split_fixed(phrase, pattern = " ", n = 2)
+```
+\pause
+
+```{r, size = "tiny"}
 str_split_fixed(phrase, pattern = " ", n = 3)
+```
+\pause
+```{r, size = "tiny"}
 str_split_fixed(phrase, pattern = " ", n = 4)
 ```
 
 ## Finding strings in strings
 
 ```{r}
+phrase
 str_detect(phrase, "are")
+```
+
+\pause
+
+```{r}
 str_detect(phrase, "scrumptious")
 str_detect(phrase, "nana")
 ```
@@ -204,6 +234,9 @@ str_sub(fruit, 1, 2)
 ```{r size = "tiny"}
 fruit%>%
   str_detect("fruit")
+```
+\pause
+```{r size = "tiny"}
 ## How many?
 fruit%>%
   str_detect("fruit")%>%
@@ -262,7 +295,6 @@ titanic<-read_csv("./data/titanic.csv")
 tolower(names(titanic))
 names(titanic)<-tolower(names(titanic))
 ```
-
 
 ## Let's see what titles people used
 
