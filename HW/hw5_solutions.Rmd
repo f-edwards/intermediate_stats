@@ -47,7 +47,8 @@ titanic%>%
 ```{r}
 m1<-glm(Survived~
           Age,
-        data = titanic)
+        data = titanic,
+        family = "binomial")
 m1_results<-tidy(m1)
 m1_results$odds_ratio<-exp(m1_results$estimate)
 m1_results
@@ -90,7 +91,8 @@ This isn't terrible. We're definitely picking up on something. But we can do bet
 ```{r}
 m2<-glm(Survived~
           Sex + Age,
-        data = titanic)
+        data = titanic,
+        family = "binomial")
 m2_results<-tidy(m2)
 m2_results$odds_ratio<-exp(m2_results$estimate)
 m2_results
@@ -103,7 +105,8 @@ Add Pclass
 ```{r}
 m3<-glm(Survived~
           Pclass + Sex + Age,
-        data = titanic)
+        data = titanic,
+        family = "binomial")
 m3_results<-tidy(m3)
 m3_results$odds_ratio<-exp(m3_results$estimate)
 m3_results
@@ -144,7 +147,8 @@ OK - so it wan't just "women and children first". It was "women, children, and t
 ```{r}
 m4<-glm(Survived~
           Pclass + Sex + Age + (sibs>0) + (kids>0),
-        data = titanic)
+        data = titanic,
+        family = "binomial")
 tidy(m4)
 check_logit_results(m4)
 ```
@@ -156,7 +160,8 @@ Maybe the effect of sex, age, and class all depend on each other. For example, m
 ```{r}
 m5<-glm(Survived~
           Pclass * (Sex * Age) + kids + sibs,
-        data = titanic)
+        data = titanic,
+        family = "binomial")
 tidy(m5)
 ```
 
