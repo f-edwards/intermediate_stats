@@ -253,3 +253,11 @@ BIC(m_true)
 BIC(m_of)
 ```
 
+## General advice
+
+1. Include theoretically sensible predictors
+2. Include theoretically sensible interactions
+3. Check how your model fits your observed data (i.e. ROC curves, residual/fitted plots, $R^2$)
+4. Use BIC to compare models
+5. Think about whether overfitting might be occurring and adjust for parsimony
+6. Use cross-validation and other data science-y techniques to check predictive performance
