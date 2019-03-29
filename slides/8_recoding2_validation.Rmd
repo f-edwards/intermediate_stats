@@ -1,0 +1,255 @@
+---
+title: "Recoding variables (2), model validation"
+author: "Frank Edwards"
+output: binb::metropolis
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+library(tidyverse)
+library(broom)
+set.seed(1)
+
+options(xtable.comment = FALSE)
+theme_set(theme_minimal())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+### mess up some titanic data
+titanic<-read_csv("./data/titanic.csv")
+men<-which(titanic$Sex=="male")
+recodes<-sample(men, 20, replace=F)
+titanic[recodes, "Sex"]<-"mule"
+women<-which(titanic$Sex=="female")
+recodes<-sample(women, 20, replace = F)
+titanic[recodes, "Sex"]<-"femlae"
+women<-which(titanic$Sex=="female")
+recodes<-sample(women, 20, replace = F)
+titanic[recodes, "Sex"]<-"femlar"
+recodes<-sample(1:nrow(titanic), 20)
+characters<-sample(c("a", "&", "]", "%"), 20, replace = T)
+titanic[recodes, "Age"]<-str_c(titanic$Age[recodes], characters, sep = "")
+titanic$Fare<-str_c("$ ", titanic$Fare)
+write_csv(titanic, "./data/titanic_messy.csv")
+```
+
+# Cleaning messy data
+
+## Load messy titanic data
+
+- From terminal: git pull
+- In Rstudio: Open project, intermediate_stats
+
+```{r}
+# titanic<-read_csv("./slides/data/titanic_messy.csv")
+```
+
+# Data cleaning lab
+
+# Break
+
+# Model comparison and validation
+
+## Motivation for model comparison
+
+- What is the goal of a regression model? \pause
+- Why would we want to compare models? \pause
+
+## In the Ordinary Least Squares context
+
+$$y_i = \beta_0 + \beta_1 x_{1i} + \beta_2 x_{2i} + \varepsilon_i $$
+
+What is the primary characteristic of the vector of $\beta$ that the OLS method returns? (Hint: it involves the residuals) 
+
+## So how do we compare OLS models?
+
+Because OLS defines $\beta$ as the coefficients that minimize the residual sum of squares (RSS), we can compare the fit of models to the same data using RSS \pause
+
+$$RSS = \sum_{i = 1}^n (y_i - \hat{y})^2 $$ \pause
+
+What does RSS mean in plain English?
+
+# What's the most common single measure you use to assess the goodness-of-fit of an OLS model?
+
+## Moving from RSS to goodness-of-fit
+
+$$R^2 = 1-  \frac{\sum(y_i - \hat{y})^2 }{\sum(y_i - \bar{y})^2} $$
+
+1. What is the numerator? \pause
+2. What is the denominator? \pause
+3. What does this ratio tell us? \pause
+4. When can we compare $R^2$ across models? \pause
+5. What does RSS look like for logistic models?
+
+## For more complex models
+
+In GLMs, we don't use ordinary least squares (which minimize the RSS) to fit models. Instead, we rely on maximum likelihood estimation (MLE).\pause
+
+MLE finds the set of parameters $\beta$ that maximize the likelihood function we've chosen for our model. This is the method we use in estimating GLMs. \pause
+
+Fun fact: For the normal likelihood model, OLS==MLE
+
+## What is a likelihood?
+
+A likelihood function is a function we use to identify parameters for a model given our data. It depends on the probability distribution we use to model our data. 
+
+We can think of a likelihood $L(y|\theta)$ as describing the probability of observing our data given a set of parameters. 
+
+## Options for GoF under MLE
+
+$R^2$ only describes the proportion of variance explained under a Normal likelihood model. 
+
+The likelihood ratio test is similar to comparing $R^2$. We can directly compare the likelihood of the data conditional on our estimated model for two models as:
+
+$$LR = \frac{L(y|\theta_1)}{L(y|\theta_2)} $$
+Conveniently, we can use a $\chi^2$ distribution to perform a significance test on whether model 2 fits better than model 1.
+
+## An example: returning to the titanic
+
+```{r, size = "tiny"}
+titanic<-read_csv("./data/titanic.csv")
+m0<-glm(Survived ~ Sex, data = titanic, family = "binomial")
+m1<-glm(Survived ~ Sex + Age, data = titanic, family = "binomial")
+anova(m0, m1, test = "LRT")
+```
+
+## Likelihood ratio test Example (cont.)
+
+```{r, size = "tiny"}
+m2<-glm(Survived ~ Sex + Age + factor(Pclass), data = titanic, family = "binomial")
+
+anova(m0, m2, test = "LRT")
+```
+
+## Conditions for LRT and $R^2$
+
+- Identical outcome variables
+- Nested models (parameters in model A are a subset of parameters in model B)
+
+
+## Dangers of relying exclusively on goodness-of-fit measures
+
+```{r echo = FALSE}
+library(MASS)
+samples = 20
+r = 0.9
+
+data<- mvrnorm(n=samples, mu=c(0, 0), Sigma=matrix(c(1, r, r, 1), nrow=2), empirical=TRUE)
+data_big<-mvrnorm(n=2000, mu=c(0, 0), Sigma=matrix(c(1, r, r, 1), nrow=2), empirical=TRUE)
+data <- data.frame(y = data[,1], x = data[,2])
+data_big<-data.frame(y = data_big[,1], x = data_big[,2])
+
+m_true<-lm(y~x, data = data)
+m_of<-lm(y~ x + I(x^2) + 
+                I(x^3) + I(x^4) + I(x^5) + I(x^6), data = data)
+```
+
+```{r echo = FALSE}
+ggplot(data, 
+       aes(x = x, y = y)) + 
+  geom_point() 
+```
+
+## Dangers of relying exclusively on goodness-of-fit measures
+```{r echo = FALSE}
+ggplot(data, 
+       aes(x = x, y = y)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", 
+              formula = y~ x + I(x^2) + 
+                I(x^3) + I(x^4) + I(x^5) + I(x^6),
+              se = F) 
+```
+
+## Dangers of relying exclusively on goodness-of-fit measures
+```{r echo = FALSE}
+ggplot(data, 
+       aes(x = x, y = y)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", 
+              formula = y~ x + I(x^2) + 
+                I(x^3) + I(x^4) + I(x^5) + I(x^6),
+              se = F) + 
+  geom_smooth(method = "lm",
+              formula = y~x, 
+              se = F, 
+              lty = 2)
+```
+
+## Dangers of relying exclusively on goodness-of-fit measures
+```{r echo = FALSE}
+ggplot(data, 
+       aes(x = x, y = y)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", 
+              formula = y~ x + I(x^2) + 
+                I(x^3) + I(x^4) + I(x^5) + I(x^6),
+              se = F) + 
+  geom_smooth(method = "lm",
+              formula = y~x, 
+              se = F, 
+              lty = 2) + 
+  geom_point(data = data_big, aes(x = x, y = y),
+             alpha = 0.3, size = 0.2)
+```
+
+## A more general approach: Bayesian Information Criteria
+
+BIC is a general approach to comparing models estimated through MLE that is similar to a likelihood ratio test. 
+
+$$BIC = ln(n)k - 2ln(L)$$
+
+Where $n$ is the number of observations in our data, $k$ is the number of parameters in the model, and $L$ is the maximum of the likelihood function of our model. \pause
+
+How does BIC differ from a likelihood ratio test? 
+
+## Advantages of BIC
+
+- Directly compares goodness of fit
+- Does not require nested models (does require identical outcomes)
+- Easy to compare models
+- Penalizes models for complexity, helps avoid overfitting
+
+Models with low BIC fit better than models with high BIC
+
+## BIC example
+
+```{r}
+BIC(m0)
+BIC(m1)
+BIC(m2)
+```
+
+So we conclude that m2 is the better fit, because 
+
+$$BIC(m0) - BIC(m2) > BIC(m0) - BIC(m1)$$
+
+## Returning to our overfit example
+```{r echo = FALSE}
+ggplot(data, 
+       aes(x = x, y = y)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", 
+              formula = y~ x + I(x^2) + 
+                I(x^3) + I(x^4) + I(x^5) + I(x^6),
+              se = F) + 
+  geom_smooth(method = "lm",
+              formula = y~x, 
+              se = F, 
+              lty = 2) + 
+  geom_point(data = data_big, aes(x = x, y = y),
+             alpha = 0.3, size = 0.2)
+```
+
+## Returning to our overfit example
+```{r, size = "tiny"}
+formula(m_true)
+summary(m_true)$r.squared
+formula(m_of)
+summary(m_of)$r.squared
+BIC(m_true)
+BIC(m_of)
+```
+
