@@ -1,5 +1,5 @@
 ---
-title: "Categorical data and regression"
+title: "Count data"
 author: "Frank Edwards"
 output: binb::metropolis
 ---
