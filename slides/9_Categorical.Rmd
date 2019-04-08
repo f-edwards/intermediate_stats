@@ -197,7 +197,7 @@ df<-bind_rows(df_out)%>%
   select(-X1, -n)
 ```
 
-```{r}
+```{r size = "tiny"}
 lapply(df, unique)
 ## reference category for outcome
 df<-df%>%
