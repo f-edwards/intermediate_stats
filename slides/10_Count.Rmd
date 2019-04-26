@@ -65,7 +65,7 @@ $$\varepsilon \sim Normal(0,\sigma^2) $$
 
 ## Estimating the model
 ```{r}
-m0<-lm(kids ~ sex + age, data = titanic)
+m0<-lm(kids ~ sex * age, data = titanic)
 m0_out<-tidy(m0)
 m0_out
 ```
