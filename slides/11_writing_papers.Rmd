@@ -60,17 +60,18 @@ knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
 
 ## Markdown is pretty easy
 
-- [Rstudio's rmarkdown site with lots of examples and tutorials](https://rmarkdown.rstudio.com/)
-- [The cheat sheet](https://www.rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf)
+- [Rstudio's rmarkdown site with lots of examples and tutorials](https://rmarkdown.rstudio.com/) (link)
+- [The cheat sheet](https://www.rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf) (link)
 
 ## Markdown lets you write nice math (via LaTeX)
 
 - tutorial here: https://www.calvin.edu/~rpruim/courses/s341/S17/from-class/MathinRmd.html
 - RMarkdown uses LaTeX math syntax, plenty of guides can walk you through how to write equations
 - Example: $y \sim Normal(\mu, \sigma^2)$ or $y_i = e^{\beta_0 + \beta_1 x_1 + \beta_2 x_1^2}$
-- eg1: ```y \sim Normal(\mu, \sigma^2)```
-- eg2: ```y_i = e^{\beta_0 + \beta_1 x_1 + \beta_2 x_1^2}```
-
+- eg1: ```$y \sim Normal(\mu, \sigma^2)$```
+- eg2: ```$y_i = e^{\beta_0 + \beta_1 x_1 + \beta_2 x_1^2}$```
+- enclose math statements with dollar signs ($)
+- using two dollar signs starts the equation on a new line
 
 # Anatomy of an academic paper in plain text
 
@@ -93,8 +94,8 @@ knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
 
 - When using bookdown output types (book, pdf_document2)
 - The chunk label becomes a reference label
-- Chunk syntax: ```{r lifetime, echo = FALSE, fig.cap = 'Lifetime risk'}
-- reference syntax: \\@ref(lifetime) 
+- Chunk syntax: ``````{r lifetime, echo = FALSE, fig.cap = 'Lifetime risk'}```
+- reference syntax: ```\@ref(lifetime)```
 
 ## Cross references for figures
 
@@ -104,12 +105,14 @@ knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
 
 - When using bookdown output types (book, pdf_document2)
 - Use the kable() function from the knitr package
-- Label for use with \\@ref() becomes the chunk label
+- Label for use with ```\@ref()``` becomes the chunk label
 - Format your table (data.frame) the way you want it to look in text with rename, select, mutate, etc
 
 ## Cross references for tables
 
 ![](vis/table_demo.png)
+
+```\@ref(regTable)``` makes a numbered reference
 
 # Bibliographies
 
