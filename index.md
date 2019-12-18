@@ -3,20 +3,17 @@ layout: default
 ---
 
 |Intermediate Statistics   | 27:202:543  |  
-|Friday, 2:00-4:40   | Room: CLJ-574  |
-|frank.edwards@rutgers.edu | Office hours by appointment|
+|Lecture: Friday, 10:00AM - 12:40PM   | Room: CLJ-574  |
+|Lab: TBD | Room: TBD |
+|frank.edwards@rutgers.edu | Office hours: TBD|
 
 ## Quick links
 
 [Lecture slides](https://github.com/f-edwards/intermediate_stats/tree/master/slides)
 
-[Data used in class](https://github.com/f-edwards/intermediate_stats/tree/master/data)
-
-[Homeworks](https://github.com/f-edwards/intermediate_stats/tree/master/HW)
-
 ## Course description
 
-This is the course syllabus for Intermediate Statistics, Spring 2019. Continuous outcomes that meet the assumptions of ordinary least squares regression are relatively rare in the social sciences. This course focuses our attention on how to estimate regression models for discrete outcomes including binary, categorical, and count variables. We use maximum likelihood estimation to estimate a series of generalized linear models. These flexible tools allow us to more accurately model a wide range of outcomes.
+This course introduces students to Bayesian data analysis and applied regression modeling. 
 
 ## Communication
 
@@ -26,9 +23,9 @@ I've set up a Slack page for us to communicate about the course. This can be a r
 
 ## Course goals
 
-1. Master maximum likelihood estimation and its application through a variety of generalized linear models
-2. Develop expertise in advanced statistical programming and data visualization 
-3. Develop the ability to design and conduct quantitative criminological research
+1. Develop familiarity with principals of Bayesian data analysis
+2. Master the principals of model building and model critique
+3. Develop familiarity with principals of contemporary causal inference and design
 
 ## Expectations
 
@@ -66,67 +63,39 @@ Lastly, I recommend learning some form of version control to ensure your work is
 
 We will work primarily from two books. You are not required to purchase either text.
 
-Gelman and Hill's *Data Analysis Using Regression and Multilevel/Hierarchical Models* is a wonderful reference book to have on your shelf as a quantitative researcher, though a second edition is due out soon. I will have a copy available for reference for those of you who prefer not to purchase it.
+McElreath, *Statistical Rethinking: A Bayesian Course with Examples in R and Stan*
 
 Wickham's [R for Data Science](https://r4ds.had.co.nz/) is available for free online textbook, though there are print versions available if you prefer to purchase a copy.
 
-These books are also very useful, and some examples are pulled from them:
-
-Healy, [*Data Visualization: A Practical Introduction*](http://socviz.co/index.html) 
-
-McElreath, *Statistical Rethinking: A Bayesian Course with Examples in R and Stan*
-
 ## Assignments and grading
 
-Course grading is based on a combination of course participation (20 percent), homework assignments (40 percent) and a final project (40 percent). 
+Course grading is based on a combination of course participation (20 percent) and homework assignments (80 percent). 
 
 ### Homeworks
 
-Problem sets provide you an opportunity to directly apply what we've learned to real-world data analysis and statistical problems. 
+Homework should be submitted to me via email by 10AM on the due date. 
 
-I expect to see your code, code output, and your interpretations of the results for each question. RMarkdown is a great way to complete your homeworks, and seamlessly integrates text, code, and code output into a single document. You can submit your compiled homeworks in either .html or .pdf format.
+For each week, I'll provide a list of homework questions for you to complete. Students will have a choice to attempt the medium or hard problem set. Students attempting the medium problem set can obtain a maximum grade of 90. Students attempting the hard problem set can obtain a maximum grade of 100. 
 
-Homework should be submitted to me via email by 10AM on the due date. Late work is penalized according to an exponential decay function where your maximum grade is calculated as *y*=*e*<sup>-*x*/20</sup> where *x* is the number of days an assignment is turned in late. Late work is never worth zero points. Each student is allowed one 3-day extension without penalty for a homework due-date over the semester. 
+Each student may request, without penalty, one 5-day extension during the semester. I must recieve an email requesting this extension before the homework due date.
 
-### Final project
-
-You will design and complete an original empirical criminological paper over the course of the semester. You should seek to write a paper that is of publishable quality. I expect these papers to have a thoughtful theoretical framework, demonstrate a mastery of exploratory data analysis and data visualization, a statistical analysis that uses a generalized linear model, and a clear interpretation of the meaning of the statistical analysis.
-
-Students will propose the topic for their analysis by the second week of class, and are expected to work toward completion of the paper throughout the semester. Work toward the completion of the paper will be included in some homework assignments. 
-
-#### Suggested datasets
-
-While I encourage you to work with any data you like that is appropriate for the assignment, I recognize that at this stage of your graduate career you may not yet have a clear project in mind. Here are a few datasets/archives that I think could lead to strong empirical papers:
-
-The [National Archive of Criminal Justice Data](https://www.icpsr.umich.edu/icpsrweb/content/NACJD/learning-data-guides.html) hosts vast amounts of publicly accessible crime and criminal justice data, along with bibliographies of papers published using each dataset. The National Crime Victimization Survey might be a good place to start.
-
-Here are some newer datasets you could work with. They might require substantial cleaning to get ready for analysis, but haven't been widely used yet in criminology so might present interesting opportunities for new insights.
-
-- [Stanford Open Policing Project](https://openpolicing.stanford.edu/)
-- [NJ police use-of-force data](https://www.propublica.org/datastore/dataset/police-use-of-force-new-jersey)
-- [NYPD Stop and Frisk data](https://www1.nyc.gov/site/nypd/stats/reports-analysis/stopfrisk.page)
-- [Fatal Encounters](https://www.fatalencounters.org/)
-
-For any new dataset you wish to use, I strongly recommend that you seek out prior academic research that has used these data for insights into their potential, structure, and limitations.
+Late homework will be penalized at 5 points per day late.
 
 ## Course topics and schedule
 
-|1/25| Intro to course, review part 1| |
-|2/1| The linear model |  |
-|2/8| Visualzing data | |
-|2/15| Reshaping data Binary outcomes | |
-|2/22| Logistic regression |  |
-|3/1| Categorical outcomes| Complete paper proposal due|
-|3/8| Multinomial regression |  |
-|3/15| Count variables |  |
-|3/22| Spring Break | |
-|3/29| Poisson and negative binomial regression |  |
-|4/5| Presentations on research in progress | |
-|4/12| Class canceled - PAA | |
-|4/19| Introduction to multilevel models (reschedule) | |
-|4/26| Missing data and multiple imputation | |
-|5/3| Recap | |
-|5/10| No class | Final paper due |
-
-
-
+|1/24| Introduction | McElreath Preface, 1, 2 |
+|1/31| Sampling from the posterior | McElreath 3 |
+|2/7| Linear regression | McElreath 4 | 
+|2/14| Multiple regression | McElreath 5 |
+|2/21| Causality | McElreath 6 |
+|2/28| Overfitting and comparison | McElreath 7|
+|3/6| Interactions | McElreath 8 | 
+|3/13| Markov Chain Monte Carlo | McElreath 9 |
+|3/20| Spring break | McElreath 10 |
+|3/27| Generalized Linear Models (1) | McElreath 10, 11.1, 11.2|
+|4/3| Generalized Linear Models (2) | McElreath 11.3, 11.4 |
+|4/10| Mixture models | McElreath 12 |
+|4/17| Multilevel models (intercepts) | McElreath 13 | 
+|4/24| Multilevel models (slopes) | McElreath 14  |
+|5/1| Measurement error and missing data | McElreath 15 |
+|5/8| Formal models and conclusion | McElreath 16, 17 |
