@@ -7,10 +7,6 @@ layout: default
 |Lab: TBD | Room: TBD |
 |frank.edwards@rutgers.edu | Office hours: TBD|
 
-## Quick links
-
-[Lecture slides](https://github.com/f-edwards/intermediate_stats/tree/master/slides)
-
 ## Course description
 
 This course introduces students to Bayesian data analysis and applied regression modeling. 
@@ -61,7 +57,7 @@ Lastly, I recommend learning some form of version control to ensure your work is
 
 ## Books
 
-We will work primarily from two books. You are not required to purchase either text.
+We will work primarily from two books. 
 
 McElreath, *Statistical Rethinking: A Bayesian Course with Examples in R and Stan*
 
@@ -98,4 +94,4 @@ Late homework will be penalized at 5 points per day late.
 |4/17| Multilevel models (intercepts) | McElreath 13 | 
 |4/24| Multilevel models (slopes) | McElreath 14  |
 |5/1| Measurement error and missing data | McElreath 15 |
-|5/8| Formal models and conclusion | McElreath 16, 17 |
+|5/8| Bayesian data analysis using tidyverse and brms | McElreath 17 | 
