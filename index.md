@@ -4,7 +4,7 @@ layout: default
 
 |Intermediate Statistics   | 27:202:543  |  
 |Lecture: Friday, 10:00AM - 12:40PM   | Room: CLJ-574  |
-|Lab: Tuesday 1:00PM - 2:30PM | Room: TBD |
+|Lab: Tuesday 1:00PM - 2:30PM | Room: CLJ-567 |
 |frank.edwards@rutgers.edu | Office hours: Wednesday 12:00PM - 2:00PM|
 
 ## Course description
