@@ -4,8 +4,8 @@ layout: default
 
 |Intermediate Statistics   | 27:202:543  |  
 |Lecture: Friday, 10:00AM - 12:40PM   | Room: CLJ-574  |
-|Lab: TBD | Room: TBD |
-|frank.edwards@rutgers.edu | Office hours: TBD|
+|Lab: Tuesday 1:00PM - 2:30PM | Room: TBD |
+|frank.edwards@rutgers.edu | Office hours: Wednesday 12:00PM - 2:00PM|
 
 ## Course description
 
@@ -15,7 +15,7 @@ This course introduces students to Bayesian data analysis and applied regression
 
 I've set up a Slack page for us to communicate about the course. This can be a resource for you to collaborate and ask me questions about homework, and will also be a spot where course announcements are posted. Invites will be circulated before the course begins.
 
-[Course Slack](https://ru-intermed-stats.slack.com)
+[Course Slack](https://bayesianstats-w20.slack.com)
 
 ## Course goals
 

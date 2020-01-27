@@ -440,4 +440,5 @@ ggplot(plot_dat,
 
 - The Uniform prior is flat - but we know that Earth is mostly water, right? \pause
 - In your homework, you will estimate the posterior distribution under a different prior distribution. \pause
-- Hint: A Uniform distribution assigns zero probability to regions outside of it's interval, and $\frac{1}{b-a}$ probability density to all values inside the interval. 
+- Hint 1: A Uniform distribution assigns zero probability to regions outside of its interval, and $\frac{1}{b-a}$ probability density to all values inside the interval. \pause
+- Hint 2: ifelse() is a very useful function.
