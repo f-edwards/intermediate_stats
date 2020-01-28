@@ -1,0 +1,133 @@
+---
+title: "Lab 1: intro to R and RMarkdown"
+author: "Intermediate stats / Advanced Bayesian"
+date: "1/28/2020"
+output: ioslides_presentation
+---
+
+## Installing packages in R from CRAN
+
+```{r eval = F}
+install.packages("tidyverse")
+install.packages("devtools")
+```
+
+## Installing the rethinking package
+
+```{r eval = F}
+devtools::install_github("rmcelreath/rethinking",
+                         ref="Experimental")
+```
+
+## Loading installed packages
+
+```{r}
+library(tidyverse)
+library(rethinking)
+```
+
+## Objects in R
+
+Atomic objects store a single thing
+
+```{r}
+my_number<-2
+my_letter<-"p"
+my_pizza<-"margherita please"
+```
+## We can manipulate objects with math!
+
+```{r}
+my_number * 2
+my_number^2
+sqrt(my_number)
+```
+
+## But some things don't make sense
+
+```{r eval = F}
+my_number + my_pizza
+```
+
+## R Projects keep you organized!
+
+Your root directory becomes fixed in an R Project to the folder where you are working.
+
+![](./vis/project_demo.png)
+
+Once you are in a project, all files and folders are relative to your root directory - this is good!
+
+## We can load data in from external files
+
+```{r}
+my_data <- read.csv("cars.csv")
+### for you to run
+# my_data<-read.csv("./lab/cars.csv")
+```
+## Learn about your data frame, str()
+
+```{r}
+str(my_data)
+```
+
+## Learn about your data frame, head()
+
+```{r}
+head(my_data)
+```
+
+## Learn about your data frame, summary()
+
+```{r}
+summary(my_data)
+```
+
+## Data frames collect vectors
+
+```{r}
+my_data$speed
+```
+
+## Vectors are indexed
+
+```{r}
+my_data$speed[2]
+```
+
+## Vectors can be summarized
+
+```{r}
+table(cars$speed)
+```
+
+
+## We can do math with vectors (matrix operations)
+
+```{r}
+my_data$speed + my_data$dist
+```
+
+## We can summarize vectors
+
+```{r}
+sum(cars$speed)
+mean(cars$speed)
+median(cars$speed)
+```
+
+## Define new columns in a data frame
+
+```{r}
+my_data$cool_variable<-my_data$speed + my_data$dist
+```
+
+## Practice
+
+1. Load in the mtcars data using data(mtcars)\
+2. What is the average miles per gallon in this data?
+3. Calculate the ratio of miles per gallon to weight for each car
+3. What is the average ratio of miles per gallon to weight?
+4. How many cars have 6 cylinders? 
+5. Create a new variable equal to the sum of mpg and cyl
+6. Calculate the square root of each car's mpg
+7. Calculate the average square root of each car's mpg
