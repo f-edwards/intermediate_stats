@@ -1,6 +1,6 @@
 ---
 title: "HW 1"
-author: "Frank Edwards"
+author: "My cool name"
 date: "1/24/2020"
 output:
   html_document:
@@ -22,6 +22,8 @@ The easy questions are worth a total of 6 points. Hard questions are worth a tot
 3. Pr(Wednesday | pizza)
 4. Pr(pizza, wednesday) / Pr(Wednesday)
 
+My cool answer to the question
+
 **E2.** Which of the following statements correspond to the expression: Pr(Wednesday | pizza)
 
 1. The probability of pizza on Wednesday
@@ -36,6 +38,20 @@ The easy questions are worth a total of 6 points. Hard questions are worth a tot
 1. W, W, W
 2. L, W, L, W, W
 3. W, L, W, W, L, W, W, L, W, L, W, W
+
+```{r}
+length <- 10
+# 1 define the grid
+grid<-seq(from = 0, to = 1, length.out = length)
+#2. Compute the prior for each parameter value on the grid
+prior  <-  rep(1, length)
+#3. Compute the likelihood for each parameter value on the grid for the observed 
+likelihood  <-  dbinom(6, size = 9, prob = grid)
+# 4. Multiply the prior by the likelihood
+# 5. Divide by the sum of all values
+posterior <- prior * likelihood / sum(prior * likelihood)
+plot(grid, posterior, type = "l")
+```
 
 **M2.** Revise your priors. We know that Earth is mostly water. Assume a prior for p that is equal to zero when $p < 0.5$ and uniform when $p \geq 0.5$. Now, estimate the posterior for each set of observations in **M1.** 
 
