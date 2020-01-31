@@ -1,0 +1,125 @@
+---
+title: "HW 1"
+author: "My cool name"
+date: "1/24/2020"
+output:
+  html_document:
+    df_print: paged
+---
+
+**Due via email by 10AM 1/31 to cs1215@scj.rutgers.edu**
+
+Please use RMarkdown to complete this homework, and knit it into an html report. You can write your code and responses inline. For help with RMarkdown, see [this guide](https://rmarkdown.rstudio.com/lesson-1.html), or the cheat sheet in RStudio's menus: Help->cheatsheets->R Markdown Cheat Sheet.
+
+The easy questions are worth a total of 6 points. Hard questions are worth a total of 4 points.
+
+## Easy
+
+**E1.** Which expressions correspond to the statement: *the probability of pizza on wednesday*
+
+1. Pr(pizza)
+2. Pr(pizza | Wednesday)
+3. Pr(Wednesday | pizza)
+4. Pr(pizza, wednesday) / Pr(Wednesday)
+
+**E2.** Which of the following statements correspond to the expression: Pr(Wednesday | pizza)
+
+1. The probability of pizza on Wednesday
+2. The probability of pizza, given that it is Wednesday
+3. The probability that it is Wednesday, given that I am eating pizza
+4. The probability that it is Wednesday and that I am eating pizza
+
+## Hard
+
+**M1.** We repeat the globe tossing experiment from chapter 2. Assume the prior $p \sim Uniform(0,1)$, and a binomial likelihood for the data. Compute and plot the posterior distribution for each of the following sets of data using grid approximation. 
+
+1. W, W, W
+2. L, W, L, W, W
+3. W, L, W, W, L, W, W, L, W, L, W, W
+
+```{r}
+###M1.1
+length <- 10
+# 1 define the grid
+grid<-seq(from = 0, to = 1, length.out = length)
+#2. Compute the prior for each parameter value on the grid
+prior  <-  rep(1, length)
+#3. Compute the likelihood for each parameter value on the grid for the observed 
+likelihood  <-  dbinom(3, size = 3, prob = grid)
+# 4. Multiply the prior by the likelihood
+# 5. Divide by the sum of all values
+posterior <- prior * likelihood / sum(prior * likelihood)
+plot(grid, posterior, type = "l")
+```
+
+
+```{r}
+###M1.1
+length <- 10
+# 1 define the grid
+grid<-seq(from = 0, to = 1, length.out = length)
+#2. Compute the prior for each parameter value on the grid
+prior  <-  rep(1, length)
+#3. Compute the likelihood for each parameter value on the grid for the observed 
+likelihood  <-  dbinom(3, size = 5, prob = grid)
+# 4. Multiply the prior by the likelihood
+# 5. Divide by the sum of all values
+posterior <- prior * likelihood / sum(prior * likelihood)
+plot(grid, posterior, type = "l")
+```
+
+```{r}
+###M1.1
+length <- 10
+# 1 define the grid
+grid<-seq(from = 0, to = 1, length.out = length)
+#2. Compute the prior for each parameter value on the grid
+prior  <-  rep(1, length)
+#3. Compute the likelihood for each parameter value on the grid for the observed 
+likelihood  <-  dbinom(8, size = 12, prob = grid)
+# 4. Multiply the prior by the likelihood
+# 5. Divide by the sum of all values
+posterior <- prior * likelihood / sum(prior * likelihood)
+plot(grid, posterior, type = "l")
+```
+
+
+**M2.** Revise your priors. We know that Earth is mostly water. Assume a prior for p that is equal to zero when $p < 0.5$ and uniform when $p \geq 0.5$. Now, estimate the posterior for each set of observations in **M1.** 
+
+```{r}
+###M2.1
+length <- 10
+# 1 define the grid
+grid<-seq(from = 0, to = 1, length.out = length)
+#2. Compute the prior for each parameter value on the grid
+prior  <-  c(0,0,0,0,0, 2, 2, 2, 2, 2)
+
+prior<-ifelse(gride<0.5, 0, 2)
+#3. Compute the likelihood for each parameter value on the grid for the observed 
+likelihood  <-  dbinom(8, size = 12, prob = grid)
+# 4. Multiply the prior by the likelihood
+# 5. Divide by the sum of all values
+posterior <- prior * likelihood / sum(prior * likelihood)
+plot(grid, posterior, type = "l")
+```
+
+**M3.** You heard somewhere that Earth is definitely 90 percent water. Assume a prior for p that is equal to zero when $p<0.9$, and uniform when $p \geq 0.9$. Now, estimate the posterior for each set of observations in **M1.** 
+
+```{r}
+###M3.1
+length <- 10
+# 1 define the grid
+grid<-seq(from = 0, to = 1, length.out = length)
+#2. Compute the prior for each parameter value on the grid
+prior  <-  c(0,0,0,0,0, 0,0,0,0, 10)
+
+prior<-ifelse(gride<0.5, 0, 2)
+#3. Compute the likelihood for each parameter value on the grid for the observed 
+likelihood  <-  dbinom(8, size = 12, prob = grid)
+# 4. Multiply the prior by the likelihood
+# 5. Divide by the sum of all values
+posterior <- prior * likelihood / sum(prior * likelihood)
+plot(grid, posterior, type = "l")
+```
+
+**M4.** Discuss the differences between the estimated posteriors in **M1**, **M2**, and **M3**. What impact does varying the prior have on your posterior certainty in how much water is on the globe? What impact does the data have on the location and shape of the posterior distribution?
