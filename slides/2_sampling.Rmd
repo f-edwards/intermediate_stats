@@ -1,5 +1,5 @@
 ---
-title: "Introduction to the course and Bayesian data analysis"
+title: "Posterior Sampling"
 author: "Frank Edwards"
 date: "1/31/2020"
 output: binb::metropolis
