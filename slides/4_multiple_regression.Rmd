@@ -28,8 +28,8 @@ knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = F, size = "small")
 
 Let's say that wages are related to years of education according to this linear model:
 
-\[wages_i \sim(\mu, \sigma)\]
-\[E(wages_i) = \mu_i = 10000 + 500 \times years_i\]
+\[wages_i \sim Normal(\mu, \sigma)\]
+\[E(wages_i) = \mu_i = 10000 + 2000 \times years_i\]
 
 
 ## The linear component of the model
