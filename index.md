@@ -83,9 +83,9 @@ Late homework will be penalized at 5 points per day late.
 |1/31| Sampling from the posterior | McElreath 3 |
 |2/7| Linear regression | McElreath 4 | 
 |2/14| Multiple regression | McElreath 5 |
-|2/21| Causality | McElreath 6 |
-|2/28| Overfitting and comparison | McElreath 7|
-|3/6| Interactions | McElreath 8 | 
+|2/21| Multiple regression pt 2 | McElreath 6 |
+|2/25| Causality | McElreath 6 |
+|3/6| Overfitting, comparison, Interactions | McElreath 7, 8 | 
 |3/13| Markov Chain Monte Carlo | McElreath 9 |
 |3/20| Spring break | McElreath 10 |
 |3/27| Generalized Linear Models (1) | McElreath 10, 11.1, 11.2|
