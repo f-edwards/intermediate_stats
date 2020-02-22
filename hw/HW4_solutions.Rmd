@@ -1,0 +1,83 @@
+---
+title: "HWz"
+author: "Frank Edwards"
+date: "2/14/2020"
+output: html_document
+---
+
+**Due via email by 10AM 2/21 to cs1215@scj.rutgers.edu**
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(rethinking)
+```
+
+These questions use the mtcars data built into R 
+
+```{r}
+data(mtcars)
+head(mtcars)
+d<-mtcars %>% 
+  mutate(M = scale(mpg),
+         W = scale(wt),
+         H = scale(hp))
+```
+
+**1:** A car's fuel efficiency is probably affected by more than just its weight. The energy output of the engine also likely plays a role. Propose a multiple linear regression model for fuel efficiency (mpg) that includes both weight (wt) and horsepower (hp). Describe the model using the typical format we've used in class (likelihood, linear function, priors)
+
+\[M \sim N(\mu, \sigma)\]
+\[\mu_i = \alpha + \beta_W \times W_i + \beta_H \times H_i\]
+\[\alpha \sim N(0, 0.2)\]
+\[\beta_W \sim N(0, 0.5)\]
+\[\beta_H \sim N(0, 0.5)\]
+\[\sigma \sim Exp(1)\]
+
+
+**2:** Inspect your priors using prior predictive simulation. Are the priors reasonable? Revise if needed.
+
+```{r}
+### evaluate the prior at W = 1, H = 1
+W<-1
+H<-1
+plot_dat<-data.frame(a= rnorm(1000, 0, 0.2),
+                     bw = rnorm(1000, 0, 0.5),
+                     bh = rnorm(1000, 0, 0.5)) 
+
+plot_dat<-plot_dat %>% 
+  mutate(M = a + bw*W + bh*H)
+
+ggplot(plot_dat, aes(x = M)) + 
+  geom_density()
+```
+
+
+**3:** Compute the posterior using quap(). Briefly summarize your findings
+
+```{r}
+m0<-quap(
+  flist = alist(
+    M ~ dnorm(mu, sigma),
+    mu<-a + bw * W ,
+    a ~ dnorm(0, 0.5),
+    bw ~ dnorm(0, 0.2),
+    sigma ~ dexp(1)
+  ),
+  data = d
+)
+
+m1<-quap(
+  flist = alist(
+    M ~ dnorm(mu, sigma),
+    mu<-a + bw * W + bh*H,
+    a ~ dnorm(0, 0.5),
+    bw ~ dnorm(0, 0.2),
+    bh ~ dnorm(0, 0.2),
+    sigma ~ dexp(1)
+  ),
+  data = d
+)
+
+coeftab(m0, m1)
+```
+
+**4:** Compare results to those you estimated for HW3, a model that did not include horsepower. What differences do you notice?
