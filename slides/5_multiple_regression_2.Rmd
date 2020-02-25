@@ -218,7 +218,7 @@ ggplot(prior_preds,
 
 1. Prior prediction plots: What are plausible datasets we could observe?
 2. **Posterior prediction plots**: Does the model fit the observed data?
-3. Counterfactual plots: What is the effect of X on Y?xq
+3. Counterfactual plots: What is the effect of X on Y?
 
 ## Posterior prediction plot
 

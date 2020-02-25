@@ -5,7 +5,7 @@ date: "2/21/2020"
 output: html_document
 ---
 
-**Due via email by 10AM 3/6 to cs1215@scj.rutgers.edu**
+**Due via email by 10AM 2/28 to cs1215@scj.rutgers.edu**
 
 ```{r setup, include=FALSE}
 library(tidyverse)
