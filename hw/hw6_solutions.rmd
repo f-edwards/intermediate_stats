@@ -1,0 +1,231 @@
+---
+title: "HW6_solutions"
+author: "Frank Edwards"
+date: "3/23/2020"
+output: html_document
+---
+
+Setting up the data and packages by formatting according to instructions.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = F,
+                      message = F)
+
+```
+
+```{r}
+library(rethinking)
+library(tidyverse)
+data(nettle)
+
+d<- nettle %>% 
+  mutate(lang.per.cap = num.lang / k.pop,
+         log.lang.per.cap = log(lang.per.cap))
+```
+
+## a)
+
+First, I see if language diversity is positively associated with the average length of the growing season in a nation. 
+
+```{r}
+ggplot(d, 
+       aes(x = mean.growing.season, 
+           y = log.lang.per.cap)) + 
+  geom_point()
+```
+
+Based on this scatterplot, there is a clear linear relationship between mean growing season and language diversity (on the log scale). 
+
+Next I estimate a regression to get a better sense of the magnitude of the relationship. Because there's nothing inherently intuitive about the log languages per capita scale, I rescale the variable to be mean centered with a one unit standard deviation. Now the average log language diversity is zero, and the standard deviation is fixed at one. Mean growing season is measured in months, which is intuitive enough.
+
+```{r}
+d<-d %>% 
+  mutate(lang.s = scale(log.lang.per.cap))
+```
+
+To select priors, I am initially agnostic about the relationship between growing season length and growing season. I want my prior for beta to allow for both positive and negative relationships, but to prohibit unreasonable extreme relationships. 
+
+A reasonable upper bound might be that a one month increase in growing season is associated with a one SD increase in language diversity (a big effect!). That corresponds roughly to a $\beta_{mn} \sim Normal(0, 0.5)$ prior. 95 percent of the probability mass of this prior lies on $[-1, 1]$, constraining the prior for $\beta$ to values that are believable on the scale we are working on.
+
+We add log(area) in to adjust for the size of a country. Because I have no intuition about the scale or spread of area, I'm going to mean center and scale the log(area) variable. 
+
+```{r}
+d<-d %>% 
+  mutate(area.s = scale(log(area)))
+```
+
+
+After doing so, we can set a vague prior that allows for a one SD change in log(area) to have a broad range of relationships to language diversity. A range of $[-2,2]$ corresponds to a rather vague prior, so I'll use a $\beta_{a} \sim Normal(0, 1)$ prior.
+
+For the intercept prior, we are setting values for believable values of language diversity when the growing season is zero and land area is at the mean. I don't have strong beliefs on this, so I'll use a vague prior, where most values of $\alpha$ will fall between $[-4, 4]$ standard deviations of the mean. We can get this range with $\alpha \sim Normal(0, 2)$. 
+
+I'll use the typical $\sigma \sim Exp(1)$ to constrain $\sigma$ to positive values, and allow for extreme parameter values with the long tails, with more weight closer to zero.
+
+I estimate this model using quap()
+
+```{r}
+m_a<-quap(alist(
+  lang.s ~ dnorm(mu, sigma),
+  mu<- a + b_mn * mean.growing.season + b_a * area.s,
+  a ~ dnorm(0, 2),
+  b_mn ~ dnorm(0, 0.5),
+  b_a ~ dnorm(0, 1),
+  sigma ~ dexp(1)
+), data = d)
+
+precis(m_a)
+```
+
+This model shows that there is a small positive linear relationship between the average length of the growing season and language diversity. To interpret the relationship, I use the posterior predictive distribution to predict how much more language diversity we would see in a country with a growing season of 9 months compared to a country with a growing season of 3 months.
+
+```{r}
+sim_dat<-data.frame(mean.growing.season = c(3, 9),
+                    area.s = 1)
+preds<-sim(m_a, sim_dat)
+## subtract the two to compute the posterior predictive difference
+diff<-preds[,2] - preds[,1]
+## visualize the difference
+hist(diff)
+```
+
+The histogram shows the posterior distribution of the predicted difference in language diversity (SD units) for a country with a 9 month growing season and a 3 month growing season. It shows that most of the predictions are greater than zero, but the model doesn't have high certainty that a 6 month longer growing season will yield more language diversity. Many estimate values are below zero.
+
+If we repeated this as a posterior difference (rather than a posterior predictive difference), we'd see a clear positive relationship in the *expected* value of language diversity for a longer growing season, because we haven't incorporated sampling uncertainty into the computation ($\sigma$).
+
+```{r}
+## draw expected values of mu
+preds_mu<-link(m_a, sim_dat)
+## subtract the two to compute the posterior predictive difference
+diff<-preds_mu[,2] - preds_mu[,1]
+## visualize the difference
+hist(diff)
+```
+
+So the evidence suggests that there is a positive linear relationship between growing season length and expected language diversity. There's still quite a bit of uncertainty in predicted values of diversity though. The mean language diversity increases as growing season length increases, but individual nations could still observe a wide range of actual values (including negative values).
+
+## b)
+
+Next, I evaluate whether the stability of a growing season's length is negatively associated with language diversity. More instability may lead to close ties to other nations, reducing language diversity through increased interdependence.
+
+```{r}
+ggplot(d, 
+       aes(x = sd.growing.season, 
+           y = lang.s)) + 
+  geom_point()
+```
+
+From the scatterplot, there certainly appears to be a negative relationship between the stability of the growing season's length and language diversity.
+
+Next, I will estimate a regression to check this relationship. I'll use the same prior $\alpha \sim Normal(0, 2)$, because I don't have strong prior insights about where I expect language diversity to be in a country with no variance on it's growing season. 
+
+Because our predictor *sd.growing.season* is on a standard deviation scale, I think that a prior that allows most values of beta to fall within $[-1,1]$ is reasonable: allowing a one SD increase in growing season variability can correlate with a one SD increase in language diversity. We'll stick with the sensible $\beta \sim Normal(0, 0.5)$ prior.
+
+```{r}
+m_b<-quap(alist(
+  lang.s ~ dnorm(mu, sigma),
+  mu<- a + b_sd * sd.growing.season + b_a * area.s,
+  a ~ dnorm(0, 2),
+  b_sd ~ dnorm(0, 0.5),
+  b_a ~ dnorm(0, 1),
+  sigma ~ dexp(1)
+), data = d)
+
+precis(m_b)
+```
+
+The posterior distribution for $\beta_{sd}$ has nearly all of it's probability mass below zero, with an 89 percent credible interval that is fully below zero. This model suggests that there is a negative relationship between the variability of a growing season's length and language diversity.
+
+Below, I plot the expected difference of language diversity for a nation with no variance in growing season length compared to a nation with a standard deviation of growing season of 3, conditional on the country's area being one SD above the sample mean (area.s = 1).
+
+```{r}
+sim_dat<-data.frame(sd.growing.season = c(0, 3), 
+                    area.s = 1)
+## draw expected values of mu
+preds_mu<-link(m_b, sim_dat)
+## subtract the two to compute the posterior predictive difference
+diff<-preds_mu[,2] - preds_mu[,1]
+## visualize the difference
+hist(diff)
+```
+
+We see largely negative values in the posterior difference in the expected values of language diversity for a country with no variance in growing season length relative to a country with high variance in growing season length. The data and model are consistent with a negative relationship between variable growing season length and expected language diversity, conditional on a country having higher than average land area. Note that this figure doesn't incorporate sampling uncertainty (posterior prediction).
+
+## c)
+
+Next, we evaluate whether the relationships between language diversity and variance and average length of a growing season interact. Perhaps the relationship between mean growing season and language diversity is smaller when there is less variance in the growing season. This model will allow for the relationships between length and variance in growing season with language diversity to vary according to levels in the other variable.
+
+I re-use priors from the other model, and use the same vague prior for the interaction of mean season length and SD season length as I use for the other $\beta$ parameters. This prior is $\beta_{MnSD} \sim Normal(0, 0.5)$. This allows for the conditional association between each variable to vary substantially over the range of values in the mean and SD of the growing season.
+
+```{r}
+m_c<-quap(alist(
+  lang.s ~ dnorm(mu, sigma),
+  mu<- a + b_sd * sd.growing.season + b_a * area.s + 
+    b_mn * mean.growing.season + 
+    b_MnSD * (sd.growing.season * mean.growing.season),
+  a ~ dnorm(0, 2),
+  b_sd ~ dnorm(0, 0.5),
+  b_mn ~ dnorm(0, 0.5),
+  b_MnSD ~ dnorm(0, 0.5),
+  b_a ~ dnorm(0, 1),
+  sigma ~ dexp(1)
+), data = d)
+```
+
+WAIC suggests that $m_c$, our interaction model, outperforms the other two models. The interaction is improving expected predictive accuracy of the model. Note that I use the pander() package and function to make a slightly less unattractive table out of these results in markdown.
+
+```{r}
+library(pander)
+pander(compare(m_a, m_b, m_c))
+```
+
+A table of MAP values for posterior distributions of parameters of the sort we can get from summary() or precis() is not especially informative when we have a continuous interaction in the model. Instead, we need to turn to visuals to help see the now conditional relationships between the outcome and two predictors. We'll keep area fixed at 1 SD above the mean, because it isn't of theoretical interest in our question about growing seasons and language diversity. We'll vary  mean of season length from it's observed minimum and maximum, then evaluate the SD at three points, a low, mid, and high value.
+
+```{r}
+### repeat the mean growing season scenario i times
+### where i is the number of scenarios for SD growing season (3)
+## repeat the SD growing season scenario j times
+### where j is the number of scenarios for mean growing season (100)
+### all vectors will be of length i * j, or 300
+### if we don't give dimensions for area.s, it'll be the same length 
+### as the other vectors
+sim_dat<-data.frame(
+  mean.growing.season = rep(
+    seq(from = min(d$mean.growing.season),
+        to = max(d$mean.growing.season),
+        length.out = 100),
+    3),
+  sd.growing.season = rep(c(0, 3, 6), 
+                          each = 100),
+  area.s = 1
+)
+
+### now run it through link() to get 
+### posterior samples of mu for each scenario
+
+post_mu<-link(m_c, sim_dat)
+## format for plotting
+post_mu_mn<-apply(post_mu, 2, mean)
+post_mu_PI<-apply(post_mu, 2, PI)
+
+sim_dat<-sim_dat %>% 
+  mutate(mu_mn = post_mu_mn,
+         mu_lwr = post_mu_PI[1,],
+         mu_upr = post_mu_PI[2,])
+
+## plot
+ggplot(sim_dat, 
+       aes(x = mean.growing.season,
+           y = mu_mn)) + 
+  geom_line() + 
+  geom_ribbon(aes(ymin = mu_lwr, ymax = mu_upr), alpha = 0.5) + 
+  facet_wrap(~sd.growing.season, ncol = 1) + 
+  labs(y = "Expected language diversity",
+       x = "Mean growing season length",
+       subtitle = "SD of growing season in panel label")
+```
+
+This plot clearly shows the interaction. When the SD of the growing season is zero (same length growing season each year), we see a clear positive relationship between mean season length and language diversity. When the SD is at 3, there is no relationship between season length and language diversity. When the SD is at 6, there is a negative relationship between season length and language diversity. The stability of the length of the growing season clearly interacts with the length of the season. When the season is stable, those with short growing seasons have less language diversity, compared to those with long seasons. However, when seasons are highly variable, a nation with short seasons will (on average) have higher language diversity than a nation with long seasons. 
+
+The interaction allows for the sign of the relationship between mean growing season length and language diversity to switch as a function of the variance in the length of the growing season.
+
