@@ -1,5 +1,5 @@
 ---
-title: "Generalized Linear Models, part 1"
+title: "Generalized Linear Models, part 2"
 author: "Frank Edwards"
 date: "3/27/2020"
 output: binb::metropolis
@@ -66,7 +66,7 @@ pois_demo<-data.frame(count = c(p1, p2, p3, p4, p5, p6, p7, p8, p9),
                       lambda = rep(1:9, each = 10000))
 ```
 
-```{r}
+```{r fig.height = 4}
 ggplot(pois_demo, aes(x=count)) + 
   geom_density(adjust = 1/4) + 
   facet_wrap(~lambda)
@@ -107,7 +107,6 @@ Let's define a Poisson regression of death rates $d$
 \[d_i \sim Poisson(\lambda)\]
 \[\log \lambda_i = \alpha[race]_i \]
 \[\alpha[race] \sim Normal(0, 2)\]
-\[\sigma \sim Exp(1)\]
 
 ## Estimation
 
