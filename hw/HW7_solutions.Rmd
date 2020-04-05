@@ -1,0 +1,168 @@
+---
+title: "HW7"
+author: "Frank Edwards"
+date: "3/27/2020"
+output: html_document
+---
+
+For this homework, use titanic.csv in ./hw/data/titanic.csv
+
+The data contains the following variables:
+
+- Survived: a binary indicating survival
+- Pclass: a categorical indicating passenger class (first being the most expensive)
+- Name: the passenger's name
+- Sex: the passenger's sex (character)
+- Age: the passenger's age
+- Siblings/Spouses Aboard: an integer with how many sibs/spouses a passenger had aboard
+- Parents/Children Aboard: an integer with how many parents or children a passenger had aboard
+- Fare: The cost of the passenger's ticket
+
+For this homework, you will provide an analysis of why some passengers died on the Titanic while others survived. Use any of the included measures, and specify any model that you think is appropriate. Provide an appropriate description and exploration of the data, an explanation of your theoretical approach (DAGs may be helpful for thinking about causation), a description and justification for your model, and summaries and visualizations of any statistical models estimated.
+
+Based on your empirical inspection of your model, you may choose to revise your initial modeling decisions. Feel free to use the compare() function for this purpose. Remember to add the argument log_lik = TRUE to ulam() if you want to use compare().
+
+Provide me with adequate written detail to follow your reasoning, and enough information to support your claims. Conclude with a theoretically motivated and empirically informed statement about who was likely to die and who was likely to survive on the Titanic. 
+
+```{r message = F}
+library(rethinking)
+library(tidyverse)
+
+titanic<-read_csv("./data/titanic.csv")
+```
+
+I suggest that the saying "women and children first" applied to the Titani's evacuation. Children and women must have been most likely to survive. But I'm also a bit of a Marxist, and know that the rich were likely to try to save their own hides before letting any 3rd class passengers off. So I suggest that children and women were more likely to survive than men, but also that women and children in first class were more likely to survive than others. 
+
+This suggests an interactive model. I'll use two variables for age: a binary (child/adult), and a continuous age measure. I suggest that the probability of survival decreases with age in a linear manner, but that kids are more likely to survive than adults. Sex can remain binary. I'll interact sex and child status with passenger class in my preferred model, but I'll compare it to a model without the interaction to check whether the interaction improves fit.
+
+I define the simpler model for the survival $s$ of passenger $i$ as:
+
+\[s_i \sim Binomial(1, p)\]
+\[logit(p) = \alpha[sex]_i + \gamma[child]_i + \beta \times age_i\]
+\[\alpha \sim Normal(0, 2)\]
+\[\gamma \sim Normal(0, 2)\]
+\[\beta \sim Normal(0, 1)\]
+
+I use weakly informative priors for the intercept and slope parameters ($\alpha, \gamma, \beta$) that allow a broad range on the probability scale (try logistic(-4), logistic(4) to see how broad a Normal(0,2) is on the inverse-logit scale).
+
+I fit this relatively simple model using MCMC
+
+```{r message = F}
+titanic_slim<-titanic %>% 
+  mutate(sex = ifelse(Sex == "female", 1, 2),
+         child = ifelse(Age<18, 1, 2)) %>% 
+  select(Survived, Pclass, sex, child, Age)
+```
+
+```{r results = "hide"}
+m1<-ulam(alist(
+  Survived ~ dbinom(1, p),
+  logit(p) <- a[sex] + g[child] + b * Age,
+  a[sex] ~ dnorm(0,1),
+  g[child] ~ dnorm(0,1),
+  b ~ dnorm(0,0.5)
+), data = titanic_slim, chains = 4, cores = 2,
+log_lik = T)
+```
+
+I next estimate a model that adjusts for passenger class, with the expectation that first class passengers will have survived more often than second or third class passengers.
+
+This model is:
+
+\[s_i \sim Binomial(1, p)\]
+\[logit(p) = \alpha[sex]_i + \gamma[child]_i + \beta_1 \times age_i + \beta_2 \times class_i\]
+\[\alpha \sim Normal(0, 2)\]
+\[\gamma \sim Normal(0, 2)\]
+\[\beta \sim Normal(0, 1)\]
+
+```{r results = "hide"}
+m2<-ulam(alist(
+  Survived ~ dbinom(1, p),
+  logit(p) <- a[sex] + g[child] + b1 * Age + 
+    b2 * Pclass,
+  a[sex] ~ dnorm(0,1),
+  g[child] ~ dnorm(0,1),
+  b1 ~ dnorm(0,0.5),  
+  b2 ~ dnorm(0,0.5)
+), data = titanic_slim, chains = 4, cores = 2,
+log_lik = T)
+```
+
+The third model includes a passenger class predictor and interaction of passenger class with age and sex. I suggest that 3rd class children and women may not have been more likely to survive than men, but first class women and children may have been more likely to survive.
+
+This model is:
+
+\[s_i \sim Binomial(1, p)\]
+\[logit(p) = \alpha[sex]_i + \gamma[child]_i + \beta_1 \times age_i  + \beta_2[sex] \times class_i + \beta_3[child] \times class_i\]
+\[\alpha \sim Normal(0, 2)\]
+\[\gamma \sim Normal(0, 2)\]
+\[\beta_1 \sim Normal(0, 1)\]
+\[\beta_2 \sim Normal(0, 1)\]
+\[\beta_3 \sim Normal(0, 1)\]
+
+```{r results = "hide"}
+m3<-ulam(alist(
+  Survived ~ dbinom(1, p),
+  logit(p) <- a[sex] + g[child] + b1 * Age + 
+    b2[sex] * Pclass + b3[child] * Pclass,
+  a[sex] ~ dnorm(0,1),
+  g[child] ~ dnorm(0,1),
+  b1 ~ dnorm(0,0.5),  
+  b2[sex] ~ dnorm(0,0.5),
+  b3[child] ~ dnorm(0,0.5)
+), data = titanic_slim, chains = 4, cores = 2,
+log_lik = T)
+```
+
+While I have theoretical reasons to prefer model 3, I'd like to confirm that it fits the data better than the others. I compare the WAIC scores across all 3 models to see if model 3 performs more effectively on expected prediciton that model 2 or 1.
+
+```{r}
+## for nicer markdown tables, use pander
+library(pander)
+compare_table<-round(compare(m3, m2, m1),2)
+pander(compare_table)
+```
+
+Now I visualize the relationship between sex, age, child status, and passenger class. I create scenarios for all possible values.
+
+```{r}
+Pclass<-1:3
+sex<-1:2
+Age<-0:99
+### expand_grid makes a tibble with all possible combination of 
+### the included variables
+sim_dat<-expand_grid(Pclass, sex, Age) %>% 
+  mutate(child = ifelse(Age<18, 1, 2)) # kids are under 18
+### draw samples of the posterior p for all possible values
+post_p<-link(m3, sim_dat)
+### attach mean, upper, lower PI for p
+sim_dat<-sim_dat %>% 
+  mutate(p_mn = apply(post_p, 2, mean),
+         p_lwr = apply(post_p, 2, PI)[1,],
+         p_upr = apply(post_p, 2, PI)[2,]) 
+### recode the variables for plotting
+sim_dat<-sim_dat %>% 
+  mutate(
+    Pclass = case_when(
+      Pclass == 1 ~ "First class",
+      Pclass == 2 ~ "Second class",
+      Pclass == 3 ~ "Third class"),
+    sex = case_when(
+      sex== 1 ~ "female",
+      sex== 2 ~ "male"
+    )
+  )
+## plot it
+library(RColorBrewer)
+library(viridisLite)
+ggplot(sim_dat, 
+       aes(y = p_mn, ymin = p_lwr, ymax = p_upr,
+           x = Age, color = Pclass, 
+           fill = Pclass)) + 
+  geom_line() + 
+  geom_ribbon(alpha = 0.5) + 
+  facet_wrap(~sex) + 
+  labs(y = "Survival probability", fill = "", color = "")
+```
+
+So in general, women were more likely to survive than men, and childen more likely to survive than adults. But passenger class made a huge difference in survival odds. First class men and boys were about as likely to survive as theird class women and girls. Very few third class men survived. There is also a clear dropoff in survival probability for males after age 18, when that drop is less pronounced for girls.
