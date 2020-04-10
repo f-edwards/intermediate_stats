@@ -1,0 +1,389 @@
+---
+title: "Generalized Linear Models, part 2"
+author: "Frank Edwards"
+date: "3/27/2020"
+output: binb::metropolis
+---
+
+```{r setup, include=FALSE}
+library(rethinking)
+library(gridExtra)
+library(tidyverse)
+library(broom)
+set.seed(1)
+
+knitr::opts_chunk$set(tidy = FALSE)
+theme_set(theme_bw())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = F, size = "small")
+```
+
+# Overdispersion
+
+## The Poisson model
+
+\[y \sim Poisson(\lambda)\]
+\[E(y) = \lambda\]
+\[Var(y) = \lambda\]
+
+## The Poisson distribution
+
+```{r, echo = FALSE}
+p1<-rpois(10000, 1)
+p2<-rpois(10000, 2)
+p3<-rpois(10000, 3)
+p4<-rpois(10000, 4)
+p5<-rpois(10000, 5)
+p6<-rpois(10000, 6)
+p7<-rpois(10000, 7)
+p8<-rpois(10000, 8)
+p9<-rpois(10000, 9)
+
+pois_demo<-data.frame(count = c(p1, p2, p3, p4, p5, p6, p7, p8, p9), 
+                      lambda = rep(1:9, each = 10000))
+```
+
+```{r fig.height = 4}
+ggplot(pois_demo, aes(x=count)) + 
+  geom_density(adjust = 1/4) + 
+  facet_wrap(~lambda)
+```
+
+## Overdispersion
+
+A variable is said to be *overdispersed* if the variance exceeds what is expected by the model. 
+
+A count is overdispersed if it's variance exceeds it's mean (Poisson) or it's variance exceeds $np(1-p)$ (Binomial).
+
+## What overdispersion looks like in practice
+
+```{r}
+### on your computer, run fe<-read_csv("./slides/fe_demo.csv")
+### make total deaths and pop per county
+fe<-read_csv("./fe_demo.csv") %>% 
+  group_by(fips, state) %>% 
+  summarise(pop = sum(pop), 
+            deaths = sum(deaths)) 
+head(fe)
+```
+
+## Estimating an intercept-only offset Poisson model
+
+\[d_i \sim Poisson(\lambda)\]
+\[\log \lambda_i = \log p_i + \alpha \]
+\[\alpha \sim Normal(0, 2)\]
+
+```{r size = "tiny", results = "hide", cache = T}
+fe_pois_offset<-ulam(alist(
+  deaths ~ dpois(l),
+  log(l) <- log(pop) + a,
+  a ~ dnorm(0,2)
+), data = fe, chains = 4, cores = 2)
+```
+
+## Let's compare model predictions to the observed data
+
+```{r}
+### compare the model to the observed
+sim_dat<-data.frame(pop = 1e5)
+sims<-sim(fe_pois_offset, data = sim_dat)
+observeds<-fe$deaths / fe$pop * 1e5
+tab_dat<-data.frame(type = c("observed", "model"),
+                    var_y = c(var(observeds), var(sims)),
+                    mean_y = c(mean(observeds), mean(sims)))
+library(pander)
+pander(tab_dat)
+```
+
+## Let's compare model predictions to the observed data
+
+```{r echo = F}
+par(mfrow = c(3, 1))
+plot(density(sims))
+plot(density(observeds), xlim = c(0, 15))
+plot(density(observeds))
+```
+
+## Overdispersion in practice
+
+- Overdispersion results from mixed processes, when outcomes have more than one cause or are a sum or product of processes
+- Most count variables are overdispersed
+- Failing to adjust for overdispersion leads to over-confidence in posterior inference (intervals are too narrow)
+- My advice: assume overdispersion
+
+## Addressing overdispersion
+
+- Mixture models gamma + Poisson (negative binomial) and beta + binomial (beta binomial) models handle this problem well
+- Multilevel models with observation-level intercepts also effectively model overdispersion
+
+## Modeling overdispersion: the negative binomial model
+
+- To allow for unmeasured variables to influence counts, we can let each Poisson variable have it's own event rate
+- We mix the Poisson and the gamma distributions to model the count (Poisson) and the rate (gamma) of each observation
+- This adds one extra parameter to the model: a dispersion parameter $\phi$ that allows for extra variance
+
+\[y \sim \textsf{Negative Binomial}(\lambda, \phi)\]
+
+## Re-estimating the police deaths model
+
+\[d_i \textsf{Negative Binomial}(\lambda, \phi)\]
+\[\log \lambda_i = \log p_i + \alpha \]
+\[\alpha \sim Normal(0, 2)\]
+\[\phi \sim Exponential(1)\]
+
+```{r size = "tiny", results = "hide", cache = T}
+fe_NB_offset<-ulam(alist(
+  deaths ~ dgampois(l, p),
+  log(l) <- log(pop) + a,
+  a ~ dnorm(0,2),
+  p ~ dexp(1)
+), data = fe, chains = 4, cores = 2)
+```
+
+## Examining the posteriors
+
+```{r echo = F}
+post_samples_pois<-extract.samples(fe_pois_offset)
+post_samples_nb<-extract.samples(fe_NB_offset)
+
+plot_dat<-data.frame(
+  pois_a = post_samples_pois$a,
+  nb_a = post_samples_nb$a,
+  nb_phi = post_samples_nb$p)
+library(gridExtra)
+p1<-ggplot(plot_dat, aes(x = pois_a)) + geom_density()
+p2<-ggplot(plot_dat, aes(x = nb_a)) + geom_density()
+p3<-ggplot(plot_dat, aes(x = nb_phi)) + geom_density()
+grid.arrange(p1, p2, p3)
+```
+
+## How Negative Binomial influences inference
+
+```{r size = "tiny", fig.height = 4}
+sims_pois<-sim(fe_pois_offset, sim_dat)
+sims_nb<-sim(fe_NB_offset, sim_dat)
+plot_dat<-data.frame(
+  param = 
+    rep(c("Poisson", "Negative Binomial", "observed"), 
+        each = 1000),
+  x = c(sims_pois, sims_nb, sample(observeds, 1000))
+)
+ggplot(plot_dat, aes(x = x)) + 
+  geom_density() + 
+  facet_wrap(~param) + 
+  coord_cartesian(xlim=c(0, 35))
+```
+
+# Zero inflation
+
+## When there are more zeroes than your model expects
+
+- Sometimes multiple processes are at play in count models: 1) determines whether the event occurs at all, and if so 2) determines the count of events
+- If we are counting salamander populations in a forest, ordinary ecological variables like forest cover may predict population sizes. But another process, like pollutant exposure may determine whether there are any salamanders there at all.
+
+## The zero inflated model
+
+This model contains two components. 
+
+1. A model describing the probability that the outcome is zero
+2. A model describing the expected event count
+
+Remember, regular count models also produce zeroes! 
+
+## Possible zero inflated count outcomes
+
+- Number of snow days in a school district
+- Prison admissions in a county
+- Well-visits to a doctor per person
+
+## How many fish did you catch on the camping trip?
+
+I'm guessing that people who went camping along were more likely to go fisihng. People in big groups and groups with kids were less likely to go fishing at all.
+
+```{r}
+zinb <- read.csv("https://stats.idre.ucla.edu/stat/data/fish.csv") %>% 
+  select(persons, camper, child, count)
+head(zinb)
+```
+
+## Let's think about this
+
+Let's assume that the average person who goes fishing catches 2 fish. That would give us a Poisson(2) distribution.
+
+```{r fig.height = 3, size = "tiny"}
+sim_fish<-rpois(250, 2)
+plot_dat<-data.frame(fish = c(sim_fish, zinb$count),
+                     kind = rep(c("sim", "real"), each = 250))
+ggplot(plot_dat, 
+       aes(x = fish, fill = kind)) + 
+  geom_histogram(alpha = 0.5)
+```
+
+## Let's build our zero-inflated model
+
+We suggest that kids and other people get in the way of fishing. If you go fishing, more people (rods) likely means more fish.
+
+- First, we will run a logistic regression to estimate the probability that each group went fishing at all. 
+- We add this probability of not going fishing to our Poisson estimated probability of catching nothing when people did go fishing.
+- Because these are separate linear models, we'll get different parameters
+
+\[fish_i \sim \textsf{Zero-inflated Poisson}(p_i, \lambda_i)\]
+\[\textsf{logit}(p_i) = \alpha_p + \beta_{1p} \times kids_i + \beta_{2p} \times persons_i\]
+\[\textsf{log}(\lambda_i) = \alpha_l + \beta_{l} \times persons_i\]
+
+## The model
+
+\[fish_i \sim \textsf{Zero-inflated Poisson}(p_i, \lambda_i)\]
+\[\textsf{logit}(p_i) = \alpha_p + \beta_{1p} \times kids_i + \beta_{2p} \times persons_i\]
+\[\textsf{log}(\lambda_i) = \alpha_l + \beta_{l} \times persons_i\]
+\[\alpha_p \sim Normal(0,2)\]
+\[\beta_{1p} \sim Normal(0,2)\]
+\[\beta_{2p} \sim Normal(0,2)\]
+\[\beta_{1l} \sim Normal(0,2)\]
+\[\alpha_l \sim Normal(0,2)\]
+
+## Estimating the model
+
+```{r results = "hide", cache = T}
+mfish<-ulam(alist(
+  count ~ dzipois(p, lambda),
+  logit(p) <- ap + b1p * child + b2p * persons,
+  log(lambda)<- al + b1l * persons,
+  ap ~ dnorm(0, 2),
+  b1p ~ dnorm(0, 2),
+  b2p ~ dnorm(0, 2),
+  al ~ dnorm(0, 2),
+  b1l ~ dnorm(0, 2)
+), data = zinb, chains = 4, cores = 4)
+```
+
+## Let's look at this ridiculous creature we've created
+
+```{r size = "tiny"}
+precis(mfish)
+```
+
+# Ordered categorical outcomes
+
+## Categorical variables and ordered categorical variables
+
+- Categorical variables have no inherent rank (i.e. States)
+- Ordered categorical variables have a clear sequence or ordering
+
+## Ordered categorical variables
+
+- Likert scales (1. Strongly disagree ... 7. Strongly agree)
+- Passenger class 
+- School grade 
+- Educational attainment (less than HS, HS diploma, Some college, college degree, graduate degree)
+\pause
+
+While these are often modeled as continuous, that assumes symmetric distances between ranks. 
+
+## How likely are you to apply to grad school?
+
+```{r size = "tiny"}
+library(haven)
+dat <- read_dta("https://stats.idre.ucla.edu/stat/data/ologit.dta")
+head(dat)
+```
+
+## Cumulative proportions
+
+```{r size = "tiny"}
+plot_dat<-dat %>% 
+  group_by(apply) %>% 
+  summarise(n = n()) %>% 
+  ungroup() %>% 
+  mutate(prop = n/sum(n),
+         cum_prop = cumsum(prop))
+
+plot_dat
+```
+
+## Visualizing proportions
+
+```{r size = "tiny", fig.height = 4}
+ggplot(plot_dat, 
+       aes(x = as_factor(apply), y = prop)) + 
+  geom_col()
+```
+
+## Visualizing cumulative proportions
+
+Note that if we have 3 categories, we only need values for 2 to know all 3, because of the law of total probability.
+
+```{r fig.height = 4}
+ggplot(plot_dat, 
+       aes(x = as_factor(apply), y = cum_prop)) + 
+  geom_col()
+```
+
+## The ordered-logit model
+
+We can allow the distance between each group to be uneven with a cumulative link function. The probability of being in group $k$ is relative to the prior group. We then use a logit linear model for each level of the outcome.
+
+\[apply_i \sim Categorical(p)\]
+\[p_1 = q_1\]
+\[p_2 = q_2 - q_1 \]
+\[p_3 = 1 - q_2 \]
+\[\textsf{logit}(q_k) = \kappa_k - \phi_i \]
+\[\phi_i = \textsf{linear model}\]
+
+And your priors
+
+## Let's build a model!
+
+I think that people with higher GPAs are more likely to say they will apply to grad school (controversial).
+
+We can write our model more compactly as
+
+\[apply_i \sim \textsf{Ordered-logit}(\phi_i, \kappa)\]
+\[\phi_i = \beta \times \textsf{GPA}_i \]
+\[\kappa_k \sim Normal(0, 2)\]
+\[\beta \sim Normal(0,2)\]
+
+## Estimate the model
+
+```{r results = "hide", cache = T}
+d_slim<-dat %>% 
+  mutate(apply = as.numeric(apply) + 1) %>% 
+  select(apply, gpa)
+
+m_ord<-ulam(alist(
+  apply ~ dordlogit(phi, kappa),
+  phi <- b * gpa,
+  b ~ dnorm(0,2),
+  kappa ~ dnorm(0,2)
+), data = d_slim, cores = 4, chains = 4)
+```
+
+## Checking the posterior
+
+```{r size = "tiny"}
+precis(m_ord, depth = 2)
+```
+
+## Posterior inference
+
+```{r size = "tiny"}
+sim_dat<-data.frame(gpa = seq(2, 4, by = 1))
+sims<-sim(m_ord, sim_dat)
+sims<-as.data.frame(sims)
+names(sims)<-c("GPA2", "GPA3", "GPA4")
+table(sims$GPA2)
+table(sims$GPA3)
+table(sims$GPA4)
+```
+
+## Summary
+
+- Mixture models are very useful for real-world processes
+- Counts are often (always) over-dispersed
+- Counts often have multiple procesess at play and excess zeroes
+- Categoricals are often ordered, and have unequally spaced differences
+- HW: 12E1 - 12E4; 12H6 if you want practice
