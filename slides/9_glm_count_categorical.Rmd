@@ -178,7 +178,6 @@ We add the offset to the regression without including a parameter.
 \[d_i \sim Poisson(\lambda)\]
 \[\log \lambda_i = \log p_i + \alpha[race]_i \]
 \[\alpha[race] \sim Normal(0, 2)\]
-\[\sigma \sim Exp(1)\]
 
 ```{r size = "tiny", results = "hide"}
 fe_pois_offset<-ulam(alist(

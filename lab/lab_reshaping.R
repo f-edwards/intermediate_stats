@@ -47,7 +47,38 @@ fe<-fe %>%
 
 ### remove non-numerics from age
 
-fe<-fe %>% 
+fe_clean<-fe %>% 
+  mutate(
+    age = case_when(
+      grepl("days", age) ~ "0",
+      grepl("mon", age) & as.numeric(word(age, 1, 1)<12) ~ "0",
+      grepl("mon", age) & as.numeric(word(age, 1, 1)>=12) ~ "1",
+      age == "20s-30s" ~ "30",
+      grepl("s", age) ~ as.character(
+        as.numeric(
+          str_sub(age, 1, 2)) + 5),
+      grepl("-", age) ~ as.character(
+        mean(
+          as.numeric(
+            word(age, 1, 1, sep = "-")) + 
+          as.numeric(
+            word(age, 2, 2, sep = "-")))),
+      grepl("/", age) ~ as.character(
+        mean(
+          as.numeric(
+            word(age, 1, 1, sep = "/")) + 
+            as.numeric(
+              word(age, 2, 2, sep = "/")))),
+      grepl("or", age) ~ as.character(
+        mean(
+          as.numeric(
+            word(age, 1, 1, sep = "or")) + 
+            as.numeric(
+              word(age, 2, 2, sep = "or")))),
+      grepl(".", age) | grepl("`", age) ~ str_sub(age, 1, 2),
+      T ~ age,
+    )
+  ) %>% 
   mutate(age = as.numeric(age))
 
 ##### read in the pop data

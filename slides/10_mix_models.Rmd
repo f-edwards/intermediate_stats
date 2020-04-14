@@ -130,7 +130,7 @@ plot(density(observeds))
 
 ## Re-estimating the police deaths model
 
-\[d_i \textsf{Negative Binomial}(\lambda, \phi)\]
+\[d_i \sim \textsf{Negative Binomial}(\lambda, \phi)\]
 \[\log \lambda_i = \log p_i + \alpha \]
 \[\alpha \sim Normal(0, 2)\]
 \[\phi \sim Exponential(1)\]

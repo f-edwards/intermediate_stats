@@ -24,7 +24,7 @@ Based on your empirical inspection of your model, you may choose to revise your 
 
 Provide me with adequate written detail to follow your reasoning, and enough information to support your claims. Conclude with a theoretically motivated and empirically informed statement about who was likely to die and who was likely to survive on the Titanic. 
 
-```{r message = F}
+```{r message = F, warning = F}
 library(rethinking)
 library(tidyverse)
 
@@ -54,7 +54,7 @@ titanic_slim<-titanic %>%
   select(Survived, Pclass, sex, child, Age)
 ```
 
-```{r results = "hide"}
+```{r results = "hide", cache = T}
 m1<-ulam(alist(
   Survived ~ dbinom(1, p),
   logit(p) <- a[sex] + g[child] + b * Age,
@@ -75,7 +75,7 @@ This model is:
 \[\gamma \sim Normal(0, 2)\]
 \[\beta \sim Normal(0, 1)\]
 
-```{r results = "hide"}
+```{r results = "hide", cache = T, echo = F}
 m2<-ulam(alist(
   Survived ~ dbinom(1, p),
   logit(p) <- a[sex] + g[child] + b1 * Age + 
@@ -100,7 +100,7 @@ This model is:
 \[\beta_2 \sim Normal(0, 1)\]
 \[\beta_3 \sim Normal(0, 1)\]
 
-```{r results = "hide"}
+```{r results = "hide", cache = T}
 m3<-ulam(alist(
   Survived ~ dbinom(1, p),
   logit(p) <- a[sex] + g[child] + b1 * Age + 
@@ -140,8 +140,9 @@ sim_dat<-sim_dat %>%
   mutate(p_mn = apply(post_p, 2, mean),
          p_lwr = apply(post_p, 2, PI)[1,],
          p_upr = apply(post_p, 2, PI)[2,]) 
+
 ### recode the variables for plotting
-sim_dat<-sim_dat %>% 
+sim_dat<-sim_dat %>%
   mutate(
     Pclass = case_when(
       Pclass == 1 ~ "First class",
@@ -153,16 +154,20 @@ sim_dat<-sim_dat %>%
     )
   )
 ## plot it
-library(RColorBrewer)
-library(viridisLite)
 ggplot(sim_dat, 
-       aes(y = p_mn, ymin = p_lwr, ymax = p_upr,
-           x = Age, color = Pclass, 
+       aes(y = p_mn, 
+           ymin = p_lwr, 
+           ymax = p_upr,
+           x = Age, 
+           color = Pclass, 
            fill = Pclass)) + 
   geom_line() + 
   geom_ribbon(alpha = 0.5) + 
   facet_wrap(~sex) + 
-  labs(y = "Survival probability", fill = "", color = "")
+  labs(y = "Posterior survival probability", 
+       fill = "", 
+       color = "") + 
+  theme_bw()
 ```
 
 So in general, women were more likely to survive than men, and childen more likely to survive than adults. But passenger class made a huge difference in survival odds. First class men and boys were about as likely to survive as theird class women and girls. Very few third class men survived. There is also a clear dropoff in survival probability for males after age 18, when that drop is less pronounced for girls.
