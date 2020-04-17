@@ -1,0 +1,120 @@
+---
+title: "HW8 Solutions"
+author: "Frank Edwards"
+date: "4/17/2020"
+output: html_document
+---
+
+```{r warning = F, message = F}
+library(rethinking)
+library(tidyverse)
+```
+
+### 11E1
+
+The log-odds of 0.35 is `r logit(0.35)`
+
+### 11E2
+
+The probability of an event with log-odds 3.2 is `r inv_logit(3.2)`
+
+## 11E3
+
+If a logistic regression coefficient is 1.7, it suggests that the proportional change in odds for a one unit increase in the predictor will be `r exp(1.7)`
+
+## 11E4
+
+Offsets incorporate a time or population exposure into a model, allowing comparison between units on different scales. For example, births in a country are a function of the size of the reproductive-age population.
+
+## 11M1
+
+When binomial data are organized in an aggregated format, the variable $n$ specifies the number of event trials in that aggregated unit. When it is disaggregated, $n$ is fixed at 1, and the likelihood is a Bernoulli with a single varible $p$.
+
+## 11M2
+
+If a Poisson regression has a coefficient of 1.7, it implies that a one unit increase in the predictor is associated with a `r exp(1.7)` percent increase in the event count.
+
+## 11M3
+
+The logit link is appropriate for a binomial GLM because we are modeling the probability of an event for a fixed number of event trials. Probability is bounded between 0 and 1, and maps a continuous linear space onto the $[0,1]$ probability space.
+
+## 11M4
+
+The log link converts the exponential Poisson process onto a linear space.
+
+## 11M5
+
+The logit link on a Poisson variable would confine event counts to either 1 or 0. I'm sure there's some application that this makes sense for, but I can't think of it.
+
+## 11M6
+
+When we have a count and the mean and variance are approximately equal, the Poisson distribution has maximum entropy as a likelihood function. When the expected value for probability is constant, and each trial must result in one of two outcomes, the Binomial likelihood has maximum entropy. 
+
+## 11H4
+
+```{r}
+data(salamanders)
+```
+
+\[S \sim Poisson(\lambda)\]
+\[\log(\lambda_i) = \alpha + \beta \times cover_i\]
+\[\alpha \sim N(0, 2)\]
+\[\beta \sim N(0, 2)\]
+
+```{r results = "hide"}
+d<-salamanders %>% 
+  mutate(P = (PCTCOVER - mean(PCTCOVER))/sd(PCTCOVER),
+         FA = (FORESTAGE - mean(FORESTAGE))/sd(FORESTAGE)) %>% 
+  select(SALAMAN, P, FA)
+
+m1<-ulam(alist(
+  SALAMAN ~ dpois(l),
+  log(l) <- a + b * P,
+  a ~ dnorm(0, 1),
+  b ~ dnorm(0, 1)
+), data = d, chains = 4, cores = 4, log_lik = T)
+```
+
+```{r}
+sim_dat<-data.frame(P = seq(-1, 1.6, by = 0.01))
+post<-link(m1, sim_dat)
+sim_dat<-sim_dat %>% 
+  mutate(salamanders = apply(post, 2, mean),
+         s_hi = apply(post, 2, PI)[2,],
+         s_lo = apply(post, 2, PI)[1,])
+ggplot(sim_dat, 
+       aes(x = P, y = salamanders,
+           ymin = s_lo,
+           ymax = s_hi)) +
+  geom_line()+ 
+  geom_ribbon(alpha = 0.2)
+```
+
+```{r}
+m2<-ulam(alist(
+  SALAMAN ~ dpois(l),
+  log(l) <- a + b * P + b2 * FA,
+  a ~ dnorm(0, 1),
+  b ~ dnorm(0, 1),
+  b2 ~ dnorm(0, 1)
+), data = d, chains = 4, cores = 4, log_lik = T)
+```
+
+```{r}
+sim_dat<-data.frame(P = rep(seq(-1, 1.6, by = 0.01), 3),
+                    FA = rep(c(-1, 0, 1), each = 261))
+post<-link(m2, sim_dat)
+sim_dat<-sim_dat %>% 
+  mutate(salamanders = apply(post, 2, mean),
+         s_hi = apply(post, 2, PI)[2,],
+         s_lo = apply(post, 2, PI)[1,])
+ggplot(sim_dat, 
+       aes(x = P, y = salamanders,
+           ymin = s_lo,
+           ymax = s_hi)) +
+  geom_line()+ 
+  geom_ribbon(alpha = 0.2) + 
+  facet_wrap(~FA)
+```
+
+The predictions are indistinguishable across various values of forest age. I think we can safely say it isn't providing much information on salamander density.
