@@ -1,0 +1,597 @@
+---
+title: "Multilevel models, part 1"
+author: "Frank Edwards"
+date: "4/17/2020"
+output: binb::metropolis
+---
+
+```{r setup, include=FALSE}
+library(rethinking)
+library(gridExtra)
+library(tidyverse)
+library(gapminder)
+set.seed(1)
+select<-dplyr::select
+
+knitr::opts_chunk$set(tidy = FALSE)
+theme_set(theme_bw())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = F, size = "small")
+```
+
+# Multilevel data 
+
+## When your data has structure
+
+**Many natural and social processes have inherent groupings**
+
+- Organisms live within ecosystems \pause
+- People live within neighborhoods (within cities) \pause
+- Students learn within classrooms (within schools, within districts, ...) \pause
+
+## Structured data are often clustered
+
+These groups often lead to patterns in our data called *clustering*
+
+- Variables are often correlated within clusters
+- These correlations can be due observed variables
+- But they can also be due to unobserved (or unobservable) features of each cluster
+- If we don't account for clustering, our inferences will be misleading
+
+## Gapminder data
+
+Let's look at these data on variation in life expectancy, population, and per capita GDP across countries over time
+
+```{r}
+### install.packages("gapminder")
+library(gapminder)
+gapminder %>% sample_n(5)
+```
+
+## A life expectancy model
+
+Say we want to learn something about average mortality rates within a country. We could fit a model for life expectancy $L$.
+
+\[L_i \sim Normal(\mu, \sigma)\]
+\[\mu_i = \alpha\]
+\[\alpha \sim Normal(55, 15)\]
+\[sigma \sim Exponential(0.5)\]
+
+## Estimating the model
+
+This model, with no included parameters for group differences, is called a *complete pooling* model. Data from all groups is used to estimate a single (set) of global parameters.
+
+```{r size = "tiny", results = "hide", cache = T}
+dat<-gapminder %>% 
+  mutate(L = lifeExp,
+         country = factor(country)) %>% 
+  select(L, country)
+
+m_LE0<-ulam(alist(
+  L ~ dnorm(mu, sigma),
+  mu <- a,
+  a ~ dnorm(55, 15),
+  sigma ~ dexp(0.5)), 
+  data = dat, chains = 4, cores = 4, log_lik = T)
+```
+
+## Visualizing the model
+
+```{r size = "tiny", fig.height = 4}
+sim_dat <- data.frame(country = unique(dat$country))
+### draw posterior predictions of L for each country
+sims <- link(m_LE0, sim_dat)
+sims_PI<-apply(sims, 2, PI)
+### compute empirical means, attach posterior estimates of \alpha[country]
+plot_dat<-dat %>% 
+  group_by(country) %>% 
+  summarise(L_bar = mean(L)) %>% 
+  ungroup() %>% 
+  mutate(a_bar = apply(sims, 2, mean),
+         a_lwr = sims_PI[1,],
+         a_upr = sims_PI[2,]) %>% 
+  arrange(L_bar)
+
+```
+
+## Visualizing the model
+
+```{r}
+
+ggplot(plot_dat, 
+       aes(x = 1:nrow(plot_dat), 
+           y = L_bar)) + 
+  geom_point(alpha = 0.5) + 
+  geom_point(aes(y = a_bar), color = "red", alpha = 0.5) + 
+  labs(x = "", y = "Cross-period average life expectancy")
+```
+
+## Weird - what happened?
+
+- An *intercept is a mean* 
+- Expected values in a complete pooling intercept-only model will be approximately equal to the empirical mean of the data
+
+```{r}
+precis(m_LE0)
+mean(dat$L)
+```
+
+## When to avoid complete pooling
+
+Sometimes units in the data have features that make them similar to other units. 
+
+- Repeated observations of countries over time (longitudinal or time series data)
+- Observations of many countries from the same time-period (cross-sectional data)
+- Countries are nested within larger geographies (regions, continents, regions)
+- We can adjust our models to learn from these features and improve inference
+
+## Life expectancy in the data: complete pooling
+
+```{r}
+ggplot(gapminder, aes(x = lifeExp)) + 
+  geom_density()
+```
+
+## One source of clustering: geography
+
+```{r}
+ggplot(gapminder, aes(x = lifeExp, color = continent)) + 
+  geom_density()
+```
+
+## More geographic clustering
+
+```{r size = "tiny", fig.height = 4}
+ggplot(gapminder, aes(x = lifeExp, color = country)) + 
+  geom_density() + 
+  facet_wrap(~continent) + 
+  guides(color = F)
+```
+
+## Temporal clustering
+
+```{r size = "tiny", fig.height = 4}
+ggplot(gapminder, aes(y = lifeExp, x = year)) + 
+  geom_point() + 
+  geom_smooth(method = "lm")
+```
+
+## Temporal and geographic clustering
+
+```{r size = "tiny", fig.height = 4}
+ggplot(gapminder, aes(y = lifeExp, x = year, 
+                      color = continent)) + 
+  geom_jitter(alpha = 0.3) + 
+  geom_smooth(method = "lm")
+```
+
+# Intercepts as regression parameters
+
+## Intercepts as group means
+
+Say we want to learn something about average mortality rates within a country. We could fit a model for life expectancy $L$ with an *intercept* for each.
+
+\[L_i \sim Normal(\mu, \sigma)\]
+\[\mu_i = \alpha[country]_i\]
+\[\alpha[country] \sim Normal(55, 15)\]
+\[sigma \sim Exponential(0.5)\]
+
+## Estimating the country intercept model
+
+```{r results = "hide" , size = "scriptsize", cache = T}
+dat<-gapminder %>% 
+  mutate(L = lifeExp,
+         country = factor(country)) %>% 
+  select(L, country)
+
+m_LE1<-ulam(alist(
+  L ~ dnorm(mu, sigma),
+  mu <- a[country],
+  a[country] ~ dnorm(55, 15),
+  sigma ~ dexp(0.5)), 
+  data = dat, chains = 4, cores = 4, log_lik = T)
+```
+
+## This isn't fun to look at, but here are the parameter estimates
+
+```{r size = "tiny"}
+precis(m_LE1, depth = 2)
+```
+
+## What an intercept means in practice
+
+Intercepts are the weighted average of the *empirical mean* of the group and the prior (remember Bayes' theorem!). In this case, for country $j$ $\alpha_j \propto \bar{L_j} \times p(\alpha_j)$
+
+```{r size = "tiny"}
+sim_dat <- data.frame(country = unique(dat$country))
+### draw posterior predictions of L for each country
+sims <- link(m_LE1, sim_dat)
+sims_PI<-apply(sims, 2, PI)
+### compute empirical means, attach posterior estimates of \alpha[country]
+plot_dat<-dat %>% 
+  group_by(country) %>% 
+  summarise(L_bar = mean(L)) %>% 
+  ungroup() %>% 
+  mutate(a_bar = apply(sims, 2, mean),
+         a_lwr = sims_PI[1,],
+         a_upr = sims_PI[2,]) %>% 
+  arrange(L_bar)
+```
+
+## Bayesian regularization and empirical means
+
+```{r size = "tiny", fig.height = 4}
+ggplot(plot_dat, 
+       aes(x = 1:nrow(plot_dat), 
+           y = L_bar)) + 
+  geom_point(alpha = 0.5) + 
+  geom_point(aes(y = a_bar), color = "red", alpha = 0.5) + 
+  geom_hline(yintercept = mean(plot_dat$L_bar), lty = 2) + 
+  labs(x = "", y = "Cross-period average life expectancy")
+```
+
+## Regularization
+
+Our model *regularizes* intercept estimates by gently nudging them toward the prior. 
+
+This shift is larger when:
+
+- The prior is narrow (strong)
+- The group mean is far away from the global mean 
+- We have few observations for a unit
+
+This shift is smaller when:
+
+- The prior is wide (weak)
+- The group mean is close to the global mean
+- We have many observations for a unit
+
+## No-pooling models
+
+Our current approach estimates country intercepts with two pieces of information:
+
+1. The observed (maximum 12) years of data on country-level life expectancy, assumed to follow a Normal likelihood
+2. Our prior that country-level life expectancy follows a Normal(55, 15)
+
+These estimates ignore any information on life expectancy from *other* countries. 
+
+## What goes into a no-pooling model
+
+- In frequentist models, estimated intercepts are equal to empirical group means
+- Often called a 'fixed effects' model
+- Bayesian approach is similar, but with regularization from the prior
+- This approach typically *overfits* the data, and makes for poor prediction, unless we have a lot of data on each unit
+
+## The partial pooling alternative
+
+- The complete pooling approach assumes all units are the same
+- The no-pooling approach assumes all units are different
+- The *partial pooling* approach assumes that all units are different, but come from the same larger population
+
+## Partial pooling: the basic approach
+
+By adding a little complexity to our model, we can split the difference between the complete pooling and no pooling approach.
+
+- We will still estimate an intercept for each country
+- But we'd also like to leverage information *across* countries
+- After all, each country is a subset of the broader population of countries
+- We achieve this by adding an *adaptive prior*, estimated from the data, to our intercept
+
+## Tadpole survival
+
+Let's see how this works with data on the survival of reed frog tadpoles. The experiment evaluated how population density and size affected the likelihood that tadpoles were eaten by predators
+
+```{r size = "tiny"}
+data(reedfrogs)
+head(reedfrogs)
+```
+
+## The complete pooling approach
+
+Let's estimate survival probability $surv$ for the population of tanks with the following model. This model has one intercept for all tanks.
+
+\[surv_i \sim \textsf{Binomial}(n, p)\]
+\[p = \alpha\]
+\[\alpha \sim Normal(0, 1.5)\]
+
+```{r size = "tiny", results = "hide", cache = T}
+dat<-reedfrogs %>% 
+  mutate(tank = 1:nrow(reedfrogs)) %>% 
+  select(tank, surv, density)
+m_tad_CP<-ulam(alist(
+  surv ~ dbinom(density, p),
+  logit(p) <- alpha,
+  alpha ~ dnorm(0, 1.5)
+), data = dat, chains = 4, log_lik = T)
+```
+
+## Check the posterior for $p$
+
+```{r size = "tiny", fig.height = 3}
+plot_dat<-dat
+post_mu<-link(m_tad_CP, plot_dat)
+plot_datCP<-plot_dat %>% 
+  mutate(mu_mn = apply(post_mu, 2, mean),
+    mu_lwr = apply(post_mu, 2, PI)[1,],
+         mu_upr = apply(post_mu, 2, PI)[2,])
+ggplot(plot_datCP, aes(x = tank, y = surv/density)) + 
+  geom_point() + 
+  geom_ribbon(aes(ymin = mu_lwr, ymax = mu_upr), alpha = 0.5)
+```
+
+## The complete pooling model
+
+- Generates a very precise prediction 
+- Makes the same prediction for every tank in the pond
+- *Underfits* the data. We can make much better predictions by estimating a more complex model.
+
+## The no pooling model
+
+OK - so there are big differences among tanks, and the complete pooling approach underfits the data. Let's estimate tank-specific intercepts (fixed effects, dummy variable model)
+
+\[surv_i \sim \textsf{Binomial}(n, p)\]
+\[p_i = \alpha[tank]\]
+\[\alpha[tank] \sim Normal(0, 1.5)\]
+
+```{r size = "tiny", results = "hide", cache = T}
+m_tad_NP<-ulam(alist(
+  surv ~ dbinom(density, p),
+  logit(p) <- alpha[tank],
+  alpha[tank] ~ dnorm(0, 1.5)
+), data = dat, chains = 4, log_lik = T)
+```
+
+## Check the posterior for $p$
+
+```{r echo = F, size = "tiny", fig.height = 3}
+plot_dat<-dat
+post_mu<-link(m_tad_NP, plot_dat)
+plot_datNP<-plot_dat %>% 
+  mutate(mu_lwr = apply(post_mu, 2, PI)[1,],
+         mu_upr = apply(post_mu, 2, PI)[2,],
+         mu_mn = apply(post_mu, 2, mean))
+ggplot(plot_datNP, aes(x = tank, y = surv/density,
+                     color = factor(density))) + 
+  geom_point() + 
+  geom_linerange(aes(ymin = mu_lwr, ymax = mu_upr), alpha = 0.5) + 
+  geom_point(aes(y = mu_mn),shape = 1) + 
+  labs(title = "Filled points are empirical proportions, hollow are E(p)")
+```
+
+## The partial pooling (multilevel) approach
+
+Now, we will use an adaptive prior for tank intercepts for each tank $j$. The prior for $\alpha$ has it's own prior, with *hyper-parameters* estimated from the data (!). 
+
+\[\textsf{surv}_i \sim \textsf{Binomial}(\textsf{dens}_i, p_i)\]
+\[p_i = \alpha_j\]
+\[\alpha_j \sim \textsf{Normal}(\bar{\alpha}, \sigma)\]
+\[\bar{\alpha} \sim \textsf{Normal}(0, 1.5)\]
+\[\sigma \sim \textsf{Exponential}(1)\]
+
+## Estimating the model
+
+```{r cache = T, results = "hide"}
+m_tad_PP<-ulam(alist(
+  surv ~ dbinom(density, p),
+  logit(p) <- a[tank],
+  a[tank] ~ dnorm(a_bar, sigma),
+  a_bar ~ dnorm(0, 1.5),
+  sigma ~ dexp(1)),
+  data = dat, chains = 4, cores = 4, log_lik = T)
+```
+
+## Taking a look at what we've got here
+
+```{r size = "tiny"}
+precis(m_tad_PP)
+```
+
+\pause
+
+- $\bar{\alpha}$: the posterior for the center of the distribution of tank intercepts
+- $\sigma$: the posterior for the standard deviation of tank intercepts
+
+## Taking a look at what we've got here: tank intercepts
+
+```{r size = "tiny"}
+precis(m_tad_PP, depth = 2)
+```
+
+## Comparing model inferences
+
+```{r echo = F}
+post_mu<-link(m_tad_PP, plot_dat)
+plot_datPP<-plot_dat %>% 
+  mutate(mu_mn = apply(post_mu, 2, mean),
+         mu_lwr = apply(post_mu, 2, PI)[1,],
+         mu_upr = apply(post_mu, 2, PI)[2,])
+
+plot_dat_all<-plot_datCP %>% 
+  mutate(model = "Complete pooling") %>% 
+  bind_rows(plot_datNP %>% 
+            mutate(model = "No pooling")) %>% 
+  bind_rows(plot_datPP %>% 
+              mutate(model = "Partial pooling"))
+
+ggplot(plot_dat_all, 
+       aes(x = tank, 
+           y = surv/density, 
+           color = factor(density))) + 
+  geom_point(alpha = 0.2) + 
+  geom_point(aes(y = mu_mn)) +
+  facet_wrap(~model) + 
+  labs(y = "Survival probability")
+```
+
+## Comparing model inferences: error
+
+```{r fig.height=4}
+ggplot(plot_dat_all, 
+       aes(x = tank, 
+           y = abs(surv/density - mu_mn), 
+           color = factor(density))) + 
+  geom_point() +
+  facet_wrap(~model) + 
+  labs(y = "Absolute error from observed")
+```
+
+## Comparing models: WAIC
+
+```{r size = "tiny"}
+compare(m_tad_CP, m_tad_NP, m_tad_PP)
+```
+
+## The impact of the partial pooling model on the posterior
+
+- Ordinary Bayesian models *shrink* posterior estimates toward the prior
+- Multilevel models shrink posterior estimates toward the group or cluster mean
+- The effect is less pronounced when there is more data in a cluster
+- When we have a lot of data, the partial pooling estimate is indistinguishable from the no pooling estimate
+
+# Clustering at more than one level
+
+## How many levels of clustering are there here?
+
+```{r}
+head(gapminder)
+```
+
+## Let's start with a model with varying country intercepts
+
+We'll account for change over time with a simple linear term. We'll center and scale life expectancy as $L$. This makes priors easier, and reduces the number of parameters needed (because $\alpha$ will center near zero by definition).
+
+\[L_i \sim Normal(\mu, \sigma)\]
+\[\mu_i = \alpha_{[country]i} + \beta \times year_i\]
+\[\alpha_{[country]} \sim \textsf{Normal} (0, \sigma_\alpha)\]
+\[\beta \sim \textsf{Normal}(0,2)\]
+\[\sigma_{\alpha} \sim \textsf{Exponential}(1)\]
+\[\sigma \sim \textsf{Exponential}(1)\]
+
+## Estimating the model
+
+```{r size = "tiny", results = "hide", cache = T}
+dat<-gapminder %>% 
+  mutate(L_c = (lifeExp - mean(lifeExp)) / sd(lifeExp),
+         country = factor(country),
+         year_c = (year - min(year))/5,
+         continent = factor(continent)) %>% 
+  select(lifeExp, L_c, country, year, year_c, continent)
+
+m_gm1<-ulam(alist(
+  L_c ~ dnorm(mu, sigma),
+  mu <- alpha[country] + beta * year_c,
+  alpha[country] ~ dnorm(0, sigma_a),
+  beta ~ dnorm(0, 2),
+  sigma_a ~ dexp(1),
+  sigma ~ dexp(1)
+), data = dat, chains = 4, cores = 4, log_lik = T)
+```
+
+## Checking the posterior
+
+```{r, size = "tiny", fig.size = 3}
+precis(m_gm1)
+traceplot(m_gm1)
+```
+
+## Within-cluster and between-cluster variance
+
+```{r size = "tiny", fig.height = 4}
+post<-extract.samples(m_gm1)
+post_plot<- data.frame(
+  post = c(post$sigma, post$sigma_a),
+  parameter = rep(c("sigma", "sigma_a"),
+                  each = nrow(post[[1]])))
+                       
+ggplot(post_plot, aes(x = post, fill = parameter)) + 
+  geom_density() 
+```
+
+## Adding more than one cluster variable
+
+We know that countries are nested within continents. Perhaps much of the variation in country life expectancy is a function of continent-wide differences. 
+
+\[L_i \sim Normal(\mu, \sigma)\]
+\[\mu_i = \alpha_{[country]i} + \gamma_{[continent]i} + \beta \times year_i\]
+\[\alpha_{[country]} \sim \textsf{Normal} (0, \sigma_\alpha)\]
+\[\gamma_{continent} \sim \textsf{Normal}(0, \sigma_\gamma\]
+\[\beta \sim \textsf{Normal}(0,2)\]
+\[\sigma_{\alpha} \sim \textsf{Exponential}(1)\]
+\[\sigma_{\gamma} \sim \textsf{Exponential}(1)\]
+\[\sigma \sim \textsf{Exponential}(1)\]s
+
+## Estimating the model
+
+Note the increased iterations - this often helps when your Rhat or n_eff is low.
+
+```{r results = "hide", cache=T}
+m_gm2<-ulam(alist(
+  L_c ~ dnorm(mu, sigma),
+  mu <- gamma[continent] + alpha[country] + beta * year_c,
+  alpha[country] ~ dnorm(0, sigma_a),
+  gamma[continent] ~ dnorm(0, sigma_g),
+  beta ~ dnorm(0, 2),
+  sigma_a ~ dexp(1),
+  sigma_g ~ dexp(1),
+  sigma ~ dexp(1)
+), data = dat, chains = 4, cores = 4, iter = 10000, log_lik = T)
+```
+
+## Checking the posterior and chains
+
+```{r size = "tiny", fig.height = 3}
+precis(m_gm2)
+traceplot(m_gm2)
+```
+
+## Evaluating fit of the two models
+
+```{r}
+compare(m_gm1, m_gm2)
+```
+
+## A bad model
+
+```{r results = "hide", cache = T}
+dat<-dat %>% 
+  mutate(year = factor(year))
+m_bad<-ulam(alist(
+  lifeExp ~ dnorm(mu, sigma),
+  mu <- alpha[country] + gamma[year],
+  alpha[country] ~ dnorm(alpha_bar, sigma_a),
+  gamma[year] ~ dnorm(gamma_bar, sigma_g),
+  alpha_bar ~ dnorm(55, 15),
+  gamma_bar ~ dnorm(55, 15),
+  sigma_a ~ dexp(0.2),
+  sigma_g ~ dexp(0.2),
+  sigma ~ dexp(0.2)
+), data = dat, chains = 4, cores = 4)
+```
+
+## Oof - this is what bad Markov chains look like
+
+```{r size = "tiny", fig.height = 3}
+precis(m_bad)
+traceplot(m_bad)
+```
+
+## Summary
+
+Multilevel models are very flexible and useful for modeling:
+
+- Repeat observations of units over time
+- Data with clusters \pause
+
+Multilevel models
+
+- Shrink estimates toward group means (like priors!)
+- Provide variance estimates across and within clusters
+- Allow for flexible posterior inference \pause
+
+Homework
+
+- Chapter 13 easy questions, and 13H2
