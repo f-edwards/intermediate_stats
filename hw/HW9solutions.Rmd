@@ -1,0 +1,68 @@
+---
+title: "HW8 Solutions"
+author: "Frank Edwards"
+date: "4/17/2020"
+output: html_document
+---
+
+```{r warning = F, message = F}
+library(rethinking)
+library(tidyverse)
+```
+
+## 12E1
+
+Ordered categoricals have an inherent rank ordering, unordered categoricals have no implicit or explicit ordering.
+
+## 12E2
+
+Ordered logistic regressions use a cumulative link function, where there are cutpoints in the probability distribution that indicate the relative probability of belonging in group k relative to k-1.
+
+## 12E3
+
+Posterior estimates of regression parameters will be biased downwards
+
+## 12E4
+
+Anything involving humans will produce over-dispersed counts, as multiple processes are nearly always at play. Underdispersion is really uncommon.
+
+## 12H6
+
+```{r, results="hide"}
+data(Fish)
+
+mfish<-ulam(alist(
+  fish_caught ~ dzipois(p, lambda),
+  logit(p) <- log(hours) + ap + b1p * child + b2p * persons, 
+  log(lambda)<- al + b1l * persons,
+  ap ~ dnorm(0, 2),
+  b1p ~ dnorm(0, 2),
+  b2p ~ dnorm(0, 2),
+  al ~ dnorm(0, 2),
+  b1l ~ dnorm(0, 2)
+), data = Fish, chains = 4, cores = 4)
+```
+
+```{r}
+hours<-5
+child<-0:3
+persons<-0:4
+### make scenario for each
+sim_dat<-expand_grid(hours, child, persons)
+### extract posterior for lambda for each
+post<-sim(mfish, sim_dat)
+sim_dat<-sim_dat %>% 
+  mutate(fish = apply(post, 2, mean),
+         fish_lo = apply(post, 2, PI)[1,],
+         fish_hi = apply(post, 2, PI)[2,])
+
+ggplot(sim_dat, aes(x = persons, y = fish,
+                    ymin = fish_lo, 
+                    ymax = fish_hi)) + 
+  geom_line() + 
+  geom_ribbon(alpha = 0.5) + 
+  facet_wrap(~child)
+```
+Kids are the faceting variable. 
+
+More people = more fish, more kids = no fish

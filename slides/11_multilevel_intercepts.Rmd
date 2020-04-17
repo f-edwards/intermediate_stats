@@ -38,7 +38,7 @@ knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = F, size = "small")
 These groups often lead to patterns in our data called *clustering*
 
 - Variables are often correlated within clusters
-- These correlations can be due observed variables
+- These correlations can be due to observed variables
 - But they can also be due to unobserved (or unobservable) features of each cluster
 - If we don't account for clustering, our inferences will be misleading
 
@@ -63,7 +63,7 @@ Say we want to learn something about average mortality rates within a country. W
 
 ## Estimating the model
 
-This model, with no included parameters for group differences, is called a *complete pooling* model. Data from all groups is used to estimate a single (set) of global parameters.
+This model, with no included parameters for group differences, is called a *complete pooling* model. Data from all groups is used to estimate a single global parameter.
 
 ```{r size = "tiny", results = "hide", cache = T}
 dat<-gapminder %>% 
@@ -86,7 +86,6 @@ sim_dat <- data.frame(country = unique(dat$country))
 ### draw posterior predictions of L for each country
 sims <- link(m_LE0, sim_dat)
 sims_PI<-apply(sims, 2, PI)
-### compute empirical means, attach posterior estimates of \alpha[country]
 plot_dat<-dat %>% 
   group_by(country) %>% 
   summarise(L_bar = mean(L)) %>% 
@@ -95,12 +94,11 @@ plot_dat<-dat %>%
          a_lwr = sims_PI[1,],
          a_upr = sims_PI[2,]) %>% 
   arrange(L_bar)
-
 ```
 
 ## Visualizing the model
 
-```{r}
+```{r fig.height = 4, size = "tiny"}
 
 ggplot(plot_dat, 
        aes(x = 1:nrow(plot_dat), 
@@ -204,7 +202,9 @@ precis(m_LE1, depth = 2)
 
 ## What an intercept means in practice
 
-Intercepts are the weighted average of the *empirical mean* of the group and the prior (remember Bayes' theorem!). In this case, for country $j$ $\alpha_j \propto \bar{L_j} \times p(\alpha_j)$
+Intercepts are the weighted average of the *empirical mean* of the group and the prior (remember Bayes' theorem!). In this case, for country $j$ 
+
+\[\alpha_j \propto \bar{L_j} \times p(\alpha_j)\]
 
 ```{r size = "tiny"}
 sim_dat <- data.frame(country = unique(dat$country))
@@ -236,7 +236,7 @@ ggplot(plot_dat,
 
 ## Regularization
 
-Our model *regularizes* intercept estimates by gently nudging them toward the prior. 
+Our model *regularizes* (or shrinks) intercept estimates by gently nudging them toward the prior. 
 
 This shift is larger when:
 
@@ -347,7 +347,7 @@ m_tad_NP<-ulam(alist(
 
 ## Check the posterior for $p$
 
-```{r echo = F, size = "tiny", fig.height = 3}
+```{r echo = F}
 plot_dat<-dat
 post_mu<-link(m_tad_NP, plot_dat)
 plot_datNP<-plot_dat %>% 
@@ -436,7 +436,7 @@ ggplot(plot_dat_all,
            color = factor(density))) + 
   geom_point() +
   facet_wrap(~model) + 
-  labs(y = "Absolute error from observed")
+  labs(y = "Absolute difference from observed")
 ```
 
 ## Comparing models: WAIC

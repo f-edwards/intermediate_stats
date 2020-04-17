@@ -10,6 +10,6 @@ for(year in 1:5){
                        rnorm(20, mean = 75 + rnorm(1, 5, 2),
                              sd = 5))
     file_name<-paste("./lab/data_test/test",year, "_",  i, ".csv", sep = "")
-    write.csv(temp, file = file_name)
+    write.csv(temp, file = file_name, row.names = F)
   }
 }
