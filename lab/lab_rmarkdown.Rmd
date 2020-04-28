@@ -1,0 +1,36 @@
+---
+title: "Advanced RMarkdown"
+author: "Frank Edwards"
+date: "4/21/2020"
+output: ioslides_presentation
+---
+
+## Chunk and Global options
+
+```{r setup, echo = T}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+## Lab outline
+
+>- Cheat sheet
+>- Inline R
+>- Math
+>- Install TinyTeX, use LaTeX
+>- Graphics
+>- Tables
+>- Citations
+>- Slides
+>- Bookdown and cross references
+
+# This is a section break
+
+## This is a slide
+
+
+- Bullet 1
+    - sub-bullet
+    - 2
+  
+- Paragraphy 2
+- spelling stinks
