@@ -64,8 +64,6 @@ Lastly, I recommend learning some form of version control to ensure your work is
 
 ## Book
 
-We will work primarily from two books. You are not required to purchase either text.
-
 Gelman, Hill, and Vehtari,  *Regression and other stories* is our textbook. It provides a cutting edge introduction to applied statistical analysis with regression models. 
 
 These books are also very useful, and some examples are pulled from them:
