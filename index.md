@@ -15,7 +15,7 @@ layout: default
 
 [Datacamp](https://learn.datacamp.com)
 
-[Slack]()
+[Slack](https://rutgersinterm-idb9612.slack.com/)
 
 ## Course description
 
