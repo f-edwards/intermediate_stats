@@ -11,9 +11,11 @@ layout: default
 
 [Lecture slides](https://github.com/f-edwards/intermediate_stats/tree/master/slides)
 
-[Data used in class](https://github.com/f-edwards/intermediate_stats/tree/master/data)
+[Homework](https://github.com/f-edwards/intermediate_stats/tree/master/HW)
 
-[Homeworks](https://github.com/f-edwards/intermediate_stats/tree/master/HW)
+[Datacamp](https://learn.datacamp.com)
+
+[Slack]()
 
 ## Course description
 
@@ -76,13 +78,13 @@ McElreath, *Statistical Rethinking: A Bayesian Course with Examples in R and Sta
 
 ## Assignments and grading
 
-Course grading is based on a combination of course participation (20 percent), and homework assignments (80 percent) 
+Course grading is based on a combination of homework assignments (80 percent) and DataCamp completion (20 percent)
 
 ### Homework
 
 1. DataCamp
 
-DataCamp provides interactive lessons in programming, and features a great library of R courses. I've set up a free account for all students in this course. I will assign DataCamp courses throughout the semester to push our programming skills forward. These assignments should typically take 4-8 hours, and you will generally have two weeks to complete them. These will be completed entirely online through our course page on DataCamp.
+DataCamp provides interactive lessons in programming, and features a great library of R courses. I've set up a free account for all students in this course. I will assign DataCamp courses throughout the semester to push our programming skills forward. These assignments should typically take 4-8 hours (can be split easily into multiple sessions), and you will generally have two weeks to complete them. These will be completed entirely online through our course page on DataCamp. 
 
 2. Problem sets
 
@@ -90,7 +92,21 @@ I will assign a weekly selection of homework problems from the Gelman, Hill, and
 
 ## Course topics and schedule
 
-TBD
+|1/20| Fundamentals: probability, regression | GHV Chapters 1-3 |
+|1/27| Inference and simulation | GHV Chapters 4-5 |
+|2/3| Linear regression (1) | GHV Chapters 6-7 |
+|2/10| Linear regression (2) | GHV Chapters 8-9 |
+|2/17| Linear regression (3) | GHV Chapters 10-12|
+|2/24| Logistic regression (1) | GHV Chapter 13 |
+|3/3| Logistic regression (2)| GHV Chapter 14|
+|3/10| Other GLMs | GHV Chapter 15  |
+|3/17| Spring Break | |
+|3/24| Design and power | GHV Chapter 16 |
+|3/31| Post-stratification and missing data | GHV Chapter 17 |
+|4/7| Causal inference in experiments | GHV Chapter 18|
+|4/14| Causal inference in observational settings | GHV Chapter 20 - 21 |
+|4/21| Advanced topics: multilevel models | GHV 22.1-22.5|
+|4/28| Advanced topis: nonparametric models | GHV 22.6-22.8 |
 
 
 
