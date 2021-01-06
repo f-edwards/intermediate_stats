@@ -1,3 +1,0 @@
-\beamer@sectionintoc {1}{Getting Started}{2}{0}{1}
-\beamer@sectionintoc {2}{All models are wrong\ldots {}}{6}{0}{2}
-\beamer@sectionintoc {3}{Probability: how many ways could what happened have happened?}{22}{0}{3}

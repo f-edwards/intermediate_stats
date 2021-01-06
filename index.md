@@ -3,25 +3,32 @@ layout: default
 ---
 
 |Intermediate Statistics   | 27:202:543  |  
-|Lecture: Friday, 10:00AM - 12:40PM   | Room: CLJ-574  |
-|Lab: Tuesday 1:00PM - 2:30PM | Room: CLJ-567 |
-|frank.edwards@rutgers.edu | Office hours: Wednesday 12:00PM - 2:00PM|
+|Wednesday, 10:00-12:40   | Room: See Slack for zoom details  |
+|frank.edwards@rutgers.edu | Office hours Tuesday, 9:00 - 11:00|
+
+
+## Quick links
+
+[Lecture slides](https://github.com/f-edwards/intermediate_stats/tree/master/slides)
+
+[Data used in class](https://github.com/f-edwards/intermediate_stats/tree/master/data)
+
+[Homeworks](https://github.com/f-edwards/intermediate_stats/tree/master/HW)
 
 ## Course description
 
-This course introduces students to Bayesian data analysis and applied regression modeling. 
+This is the course syllabus for Intermediate Statistics, Spring 2020. Continuous outcomes that meet the assumptions of ordinary least squares regression are relatively rare in the social sciences. This course focuses our attention on how to estimate regression models for discrete outcomes including binary, categorical, and count variables. We use both frequentist and Bayesian methods to estimate a series of generalized linear models. These flexible tools allow us to more accurately model a wide range of outcomes.
 
 ## Communication
 
 I've set up a Slack page for us to communicate about the course. This can be a resource for you to collaborate and ask me questions about homework, and will also be a spot where course announcements are posted. Invites will be circulated before the course begins.
 
-[Course Slack](https://bayesianstats-w20.slack.com)
-
 ## Course goals
 
-1. Develop familiarity with principals of Bayesian data analysis
-2. Master the principals of model building and model critique
-3. Develop familiarity with principals of contemporary causal inference and design
+1. Master data analysis with linear and generalized linear regression models
+2. Develop expertise in advanced statistical programming and data visualization 
+3. Develop the ability to design and conduct quantitative criminological research
+4. Become familiar with advanced techniques, like multilevel modeling and missing data analysis
 
 ## Expectations
 
@@ -29,9 +36,7 @@ I've set up a Slack page for us to communicate about the course. This can be a r
 
 - Please complete and submit assignments on time. 
 
-- Be respectful and professional. Be mindful of the space you take up in the classroom. Food and drink are allowed, but please keep the cell phone use and non-course related computer use to a minimum. 
-
-- Bring your computer. Most of the work we'll be doing involves writing code, so bring a computer with you to class. Let me know if access to a laptop is an issue.
+- Be respectful and professional. Be mindful of the space you take up in the classroom.
 
 - Collaborate with your colleagues. I encourage you all to work together to complete assignments. However, I do expect you each to submit your own homework writeups. 
 
@@ -51,47 +56,41 @@ All instruction will be conducted in the R statistical programming language. R i
 
 We will be using the [RStudio integrated development environment](https://www.rstudio.com/products/rstudio/download/). RStudio provides a powerful text editor and a range of very useful utilities. 
 
-In addition to writing code, it is a great tool for writing reports, papers, and slides using [RMarkdown](https://rmarkdown.rstudio.com/lesson-1.html). This syllabus, most of my course materials, and most of my academic papers are based on Markdown and occasionally [LaTeX](https://www.overleaf.com/learn/latex/Learn_LaTeX_in_30_minutes). I strongly recommend that you use RMarkdown to complete course assignments. Other plaintext editors (emacs, vim, sublime, atom, etc) are acceptable substitutes for RStudio, but try to avoid using MS Word or other WSIWYG editors for assignments.  
+In addition to writing code, it is a great tool for writing reports, papers, and slides using [RMarkdown](https://rmarkdown.rstudio.com/lesson-1.html). This syllabus, most of my course materials, and most of my academic papers are based on Markdown and occasionally [LaTeX](https://www.overleaf.com/learn/latex/Learn_LaTeX_in_30_minutes). I strongly recommend that you use RStudio and RMarkdown to complete course assignments.  
 
 Lastly, I recommend learning some form of version control to ensure your work is a) backed up, b) easily accessible to collaborators and c) reproducible. Git and GitHub are great and flexible tools for software development that have powerful applications for researchers. Here's a useful [intro to GitHub](https://happygitwithr.com/) for R users.
 
-## Books
+## Book
 
-We will work primarily from two books. 
+We will work primarily from two books. You are not required to purchase either text.
+
+Gelman, Hill, and Vehtari,  *Regression and other stories* is our textbook. It provides a cutting edge introduction to applied statistical analysis with regression models. 
+
+These books are also very useful, and some examples are pulled from them:
+
+Wickham, [R for Data Science](https://r4ds.had.co.nz/) 
+
+Healy, [*Data Visualization: A Practical Introduction*](http://socviz.co/index.html) 
 
 McElreath, *Statistical Rethinking: A Bayesian Course with Examples in R and Stan*
 
-Wickham's [R for Data Science](https://r4ds.had.co.nz/) is available for free online textbook, though there are print versions available if you prefer to purchase a copy.
-
 ## Assignments and grading
 
-Course grading is based on a combination of course participation (20 percent) and homework assignments (80 percent). 
+Course grading is based on a combination of course participation (20 percent), and homework assignments (80 percent) 
 
-### Homeworks
+### Homework
 
-Homework should be submitted to me via email by 10AM on the due date. 
+1. DataCamp
 
-For each week, I'll provide a list of homework questions for you to complete. Students will have a choice to attempt the medium or hard problem set. Students attempting the medium problem set can obtain a maximum grade of 90. Students attempting the hard problem set can obtain a maximum grade of 100. 
+DataCamp provides interactive lessons in programming, and features a great library of R courses. I've set up a free account for all students in this course. I will assign DataCamp courses throughout the semester to push our programming skills forward. These assignments should typically take 4-8 hours, and you will generally have two weeks to complete them. These will be completed entirely online through our course page on DataCamp.
 
-Each student may request, without penalty, one 5-day extension during the semester. I must recieve an email requesting this extension before the homework due date.
+2. Problem sets
 
-Late homework will be penalized at 5 points per day late.
+I will assign a weekly selection of homework problems from the Gelman, Hill, and Vehtari book. These assignments should be completed in RMarkdown and submitted to our TA via email by the beginning of the next week's lecture. 
 
 ## Course topics and schedule
 
-|1/24| Introduction | McElreath Preface, 1, 2 |
-|1/31| Sampling from the posterior | McElreath 3 |
-|2/7| Linear regression | McElreath 4 | 
-|2/14| Multiple regression | McElreath 5 |
-|2/21| Multiple regression pt 2 | McElreath 6 |
-|2/25| Causality | McElreath 6 |
-|3/6| Overfitting, comparison, Interactions | McElreath 7, 8 | 
-|3/13| Markov Chain Monte Carlo | McElreath 9 |
-|3/20| Spring break | McElreath 10 |
-|3/27| Generalized Linear Models (1) | McElreath 10, 11.1, 11.2|
-|4/3| Generalized Linear Models (2) | McElreath 11.3, 11.4 |
-|4/10| Mixture models | McElreath 12 |
-|4/17| Multilevel models (intercepts) | McElreath 13 | 
-|4/24| Multilevel models (slopes) | McElreath 14  |
-|5/1| Measurement error and missing data | McElreath 15 |
-|5/8| Bayesian data analysis using tidyverse and brms | McElreath 17 | 
+TBD
+
+
+

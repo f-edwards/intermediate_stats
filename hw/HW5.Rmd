@@ -1,32 +1,25 @@
 ---
 title: "HW5"
 author: "Frank Edwards"
-date: "2/21/2020"
+date: "3/1/2019"
 output: html_document
 ---
 
-**Due via email by 10AM 3/6 to cs1215@scj.rutgers.edu**
+For this homework, use titanic.csv in ./HW/data/titanic.csv
 
-```{r setup, include=FALSE}
-library(tidyverse)
-library(rethinking)
-```
+The data contains the following variables:
 
-All three exercises below use the same data, data(foxes) (part of rethinking). The urban fox (Vulpes vulpes) is a successful exploiter of human habitat. Since urban foxes move in packs and defend territories, data on habitat quality and population density is also included. The data frame has five columns:
+- Survived: a binary indicating survival
+- Pclass: a categorical indicating passenger class (first being the most expensive)
+- Name: the passenger's name
+- Sex: the passenger's sex (character)
+- Age: the passenger's age
+- Siblings/Spouses Aboard: an integer with how many sibs/spouses a passenger had aboard
+- Parents/Children Aboard: an integer with how many parents or children a passenger had aboard
+- Fare: The cost of the passenger's ticket
 
-```{r}
-data(foxes)
-head(foxes)
-```
+For this homework, you will provide an analysis of why some passengers died on the Titanic while others survived. Provide an appropriate description and exploration of the data, an explanation of your theoretical approach, and summaries and visualizations of any statistical models estimated.
 
-1. group: Number of the social group the individual fox belongs to 
-2. avgfood: The average amount of food available in the territory 
-3. groupsize: The number of foxes in the social group
-4. area: Size of the territory
-5. weight: Body weight of the individual fox
+Defend your modeling choices through a both a) theoretical motivations and b) an empirical inspection of model fit. Based on your empirical inspection of your model, you may choose to revise your initial modeling decisions. I encourage this iterative process. Please provide details for all models you estimate along the way.
 
-**1.** Fit two bivariate Gaussian regressions, using quap: (1) body weight as a linear function of territory size (area), and (2) body weight as a linear function of groupsize. Plot the results of these regressions, displaying the MAP regression line and the 89% interval of the mean. Is either variable important for predicting fox body weight?
-
-**2.** Now fit a multiple linear regression with weight as the outcome and both area and groupsize as predictor variables. Plot the predictions of the model for each predictor, holding the other predictor constant at its mean. What does this model say about the importance of each variable? Why do you get different results than you got in the exercise just above?
-
-**3.** Finally, consider the avgfood variable. Fit two more multiple regressions: (1) body weight as an additive function of avgfood and groupsize, and (2) body weight as an additive function of all three variables, avgfood and groupsize and area. Compare the results of these models to the previous models you’ve fit, in the first two exercises. (a) Is avgfood or area a better predictor of body weight? If you had to choose one or the other to include in a model, which would it be? Support your assessment with any tables or plots you choose. (b) When both avgfood or area are in the same model, their effects are reduced (closer to zero) and their standard errors are larger than when they are included in separate models. Can you explain this result?
+I expect this to take the form of a mini-paper. Pretend that you are writing for an audience that is not your instructor. Provide me with adequate written detail to follow your reasoning, and enough visual and tabular information to support your claims. Conclude with a theoretically motivated and empirically informed statement about who was likely to die and survive on the Titanic. 

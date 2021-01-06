@@ -1,0 +1,500 @@
+---
+title: "Working with categorical variables"
+author: "Frank Edwards"
+output: binb::metropolis
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+library(tidyverse)
+library(broom)
+set.seed(1)
+
+options(xtable.comment = FALSE)
+theme_set(theme_minimal())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+```
+
+# Review HW 5
+
+# Working with strings in R
+
+## What is a string?
+
+*A string is an ordered sequence of characters*
+
+- Strings are generally stored verbatim, and have no mathematical meaning (ie math operations will return errors)
+- In R, these are character objects
+- Generally wrapped in ""
+- In R, can use as.character to convert any value to character
+
+## Let's try something
+
+What's the difference between these commands
+
+```{r}
+a<-1
+b<-"1"
+```
+
+- What does each command do?
+- Try str() on each
+
+## Let's keep trying to break R
+
+On your console, try these:
+
+- a<-c(1,2,3)
+- b<-c("1", "2", "3")
+- c<-c(1, "2", 3)
+- d<-c(1, 2, "c") \pause
+
+What happened? Why?
+
+## Let's keep trying to break R
+
+- a + a
+- a + "a"
+- a + b  
+- "a" == "A"
+- a == "a"
+
+## Summary of strings in R
+
+- R will coerce vectors to string when strings are included
+- Strings are the most complex variable type (in order: logical, numeric, factor, character)
+- Strings can only be compared to strings
+- You should generally treat all categorical variables as strings in R (unless order matters! then use factor())
+
+# Working with strings in R
+
+## Stringr
+
+The stringr package loads with tidyverse
+
+```{r}
+library(tidyverse)
+```
+
+It has more powerful versions of base functions like:
+
+- substr()
+- grep()
+- paste()
+- strsplit()
+
+## Getting started
+
+```{r}
+word<-"banana"
+str_length(word)
+word%>%
+  str_length()
+```
+
+## Pulling single characters from a string
+
+```{r}
+word<-"banana"
+word_length<-str_length(word)
+word%>%
+  str_sub(1, 1)
+```
+\pause
+```{r}
+for(i in 1:word_length){
+  print(str_sub(word, i, i))
+}
+```
+
+## Pulling multiple characters
+```{r}
+word<-"banana"
+word%>%
+  str_sub(1, 3)
+```
+\pause
+```{r}
+for(i in 1:word_length){
+  print(str_sub(word, 1, i))
+}
+```
+
+## Substitution
+```{r}
+str_sub(word, 1, 2)<-"surprise"
+word
+```
+
+## Indexing on strings, negative values
+
+```{r}
+word
+str_sub(word, -2, -1)
+```
+
+What happened here?
+
+## Some convenient functions
+
+```{r}
+phrase<-"bananas are the tastiest"
+toupper(phrase)
+```
+\pause
+```{r}
+tolower(toupper(phrase))
+```
+\pause
+```{r}
+library(tools)
+toTitleCase(phrase)
+```
+\pause
+```{r}
+odd<-"   bananas are the tastiest     "
+trimws(odd)
+```
+
+## Splitting a string
+
+```{r, size = "tiny"}
+str_split(phrase, pattern = " ")
+```
+\pause
+```{r, size = "tiny"}
+str_split(phrase, pattern = "a")
+```
+
+## Splitting a string to a fixed matrix
+```{r, size = "tiny"}
+str_split_fixed(phrase, pattern = " ", n = 2)
+```
+\pause
+
+```{r, size = "tiny"}
+str_split_fixed(phrase, pattern = " ", n = 3)
+```
+\pause
+```{r, size = "tiny"}
+str_split_fixed(phrase, pattern = " ", n = 4)
+```
+
+## Finding strings in strings
+
+```{r}
+phrase
+str_detect(phrase, "are")
+```
+
+\pause
+
+```{r}
+str_detect(phrase, "scrumptious")
+str_detect(phrase, "nana")
+```
+
+## Squishing strings together
+
+```{r}
+str_c(phrase, "seriously")
+### oops
+str_c(phrase, "seriously", sep = " ")
+### or 
+str_c(phrase, " seriously")
+## not this
+str_c(phrase, "seriously", sep = "!!")
+```
+
+
+## But we usually work with vectors!
+
+- This is true
+
+- All of this works on vectors 
+
+- Like a vector of fruits! \pause
+
+```{r, size = "tiny"}
+fruit
+```
+
+## See, it works on vectors!
+
+```{r, size = "tiny"}
+str_sub(fruit, 1, 2)
+```
+
+## Let's see how many fruits use the word "fruit"
+
+```{r size = "tiny"}
+fruit%>%
+  str_detect("fruit")
+```
+\pause
+```{r size = "tiny"}
+## How many?
+fruit%>%
+  str_detect("fruit")%>%
+  sum()
+```
+
+## Let's get those fruits that are called fruits
+
+```{r}
+fruitfruits<-str_subset(fruit, "fruit")
+```
+
+## Let's make them all one word
+
+```{r, size = "scriptsize"}
+fruitfruits<-str_replace(
+  
+  fruitfruits, 
+  pattern = " ", 
+  replacement= "")
+
+fruitfruits
+```
+
+## Let's make them all two words
+
+```{r size = "scriptsize"}
+fruitfruits<-str_replace(
+  
+  fruitfruits, 
+  pattern = "fruit", 
+  replacement = " fruit")
+
+fruitfruits
+```
+
+## Using str_replace to handle NA
+```{r size = "scriptsize"}
+melons <- str_subset(fruit, pattern = "melon")
+melons[2] <- NA
+melons
+#> [1] "canary melon" NA             "watermelon"
+str_replace_na(melons, "UNKNOWN MELON")
+```
+
+# Moving on to some more practical examples
+
+## Returning to the Titanic
+
+```{r}
+titanic<-read_csv("./data/titanic.csv")
+```
+
+## A handy trick
+```{r}
+tolower(names(titanic))
+names(titanic)<-tolower(names(titanic))
+```
+
+## Let's see what titles people used
+
+```{r, size = "tiny"}
+titanic_titles<-titanic%>%
+  separate(name, 
+           into = c("title", "name"),
+           sep = "\\.")
+## the \\ is there because . has a special meaning in regex (we'll come back to that)
+titanic
+```
+
+## Titles on the Titanic
+
+```{r size = "scriptsize"}
+unique(titanic_titles$title)
+```
+
+## Who's Jonkheer? Who's the Countess?
+
+```{r}
+grep("Jonkheer", titanic$name)
+grep("the Countess", titanic$name)
+```
+
+## grep and grepl
+
+Both use regular expressions to match patterns in strings. 
+
+- grep() returns the index of matches (ie row number)
+- grepl() returns TRUE or FALSE for matches
+- Regular expressions (or regex) are super powerful and super confusing. 
+- Here's a cheat sheet (https://www.rstudio.com/wp-content/uploads/2016/09/RegExCheatsheet.pdf)
+- Most of the time, we don't need to worry about regex. But special characters can trip you up.
+
+*Special characters in regex*
+
+    \^$.|?*+()[{"  
+
+## grep and grepl in practice
+
+How many countesses are there?
+
+```{r}
+table(grepl("the Countess", titanic$name))
+```
+
+## Who was she?!
+
+```{r, size = "scriptsize"}
+titanic[grep("the Countess", titanic$name),]
+
+titanic%>%
+  filter(grepl("the Countess", titanic$name))
+```
+
+## Let's just get her title and name
+
+```{r, size = "scriptsize"}
+titanic%>%
+  filter(grepl("the Countess", titanic$name))%>%
+  select(name)
+```
+
+# Recoding - ifelse and case_when
+
+## The ifelse() function
+
+ifelse() commands require the following:
+
+1. test: a conditional statement that returns TRUE or FALSE
+2. yes: a value assigned when test==TRUE
+3. no: a value assigned when test==FALSE
+
+## if and else
+
+```{r, size = "scriptsize"}
+a<-c(1,2)
+b<-c(1,2)
+if(a==b){
+  "equal!"
+} else{
+  "not equal!"
+}
+
+if(a!=b){
+  "not equal!"
+} else{
+  "equal!"
+}
+```
+
+## What if we want a comparison of each element in the vector?
+
+```{r}
+ifelse(a==b, "equal!", "not equal!")
+```
+
+We can use this to do all kinds of neat things.
+
+## We're going to be cruel for a moment
+
+Let's add "You died" to the front of any the name of any passenger who died
+
+```{r}
+cruelty<-titanic%>%
+  mutate(
+    
+    name = 
+      ifelse(
+        survived == 0,
+        str_c("You died", name, sep = " "),
+        name)
+  )%>%
+  select(survived, name)
+```
+
+## What did it do?
+
+```{r size = "tiny"}
+cruelty
+```
+
+## Let's add a new variable - child
+
+```{r size = "scriptsize"}
+kids<-titanic%>%
+  mutate(
+    
+    child = ifelse(age<18,
+                   "Child",
+                   "Adult"))
+
+table(kids$child)
+table(titanic$age<18)
+```
+
+## Let's recode the variable sex
+
+```{r}
+recode<-titanic%>%
+  mutate(
+    
+    sex = ifelse(sex == "male",
+                      "m",
+                      "f"))
+```
+
+## But what if we have more than one condition to evaluate?
+
+Let's make a three category age variable: child, adult, elder
+
+We could nest ifelse() commands:
+
+```{r}
+age_recode<-titanic%>%
+  mutate(age_cat = 
+           
+           ifelse(age<18, "child",
+                  ifelse(age>65,
+                         "elder",
+                         "adult")))
+
+table(age_recode$age_cat)
+```
+
+## But that's hard to read and can get cumbersome with many categories
+
+case_when() is a flexible approach to link together many conditional statements
+
+```{r, size = "scriptsize"}
+age_recode2<-titanic%>%
+  mutate(age_cat = 
+           
+           case_when(
+             age < 18 ~ "child",
+             age >= 18 & age <= 65 ~ "adult",
+             age >65 ~ "elder"
+               
+           ))
+
+table(age_recode2$age_cat)
+```
+
+## A real example: HW 6
+
+```{r size = "tiny"}
+fe<-read_csv("./data/fe_1_25_19.csv")
+unique(fe$`Subject's age`)
+```
+
+## More messy data
+
+```{r size = "scriptsize"}
+unique(fe$`Subject's gender`)
+```
+
+## Data cleaning
+
+- Data cleaning involves writing code to solve problems in the raw data. 
+- We write programs that search out and fix issues so that we can conduct needed analysis.
+- NEVER modify the original data. Doing so is not reproducible or documented.
+

@@ -1,0 +1,401 @@
+---
+title: "Intermediate statistics: introduction"
+author: "Frank Edwards"
+institute: School of Criminal Justice, Rutgers - Newark
+date: "1/25/2019"
+output: binb::metropolis
+---
+
+```{r message = FALSE, warning = FALSE, echo=FALSE}
+library(tidyverse)
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+
+```
+
+
+## Basics
+
+*Contact:* frank.edwards@rutgers.edu
+
+*Office hours:* email for appointments
+
+*Course webpage and syllabus:* https://f-edwards.github.io/intermediate_stats/
+
+*Slack:* https://ru-intermed-stats.slack.com/messages
+
+# Introductions: What are you planning to do with statistical models?
+
+## Before we begin
+
+Remember: All models are wrong, some are useful.
+
+## What we will cover
+
+- How to explore, visualize, and model diverse kinds of data with an emphasis on generalized linear models \pause
+- How to program in R \pause
+- Developing a workflow for producing replicable quantitative social science \pause
+- Some advanced topics that are relevant for the kinds of data we're dealing with in the course, subject to class interest
+
+# Quick assessment of where we're at with programming
+
+## 1. Explain what this code does and expected output
+
+```{r eval=FALSE}
+for(i in 1:10){
+  print(i^2)
+}
+```
+
+## 2. Explain what this code does and expected output
+
+```{r eval=FALSE}
+a<-c(1, 2, 3)
+b<-c(2, 3, 4)
+a*b
+```
+
+## 3. Explain what this code does and expected output
+
+```{r eval=FALSE}
+whatsitdo<-function(x){
+  a<-min(x)
+  return(1/a)
+}
+z<-c(4,5,6)
+whatsitdo(z)
+```
+
+## 4. Explain what this code does and expected output
+
+```{r eval=FALSE}
+library(dplyr)
+dat<-data.frame("var1" = c(1,2,3), 
+                "var2" = c(4, 5, 6))
+dat%>%
+  summarise(total = sum(var1 + var2))
+```
+
+## 5. Explain what z is and what m1 is
+
+```{r eval=FALSE}
+y<-c(1,2,3,4,5)
+x<-c(3,4,5,6,7)
+z<-solve(t(x)%*%x)%*%t(x)%*%y
+m1<-lm(y~x)
+```
+
+## Discussion on how we could proceed with programming in the course
+
+*Self assessment:* 
+
+\begin{center}Were these problems easy? Hard? Completely foreign? Which parts were most unfamiliar? \end{center} \pause
+
+*Question for the class:* 
+
+\centering{Would it be helfpul to cover basic programming concepts (i.e. functions, loops)? \pause
+  Using the tidyverse packages? \pause
+  Using RMarkdown? \pause} 
+
+## Review the syllabus
+
+https://f-edwards.github.io/intermediate_stats/
+
+## How I will run seminars
+
+- Basic statistical theory \pause
+- Applied data analysis and modeling in R 
+
+## Expectations
+
+- Bring a laptop: we will be writing code in class \pause
+
+- Make space for everyone: respect varying levels of comfort with statistics and programming \pause
+
+- Come prepared and complete assignments on time
+
+## My general approach to data analysis
+
+1. Explore and visualize data \pause
+2. Fit models \pause
+3. Assess model fit \pause
+4. Interpret and describe results through simulation
+
+# The Generalized Linear Model
+
+## The linear model
+
+We know we can model data as:
+
+$$y = \beta_0 + \beta_1x_1 \cdots \beta_nx_n + \varepsilon$$ \pause
+
+Or, more succinctly:
+
+$$ y =  \mathbf{X} \mathbf{\beta} + \varepsilon $$ \pause
+
+Where the likelihood for the outcome conditional on the data takes the form:
+
+$$ Y|X \sim Normal(\mu, \sigma^2) $$ 
+
+## Generalzing the linear model
+
+The linear model: 
+
+$$ Y|X \sim Normal(\mu, \sigma^2) $$
+
+Can be written as a more general formulation for a likelihood function $f$
+
+$$ Y|X \sim f(\mu, \sigma^2) $$ \pause
+
+Now we can extend the (very) useful linear model to data with discrete outcomes
+
+## Generalizing the linear model
+
+A linear predictor $\eta$: 
+
+$$ \eta = \mathbf{X} \mathbf{\beta} $$ \pause
+
+A link function $g$
+
+$$ g(E(Y|X)) = \eta $$ \pause
+
+A mean expectation $E(Y|X) = \mu$
+
+$$ \mu =  g^{-1}(\eta) $$
+
+## From OLS to GLM
+
+OLS:
+
+$$ Y|X \sim Normal(\mu, \sigma^2) $$ 
+
+GLM, for a likelihood function $f$ with parameters $\theta$: 
+
+$$ Y|X \sim f(\theta) $$
+
+## Diverse likelihood functions
+
+- Binary data: linear probability (Normal/Gaussian) and logistic models \pause
+- Categorical data: Multinomial model \pause
+- Count data: Poisson and negative binomial models \pause
+- Positive continuous data: Gamma model
+
+# Getting started: software
+
+## Required installations
+
+All software we are using is free and open source.
+
+*Install R*:
+
+https://cran.r-project.org/
+
+*Install RStudio*:
+
+https://www.rstudio.com/products/rstudio/download/
+
+## Recommended software: Git and GitHub
+
+Git and GitHub are powerful tools for backing up and sharing your research. 
+
+All course materials, source code, and most of my research are hosted on GitHub (https://github.com/f-edwards).
+
+*Install Git*:
+
+https://git-scm.com/
+
+*Set up a GitHub account*:
+
+https://github.com/
+
+*Using GitHub for social science*:
+
+https://happygitwithr.com/
+
+## Recommended software: LaTeX
+
+\LaTeX is a powerful typesetting tool that works well with RMarkdown. It makes very attractive academic papers and slides. 
+
+Install it here: *Install TexLive*: 
+https://tug.org/texlive/acquire-netinstall.html
+
+# Questions so far? 
+
+# Break
+
+# Returning to the linear model
+
+## What do we know about the linear regression model?
+
+$$ y =  \mathbf{X} \mathbf{\beta} + \varepsilon $$
+$$\varepsilon \sim Normal(0, \sigma^2)$$
+
+## Review
+
+1. What forms can y take? \pause
+2. What assumptions does the linear regression model require?
+
+## Assumptions of linear regression model
+
+1. Validity of data relative to the research question \pause
+2. Additive, linear functional form \pause
+3. Independent errors \pause
+4. Equal variance of errors \pause
+5. Normality of errors \pause
+
+# Let's analyze some data?
+
+## Two ways to access course data
+
+- All data is accessible through the the course website (see the data link, or data folder on the GitHub page)
+- *Recommended approach:* In a terminal (terminal.app on mac, Git Bash on windows): 
+
+\texttt{git clone} https://github.com/f-edwards/intermediate_stats.git
+
+Before beginning your work each session, pull updates I've pushed to the repo with:
+
+\texttt{git pull}
+
+Now you have an intermediate_stats folder with all code, slides, and data. Data is in intermediate_stats/data
+
+## Read in 
+```{r}
+#library(tidyverse)
+### directly from the web
+cj_budgets<-read_csv("https://github.com/f-edwards/intermediate_stats/raw/master/data/revenue_dat.csv")
+### from a project directory root
+#setwd("C:/intermediate_stats") # set working directory
+#cj_budgets<-read_csv("./data/revenue_dat.csv")
+```
+
+## About the data
+
+Data are for an ongoing research project I'm working on. It's real, and can be a bit messy!
+
+It documents police involved deaths, demographics, and local government budgets at the county-level for two time periods, 2007-11 and 2012-16. Datasets used include Fatal Encounters, American Community Survey, Annual Survey of State and Local Government Finance, and Uniform Crime Reports.
+
+Full code for the project is up at:
+
+https://github.com/f-edwards/police-mort-revenue
+
+\texttt{merge.r} contains the code to make this merged file from a variety of source files (available if you want the raw data).
+
+## Evaluate the structure of the data
+
+```{r tidy=TRUE}
+head(cj_budgets)
+```
+
+## Evaluate the structure of the data
+
+```{r}
+nrow(cj_budgets)
+table(cj_budgets$year_range)
+```
+
+## Evaluate the structure of the data
+
+```{r}
+names(cj_budgets)
+```
+
+## Descriptives
+
+```{r}
+summary(cj_budgets$pop_pct_deep_pov)
+```
+
+## Visualize the distribution of a variable
+
+Call individual variables (columns) in a data frame with \$, like \texttt{USArrests$Murder}
+
+```{r fig.width=6, fig.height=3}
+qplot(cj_budgets$pop_pct_deep_pov)
+```
+
+## Visualize a bivariate relationship
+
+```{r fig.width=6, fig.height=3}
+qplot(pop_blk/pop_tot,
+      pop_pct_deep_pov,
+      data = cj_budgets)
+```
+
+## Fitting a linear model
+```{r}
+model_1<-lm(pop_pct_deep_pov ~ 
+              I(pop_blk/pop_tot),
+            data =cj_budgets)
+```
+
+## Display the model fit
+
+```{r}
+summary(model_1)
+```
+
+
+## Display the model fit (nicer)
+
+```{r}
+library(broom)
+tidy(model_1)
+```
+
+## Visualize the model fit
+
+```{r fig.width=6, fig.height=2.5}
+library(ggplot2)
+ggplot(cj_budgets,
+       aes(x=pop_blk/pop_tot, y=pop_pct_deep_pov))+
+  geom_smooth(method = "lm", 
+              formula = y~x) 
+```
+
+## Visualize the model fit (against the data)
+
+```{r fig.width=6, fig.height=2.5}
+library(ggplot2)
+ggplot(cj_budgets,
+       aes(x=pop_blk/pop_tot, y=pop_pct_deep_pov))+
+  geom_smooth(method = "lm", 
+              formula = y~x) + 
+  geom_point()
+```
+
+## Residuals vs fitted
+
+```{r}
+sd_outcome<-sd(cj_budgets$pop_pct_deep_pov)
+plot_dat<-data.frame(resid = model_1$residuals, yhat = model_1$fitted.values)
+ggplot(plot_dat, aes(y = resid, x = yhat)) + 
+  geom_point() + 
+  geom_hline(yintercept = sd_outcome, lty=2) + geom_hline(yintercept = -sd_outcome, lty=2)
+```
+
+# Can we fit a better model?
+
+# Homework programming prep
+
+## Needed concepts / syntax
+
+HW 1 asks you to apply some basic programming, data wrangling, and data visualization to common linear regression challenges.
+
+- Reading data
+- Loops
+- Lists
+- Matrix and data frame indexing
+- dplyr::mutate
+- ggplot2
+- RMarkdown
+
+## HW tips
+
+- Work together!
+- Check the Wickham text from the syllabus or other online R courses
+- Google it: StackOverflow will become your best friend
+- Accept that this is hard and you will probably struggle with it

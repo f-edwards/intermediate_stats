@@ -1,94 +1,56 @@
 ---
 title: "HW2"
 author: "Frank Edwards"
-date: "1/31/2020"
-output: html_document
+date: "2/1/2019"
+output: pdf_document
 ---
 
-**Due via email by 10AM 2/7 to cs1215@scj.rutgers.edu**
+## Instructions
 
-Please use RMarkdown to complete this homework, and knit it into an html report. You can write your code and responses inline. For help with RMarkdown, see [this guide](https://rmarkdown.rstudio.com/lesson-1.html), or the cheat sheet in RStudio's menus: Help->cheatsheets->R Markdown Cheat Sheet.
+In this assignment, you will write a brief analysis of police staffing levels across US counties using data on tax revenues, police spending, crime, and racial segregation. Be sure to interpret your findings and justify your decisions in manipulating the data. I expect this report to be relatively brief (about 500 - 1000 written words), but the actual document may be many pages with the inclusion of graphics and code output. 
 
-The easy questions are worth a total of 6 points. Hard questions are worth a total of 4 points.
+- Use the data hw_2_data.csv found in intermediate_stats/data
+- Your outcome for this analysis is police officer staffing levels
+- Transform the data appropriately to create predictor variables
+-  Remember that many of these measures should be normalized for population size to make them comparable. Other transformations may also be in order
+- Explore and visualize your outcome and predictors using table(), hist(), and plot() as you see fit
+- Present your writeup as either a .html or .pdf document using RMarkdown. Your code should be in-line with your narrative alternating between code chunks and text. Use the included section headers.
+- Delete the instructions and codebook before submitting the assignment. 
+- Note that unless you have a LaTeX installation, you will need to change output:pdf_document to output:html_document in the RMarkdown YAML header at the beginning of your Rmd file.
 
-*Note:* You may use either base R code (as in the book) or tidyverse code (as in my slides and lab).
+## Codebook
 
-## Easy
+All variables are at the county-level and include both local and county governments for 2012
 
-These problems use the samples from the posterior distribution for the globe tossing example.
-This code will give you a specific set of samples, so that you can check your answers exactly.
+- fips: 5 digit county fips code
+- exp_police: expenditures on police in dollars
+- pop_tot: total population 
+- officers_pc: full-time sworn police officers
+- rev_prop_tax: property tax revenues in dollars
+- violent.crime: violent crimes (count)
+- dissim_bw: dissimilarity index of Black/White segregation
+- dissim_wl: dissimilarity index of Latinx/White segregation
 
-```{r}
-p_grid <- seq( from=0 , to=1 , length.out=1000 )
-prior <- rep( 1 , 1000 )
-likelihood <- dbinom( 6 , size=9 , prob=p_grid )
-posterior <- likelihood * prior
-posterior <- posterior / sum(posterior)
-# set.seed() sets the random seed your computer uses for sampling, guaranteeing the same results
-set.seed(100) 
-samples <- sample( p_grid , prob=posterior , size=1e4 , replace=TRUE )
-```
+## Construction of measures
 
-Use the values in samples to answer the questions that follow.
+*Summarise your decisions and display code used to transform data into usable measures for analysis*
 
-**3E1.** How much posterior probability lies below p = 0.2?
+## Exploratory analysis of officer staffing across counties
 
-**3E2.** How much posterior probability lies above p = 0.8?
+*Provide a description of your officer staffing level variable* 
 
-**3E3.** How much posterior probability lies between p = 0.2 and p = 0.8?
+## Exploratory analysis of focal predictors
 
-**3E4.** 20% of the posterior probability lies below which value of p?
+*Provide a description of one or more variables you will use as predictors in your regression model*
 
-**3E5.** 20% of the posterior probability lies above which value of p?
+## Bivariate relationships between officers staffing levels and predictors
 
-**3E6.** Which values of p contain 66% of the posterior probability, assuming equal posterior probability both below and above the interval?
+*Provide description of bivariate relationships between your variables*
 
-## Hard
+## Regression model
 
-**Introduction.** The practice problems here all use the data below. These data indicate the gender (male=1, female=0) of officially reported first and second born children in 100 two-child families.
+*Estimate and describe the findings of a regression model with your officer staffing variable as the outcome. Predict officer staffing levels for an interesting counterfactual case*
 
-```{r message = F}
-library(rethinking)
-data(homeworkch3)
-birth1
-birth2
-```
+## Theoretical interpretation of results
 
-So for example, the first family in the data reported a boy (1) and then a girl (0). The second family reported a girl (0) and then a boy (1).
-
-Use these vectors as data. So for example to compute the total number of boys born across all of these births, you could use:
-
-```{r}
-sum(birth1) + sum(birth2)
-```
-
-**H1:** Using grid approximation, compute the posterior distribution for the probability of a birth being a boy. Assume a uniform prior probability. Which parameter value maximizes the posterior probability?
-
-```{r}
-p_grid <- seq( from=0 , to=1 , length.out=1000 )
-prior <- rep( 1 , 1000 )
-likelihood <- dbinom(sum(birth1) + sum(birth2) , size=length(birth1) + length(birth2) , prob=p_grid )
-posterior <- likelihood * prior
-posterior <- posterior / sum(posterior)
-# set.seed() sets the random seed your computer uses for sampling, guaranteeing the same results
-set.seed(100) 
-samples <- sample( p_grid , prob=posterior , size=1e4 , replace=TRUE )
-```
-
-**H2:** Using the sample function, draw 10,000 random parameter values from the posterior distribution you calculated above. Use these samples to estimate the 50%, 89%, and 97% central percentile intervals.
-
-**H3:** Use rbinom to simulate 10,000 replicates of 200 births. You should end up with 10,000 numbers, each one a count of boys out of 200 births. Compare the distribution of predicted numbers of boys to the actual count in the data (111 boys out of 200 births). There are many good ways to visualize the simulations, but the dens command (part of the rethinking package) is probably the easiest way in this case. Does it look like the model fits the data well? That is, does the distribution of predictions include the actual observation as a central, likely outcome?
-
-```{r}
-sims<-rbinom(1e4, 200, prob = samples)
-```
-
-**H4.** Now compare 10,000 counts of boys from 100 simulated first borns only to the number of boys in the first births, birth1 . How does the model look in this light?
-
-
-**H5.** The model assumes that sex of first and second births are independent. To check this assumption, focus now on second births that followed female first borns. Compare 10,000 simulated counts of boys to only those second births that followed girls. To do this correctly, you need to count the number of first borns who were girls and simulate that many births, 10,000 times. Compare the counts of boys in your simulations to the actual observed count of boys following girls. How does the model look in this light? Any guesses what is going on in these data?
-
-```{r}
-sims<-rbinom()
-```
-
+*Provide a brief (2-3 sentences) theoretical interpretation of the meaning of your results*

@@ -1,173 +1,175 @@
 ---
-title: "HW7"
+title: "HW7 - Categorical and Count data"
 author: "Frank Edwards"
-date: "3/27/2020"
+date: "4/8/2019"
 output: html_document
 ---
 
-For this homework, use titanic.csv in ./hw/data/titanic.csv
-
-The data contains the following variables:
-
-- Survived: a binary indicating survival
-- Pclass: a categorical indicating passenger class (first being the most expensive)
-- Name: the passenger's name
-- Sex: the passenger's sex (character)
-- Age: the passenger's age
-- Siblings/Spouses Aboard: an integer with how many sibs/spouses a passenger had aboard
-- Parents/Children Aboard: an integer with how many parents or children a passenger had aboard
-- Fare: The cost of the passenger's ticket
-
-For this homework, you will provide an analysis of why some passengers died on the Titanic while others survived. Use any of the included measures, and specify any model that you think is appropriate. Provide an appropriate description and exploration of the data, an explanation of your theoretical approach (DAGs may be helpful for thinking about causation), a description and justification for your model, and summaries and visualizations of any statistical models estimated.
-
-Based on your empirical inspection of your model, you may choose to revise your initial modeling decisions. Feel free to use the compare() function for this purpose. Remember to add the argument log_lik = TRUE to ulam() if you want to use compare().
-
-Provide me with adequate written detail to follow your reasoning, and enough information to support your claims. Conclude with a theoretically motivated and empirically informed statement about who was likely to die and who was likely to survive on the Titanic. 
-
-```{r message = F, warning = F}
-library(rethinking)
+```{r echo = FALSE, message = FALSE}
 library(tidyverse)
-
-titanic<-read_csv("./data/titanic.csv")
+fe<-read_csv("./data/fe_division_rural.csv")
 ```
 
-I suggest that the saying "women and children first" applied to the Titani's evacuation. Children and women must have been most likely to survive. But I'm also a bit of a Marxist, and know that the rich were likely to try to save their own hides before letting any 3rd class passengers off. So I suggest that children and women were more likely to survive than men, but also that women and children in first class were more likely to survive than others. 
+DUE 5/26, 10AM
 
-This suggests an interactive model. I'll use two variables for age: a binary (child/adult), and a continuous age measure. I suggest that the probability of survival decreases with age in a linear manner, but that kids are more likely to survive than adults. Sex can remain binary. I'll interact sex and child status with passenger class in my preferred model, but I'll compare it to a model without the interaction to check whether the interaction improves fit.
+This assignment uses aggregated data from Fatal Encounters.
 
-I define the simpler model for the survival $s$ of passenger $i$ as:
+This data contains the following measures:
 
-\[s_i \sim Binomial(1, p)\]
-\[logit(p) = \alpha[sex]_i + \gamma[child]_i + \beta \times age_i\]
-\[\alpha \sim Normal(0, 2)\]
-\[\gamma \sim Normal(0, 2)\]
-\[\beta \sim Normal(0, 1)\]
+- fips: a 5-digit FIPS county code
+- state: a two-letter state abbreviation
+- ur.code: a six category urban-rural classification from the CDC
+- division: a nine category Census regional division classificaiton
+- black.men, white.men, latino.men: adult male population by race/ethnicity
+- tot.men: total adult male population
+- d.asian, d.black, d.latino, d.other, d.white, d.na, d.total: men killed by police by race/ethnicity
 
-I use weakly informative priors for the intercept and slope parameters ($\alpha, \gamma, \beta$) that allow a broad range on the probability scale (try logistic(-4), logistic(4) to see how broad a Normal(0,2) is on the inverse-logit scale).
+## Section 1: Categorical models
 
-I fit this relatively simple model using MCMC
-
-```{r message = F}
-titanic_slim<-titanic %>% 
-  mutate(sex = ifelse(Sex == "female", 1, 2),
-         child = ifelse(Age<18, 1, 2)) %>% 
-  select(Survived, Pclass, sex, child, Age)
-```
-
-```{r results = "hide", cache = T}
-m1<-ulam(alist(
-  Survived ~ dbinom(1, p),
-  logit(p) <- a[sex] + g[child] + b * Age,
-  a[sex] ~ dnorm(0,1),
-  g[child] ~ dnorm(0,1),
-  b ~ dnorm(0,0.5)
-), data = titanic_slim, chains = 4, cores = 2,
-log_lik = T)
-```
-
-I next estimate a model that adjusts for passenger class, with the expectation that first class passengers will have survived more often than second or third class passengers.
-
-This model is:
-
-\[s_i \sim Binomial(1, p)\]
-\[logit(p) = \alpha[sex]_i + \gamma[child]_i + \beta_1 \times age_i + \beta_2 \times class_i\]
-\[\alpha \sim Normal(0, 2)\]
-\[\gamma \sim Normal(0, 2)\]
-\[\beta \sim Normal(0, 1)\]
-
-```{r results = "hide", cache = T, echo = F}
-m2<-ulam(alist(
-  Survived ~ dbinom(1, p),
-  logit(p) <- a[sex] + g[child] + b1 * Age + 
-    b2 * Pclass,
-  a[sex] ~ dnorm(0,1),
-  g[child] ~ dnorm(0,1),
-  b1 ~ dnorm(0,0.5),  
-  b2 ~ dnorm(0,0.5)
-), data = titanic_slim, chains = 4, cores = 2,
-log_lik = T)
-```
-
-The third model includes a passenger class predictor and interaction of passenger class with age and sex. I suggest that 3rd class children and women may not have been more likely to survive than men, but first class women and children may have been more likely to survive.
-
-This model is:
-
-\[s_i \sim Binomial(1, p)\]
-\[logit(p) = \alpha[sex]_i + \gamma[child]_i + \beta_1 \times age_i  + \beta_2[sex] \times class_i + \beta_3[child] \times class_i\]
-\[\alpha \sim Normal(0, 2)\]
-\[\gamma \sim Normal(0, 2)\]
-\[\beta_1 \sim Normal(0, 1)\]
-\[\beta_2 \sim Normal(0, 1)\]
-\[\beta_3 \sim Normal(0, 1)\]
-
-```{r results = "hide", cache = T}
-m3<-ulam(alist(
-  Survived ~ dbinom(1, p),
-  logit(p) <- a[sex] + g[child] + b1 * Age + 
-    b2[sex] * Pclass + b3[child] * Pclass,
-  a[sex] ~ dnorm(0,1),
-  g[child] ~ dnorm(0,1),
-  b1 ~ dnorm(0,0.5),  
-  b2[sex] ~ dnorm(0,0.5),
-  b3[child] ~ dnorm(0,0.5)
-), data = titanic_slim, chains = 4, cores = 2,
-log_lik = T)
-```
-
-While I have theoretical reasons to prefer model 3, I'd like to confirm that it fits the data better than the others. I compare the WAIC scores across all 3 models to see if model 3 performs more effectively on expected prediciton that model 2 or 1.
+1. Explore the distribution of adult male population across county metro types (ur.code).
 
 ```{r}
-## for nicer markdown tables, use pander
-library(pander)
-compare_table<-round(compare(m3, m2, m1),2)
-pander(compare_table)
+ggplot(fe, 
+       aes(x = tot.men)) + 
+  geom_histogram() + 
+  facet_wrap(~ur.code, scales = "free")
 ```
 
-Now I visualize the relationship between sex, age, child status, and passenger class. I create scenarios for all possible values.
+2. Explore how this distribution varies by census division
 
 ```{r}
-Pclass<-1:3
-sex<-1:2
-Age<-0:99
-### expand_grid makes a tibble with all possible combination of 
-### the included variables
-sim_dat<-expand_grid(Pclass, sex, Age) %>% 
-  mutate(child = ifelse(Age<18, 1, 2)) # kids are under 18
-### draw samples of the posterior p for all possible values
-post_p<-link(m3, sim_dat)
-### attach mean, upper, lower PI for p
-sim_dat<-sim_dat %>% 
-  mutate(p_mn = apply(post_p, 2, mean),
-         p_lwr = apply(post_p, 2, PI)[1,],
-         p_upr = apply(post_p, 2, PI)[2,]) 
-
-### recode the variables for plotting
-sim_dat<-sim_dat %>%
-  mutate(
-    Pclass = case_when(
-      Pclass == 1 ~ "First class",
-      Pclass == 2 ~ "Second class",
-      Pclass == 3 ~ "Third class"),
-    sex = case_when(
-      sex== 1 ~ "female",
-      sex== 2 ~ "male"
-    )
-  )
-## plot it
-ggplot(sim_dat, 
-       aes(y = p_mn, 
-           ymin = p_lwr, 
-           ymax = p_upr,
-           x = Age, 
-           color = Pclass, 
-           fill = Pclass)) + 
-  geom_line() + 
-  geom_ribbon(alpha = 0.5) + 
-  facet_wrap(~sex) + 
-  labs(y = "Posterior survival probability", 
-       fill = "", 
-       color = "") + 
-  theme_bw()
+ggplot(fe, 
+       aes(x = tot.men)) + 
+  geom_histogram() + 
+  scale_x_log10() + 
+  facet_wrap(~division, scales = "free")
 ```
 
-So in general, women were more likely to survive than men, and childen more likely to survive than adults. But passenger class made a huge difference in survival odds. First class men and boys were about as likely to survive as theird class women and girls. Very few third class men survived. There is also a clear dropoff in survival probability for males after age 18, when that drop is less pronounced for girls.
+3. Estimate a multinomial regression model with ur.code as the outcome. See if you can predict a county's metropolitan type based on variables in the dataset. Explain your modeling choices.
+
+```{r}
+library(nnet)
+
+m1<-multinom(ur.code ~ log(tot.men),
+             data = fe)
+
+m2<-multinom(ur.code ~ log(tot.men) + division,
+             data = fe)
+
+fake_data<-data.frame(tot.men = seq(from = 1, to = 1e6, by = 10))
+
+preds<-as.data.frame(predict(m1, fake_data, "probs"))
+
+preds<-preds%>%
+  gather(key = ur.code, value = probs)
+
+preds<-preds%>%
+  bind_cols(tot.men = rep(fake_data$tot.men, 6))
+
+ggplot(preds,
+       aes(x = tot.men, y = probs,
+           color = ur.code)) +
+  geom_line()
+```
+
+4. Interpret your model.
+
+Population is a great predictor of county metro type. The model has a hard time distinguishing between medium metros and large fringe metros, but otherwise, appears to make clear classifications based on population size alone. Adding division doesn't help much. Maybe adding ethnic population composition would help.
+
+## Section 2: Count models
+
+Use the data frame fe_long, created from included code in the .Rmd file that reshapes the data from wide to long. 
+
+```{r echo = FALSE, message = FALSE}
+#First, transform the data using this code
+fe_long_pop<-fe%>%
+  select(fips, state, ur.code, division, black.men, white.men, latino.men)%>%
+  rename(black = black.men, white = white.men, latino = latino.men)%>%
+  gather(key = "race", value = "pop", -fips, -state, -ur.code, -division)
+
+fe_long<-fe%>%
+  select(fips, state, ur.code, division, d.black, d.latino, d.white)%>%
+  rename(black = d.black, latino = d.latino, white = d.white)%>%
+  gather(key = "race", value = "deaths", -fips, -state, -ur.code, -division)%>%
+  left_join(fe_long_pop)
+```
+
+1. Explore counts of death by division
+
+```{r}
+fe_long_total<-fe_long%>%
+  group_by(division)%>%
+  summarise(deaths = sum(deaths),
+            death.rt = sum(deaths) / sum(pop) * 1e5)
+
+fe_long_total
+```
+
+
+2. Explore counts of death by ur.code
+
+```{r}
+fe_long_total<-fe_long%>%
+  group_by(ur.code)%>%
+  summarise(deaths = sum(deaths),
+            death.rt = sum(deaths) / sum(pop) * 1e5)
+
+fe_long_total
+```
+
+3. Explore counts of death by race
+
+```{r}
+fe_long_total<-fe_long%>%
+  group_by(race)%>%
+  summarise(deaths = sum(deaths),
+            death.rt = sum(deaths) / sum(pop) * 1e5)
+
+fe_long_total
+```
+
+4. Include at least one additional data visual that you find informative.
+
+```{r}
+fe_long_total<-fe_long%>%
+  group_by(race, ur.code, division)%>%
+  summarise(deaths = sum(deaths),
+            death.rt = sum(deaths) / sum(pop) * 1e5)
+
+ggplot(fe_long_total, aes(x = deaths, y = ur.code, color = race, group = race)) + 
+  geom_point() + 
+  facet_wrap(~division)
+```
+
+5. Provide an analysis of whether race/ethnicity correlates with rates at which men are killed by police. Include any regression predictors you find appropriate. Use any model you find appropriate. Explain your choices clearly and interpret your results.
+
+```{r}
+m1<-glm(deaths ~ race + 
+          offset(I(log(pop+1))), 
+                               data = fe_long)
+
+m2<-glm(deaths ~ race + ur.code + 
+          offset(I(log(pop+1))), 
+                               data = fe_long)
+
+m3<-glm(deaths ~ race + ur.code + division + 
+          offset(I(log(pop+1))), 
+                               data = fe_long)
+
+m4<-glm(deaths ~ race * (ur.code + division) + 
+          offset(I(log(pop+1))), 
+                               data = fe_long)
+
+BIC(m1);BIC(m2);BIC(m3);BIC(m4)
+
+library(broom)
+m1_t<-tidy(m1)
+#black risk
+exp(m1_t$estimate[1]) * 1e5
+#latino risk
+exp(m1_t$estimate[1] + m1_t$estimate[2]) * 1e5
+#white risk
+exp(m1_t$estimate[1] + m1_t$estimate[3]) * 1e5
+
+```
+

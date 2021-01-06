@@ -1,60 +1,58 @@
 ---
-title: "HW3"
+title: "HW 3"
 author: "Frank Edwards"
-date: "2/7/2020"
-output: html_document
+date: "2/8/2019"
+output: pdf_document
 ---
 
-**Due via email by 10AM 2/14 to cs1215@scj.rutgers.edu**
+*Required reading*: 
 
-```{r setup, include=FALSE}
-library(tidyverse)
-library(rethinking)
+Healy, Kieran. "Data Visualization: A Practical Introduction" chapters 1 and 3. 
+
+Available for free through a pre-print of the book:
+
+http://socviz.co/lookatdata.html#lookatdata 
+
+and 
+
+http://socviz.co/makeplot.html#makeplot
+
+For this homework, you will use data on national life expectancies from the gapminder package.
+
+You can install the package with the following command
+
+```{r eval = FALSE}
+install.packages("gapminder")
 ```
 
-The easy questions are worth a total of six points. The hard questions are worth a total of 4 points. You can earn a total of 10 points on this homework.
-
-# Easy
-
-**E1:** In the model definition below, which line is the likelihood?
-
-1. $y_i \sim Normal(\mu, \sigma)$
-2. $\mu \sim Normal(0, 10)$
-3. $\sigma \sim Uniform(0,10)$
-
-**E2:** In the model definition above, how many parameters are in the posterior distribution?
-
-**E3:** In the model definition below, which line is the linear model?
-
-1. $y_i \sim Normal(\mu, \sigma)$
-2. $\mu_i = \alpha + \beta x_i$
-3. $\alpha \sim Normal(0,10)$
-3. $\beta \sim Normal(0,10)$
-3. $\sigma \sim Uniform(0,10)$
-
-**E4:** In the model definition above, how many parameters are in the posterior distribution?
-
-# Hard
-
-These questions use the mtcars data built into R 
+And load the data with the following command
 
 ```{r}
-data(mtcars)
-head(mtcars)
+library(gapminder)
 ```
 
-**H1:** A car's fuel efficiency (mpg) is probably related to it's weight (wt). Using quap, estimate a linear regression with mpg as the outcome, and weight as a predictor. Use the following model specification, where $y$ is mpg and $x$ is weight:
+**You must use ggplot for all graphics on this assignment**
 
-\[y_i \sim Normal(\mu, \sigma)\]
-\[\mu = \alpha + \beta x_i\]
-\[\alpha \sim Normal(0,10)\]
-\[\beta \sim Normal(0,10)\]
-\[\sigma \sim Uniform(0,10)\]
+## Question 1
 
-Describe the posterior distribution (hint: summary() provides basic information on a quap object, extract.samples() provides draws of each parameter from the posterior).
+1. Provide a histogram of life expectancy (lifeExp). Interpret this histogram.
+2. Provide a histogram of GDP per capita (gdpPercap). Interpret this histogram.
+3. Provide a scatterplot of life expectancy by GDP per capita
+4. Transform GDP per capita using a log scale either manually or using scale_x_log10() 
+5. Interpret the relationship between life expectancy and gdp per capita
 
-**H2:** Use prior predictive simulation to generate predicted fuel efficiencies for 10,000 cars from the prior. Visualize the distribution of these predicted car fuel efficiencies with a density plot or histogram. Are these sensible priors?
+## Question 2
 
-**H3:** Revise your priors such that prior predictions have reasonable bounds.
+1. Using your scatterplot from 1.5., add a color aesthetic to your plot for continent. 
+2. Now, replace your color aesthetic with a shape aesthetic.
+3. Which plot is easier to interpret, 2.1 or 2.2?
 
-**H4:** Estimate the regression model in H1 with these new priors. Compare the posterior distributions from H1 and H5. What differences do you see?
+## Question 3
+
+1. Estimate a regression equation for the relationship between life expectancy, GDP per capita, and continent.
+2. Provide a display of the estimated model using broom::tidy()
+3. Provide a visual that summarizes your estimated relationship
+
+# Question 4
+
+If you have already obtained your data for the final project, provide three interesting and/or useful data visuals of your dataset. If you have not obtained the data yet, you may complete this question next week.

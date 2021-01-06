@@ -1,83 +1,50 @@
 ---
-title: "HWz"
+title: "HW 4"
 author: "Frank Edwards"
-date: "2/14/2020"
+date: "2/22/2019"
 output: html_document
 ---
 
-**Due via email by 10AM 2/21 to cs1215@scj.rutgers.edu**
+Use the gapminder data -- library(gapminder) -- for this question
 
-```{r setup, include=FALSE}
+```{r}
+library(gapminder)
 library(tidyverse)
-library(rethinking)
 ```
 
-These questions use the mtcars data built into R 
+1. Create an annual global measure of GDP Per Capita using group_by and summarize
 
 ```{r}
-data(mtcars)
-head(mtcars)
-d<-mtcars %>% 
-  mutate(M = scale(mpg),
-         W = scale(wt),
-         H = scale(hp))
+global<-gapminder%>%
+  group_by(year)%>%
+  summarise(mean_gdpPercap = mean(gdpPercap))
 ```
 
-**1:** A car's fuel efficiency is probably affected by more than just its weight. The energy output of the engine also likely plays a role. Propose a multiple linear regression model for fuel efficiency (mpg) that includes both weight (wt) and horsepower (hp). Describe the model using the typical format we've used in class (likelihood, linear function, priors)
-
-\[M \sim N(\mu, \sigma)\]
-\[\mu_i = \alpha + \beta_W \times W_i + \beta_H \times H_i\]
-\[\alpha \sim N(0, 0.2)\]
-\[\beta_W \sim N(0, 0.5)\]
-\[\beta_H \sim N(0, 0.5)\]
-\[\sigma \sim Exp(1)\]
-
-
-**2:** Inspect your priors using prior predictive simulation. Are the priors reasonable? Revise if needed.
+2. Attach this new measure to the gapminder data
 
 ```{r}
-### evaluate the prior at W = 1, H = 1
-W<-1
-H<-1
-plot_dat<-data.frame(a= rnorm(1000, 0, 0.2),
-                     bw = rnorm(1000, 0, 0.5),
-                     bh = rnorm(1000, 0, 0.5)) 
-
-plot_dat<-plot_dat %>% 
-  mutate(M = a + bw*W + bh*H)
-
-ggplot(plot_dat, aes(x = M)) + 
-  geom_density()
+gapminder_merge<-gapminder%>%
+  left_join(global)
 ```
 
-
-**3:** Compute the posterior using quap(). Briefly summarize your findings
+3. Create a measure that is equal to the ratio of a country-year's GDP per capita to this global average.
 
 ```{r}
-m0<-quap(
-  flist = alist(
-    M ~ dnorm(mu, sigma),
-    mu<-a + bw * W ,
-    a ~ dnorm(0, 0.5),
-    bw ~ dnorm(0, 0.2),
-    sigma ~ dexp(1)
-  ),
-  data = d
-)
-
-m1<-quap(
-  flist = alist(
-    M ~ dnorm(mu, sigma),
-    mu<-a + bw * W + bh*H,
-    a ~ dnorm(0, 0.5),
-    bw ~ dnorm(0, 0.2),
-    bh ~ dnorm(0, 0.2),
-    sigma ~ dexp(1)
-  ),
-  data = d
-)
-
-coeftab(m0, m1)
+gapminder_merge<-gapminder_merge%>%
+  mutate(gdp_ratio = gdpPercap / mean_gdpPercap)
 ```
 
-**4:** Compare results to those you estimated for HW3, a model that did not include horsepower. What differences do you notice?
+
+4. Visualize the how this ratio of national GDP to global GDP variable varies across continents and over time. You may need to summarize the data first.
+
+```{r}
+gapminder_merge%>%
+  group_by(year, continent)%>%
+  summarise(y = mean(gdp_ratio))%>%
+  ggplot(aes(x = year, y=y,
+             color = continent,
+             fill = continent)) + 
+  geom_line() + 
+  ylab("Continent average ratio of GDP to global GPD")
+```
+

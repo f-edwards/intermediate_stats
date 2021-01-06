@@ -1,28 +1,13 @@
 ---
-title: "HWz"
+title: "HW 4"
 author: "Frank Edwards"
-date: "2/14/2020"
+date: "2/22/2019"
 output: html_document
 ---
 
-**Due via email by 10AM 2/21 to cs1215@scj.rutgers.edu**
+Use the gapminder data -- library(gapminder) -- for this question
 
-```{r setup, include=FALSE}
-library(tidyverse)
-library(rethinking)
-```
-
-These questions use the mtcars data built into R 
-
-```{r}
-data(mtcars)
-head(mtcars)
-```
-
-**1:** A car's fuel efficiency is probably affected by more than just its weight. The energy output of the engine also likely plays a role. Propose a multiple linear regression model for fuel efficiency (mpg) that includes both weight (wt) and horsepower (hp). Describe the model using the typical format we've used in class (likelihood, linear function, priors)
-
-**2:** Inspect your priors using prior predictive simulation. Are the priors reasonable? Revise if needed.
-
-**3:** Compute the posterior using quap(). Briefly summarize your findings,
-
-**4:** Compare results to those you estimated for HW3, a model that did not include horsepower. What differences do you notice?
+1. Create an annual global measure of GDP Per Capita using group_by and summarize
+2. Attach this new measure to the gapminder data
+3. Create a measure that is equal to the ratio of a country-year's GDP per capita to this global average.
+4. Visualize the how this ratio of national GDP to global GDP variable varies across continents and over time. You may need to summarize the data first.

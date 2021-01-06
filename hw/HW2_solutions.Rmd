@@ -1,145 +1,102 @@
 ---
 title: "HW2"
 author: "Frank Edwards"
-date: "1/31/2020"
-output: html_document
+date: "2/1/2019"
+output: pdf_document
 ---
 
-**Due via email by 10AM 2/7 to cs1215@scj.rutgers.edu**
-
-Please use RMarkdown to complete this homework, and knit it into an html report. You can write your code and responses inline. For help with RMarkdown, see [this guide](https://rmarkdown.rstudio.com/lesson-1.html), or the cheat sheet in RStudio's menus: Help->cheatsheets->R Markdown Cheat Sheet.
-
-The easy questions are worth a total of 6 points. Hard questions are worth a total of 4 points.
-
-*Note:* You may use either base R code (as in the book) or tidyverse code (as in my slides and lab).
-
-## Easy
-
-These problems use thesamples from the posterior distribution for the globe tossing example.
-This code will give you a specific set of samples, so that you can check your answers exactly.
-
-```{r}
-p_grid <- seq( from=0 , to=1 , length.out=1000 )
-prior <- rep( 1 , 1000 )
-likelihood <- dbinom( 6 , size=9 , prob=p_grid )
-posterior <- likelihood * prior
-posterior <- posterior / sum(posterior)
-# set.seed() sets the random seed your computer uses for sampling, guaranteeing the same results
-set.seed(100) 
-samples <- sample(p_grid , prob=posterior , size=1e4 , replace=TRUE )
-```
-
-Use the values in samples to answer the questions that follow.
-
-**3E1.** How much posterior probability lies below p = 0.2?
-
-```{r}
+```{r setup, echo = FALSE, message = FALSE}
 library(tidyverse)
-samples<-data.frame(p = samples)
-samples %>% 
-  filter(p<0.2) %>% 
-  summarise(pct = n()/nrow(samples))
+dat<-read_csv("./data/hw_2_data.csv")
 ```
 
-**3E2.** How much posterior probability lies above p = 0.8?
+## Construction of measures
+
+The focal outcome of my analysis is police staffing per 1,000 persons. I suggest police staffing can be partially explained by two predictors: property tax revenue per capita and racial segregation.
+
+To construct a measure of police staffing, I divide a count of all officers by the county population, then multiply by 1,000 to provide a sensible scale for the measure. I measure property tax revenue as a per capita rate to ensure that measures are comparable across places with differing populations. I leave indices of dissimilarity untransformed.
 
 ```{r}
-samples %>% 
-  filter(p>0.8) %>% 
-  summarise(pct = n()/nrow(samples))
+dat<-dat%>%
+  mutate(officers_pc = ft_sworn / pop_tot * 1000,
+         prop_tax_pc = rev_prop_tax / pop_tot)
 ```
 
-**3E3.** How much posterior probability lies between p = 0.2 and p = 0.8?
+## Exploratory analysis of officer staffing across counties
+
+I provide plots on both the original and log scales. Because the variable has long left-tails, driven by a small number of counties with very high staffing levels, a log transformation more clearly reveals variation across counties. 
 
 ```{r}
-samples %>% 
-  filter(p<0.8 & p>0.2) %>% 
-  summarise(pct = n()/nrow(samples))
+hist(dat$officers_pc)
 ```
-
-**3E4.** 20% of the posterior probability lies below which value of p?
 
 ```{r}
-quantile(samples$p, 0.2)
+hist(log(dat$officers_pc))
 ```
 
-**3E5.** 20% of the posterior probability lies above which value of p?
+The mean county has about `r mean(dat$officers_pc)` officers per 1,000 people. The histogram shows that the modal county has about $e^{-0.5}$, or `r exp(-0.5)` officers per 1,000. The bulk of the distribution falls below this modal value. A smaller set of counties have very high staffing levels. 
+
+## Exploratory analysis of focal predictors
+
+Again, a standard histogram is not especially useful in this context, as the variable has exceptionally long tails. A small number of counties have very high per capita tax revenues, while nearly all fall below $2000 per person. 
 
 ```{r}
-quantile(samples$p, 0.8)
+hist(dat$prop_tax_pc)
 ```
-
-**3E6.** Which values of p contain 66% of the posterior probability, assuming equal posterior probability both below and above the interval?
 
 ```{r}
-quantile(samples$p, c(0.165, 0.835))
+hist(log(dat$prop_tax_pc))
 ```
 
-## Hard
+The log(property tax) histogram shows the distribution of counties more clearly, as it compresses extremely high and low values, emphasizing the center of the distribution. The modal county has property tax revenues per capita of about $e^6$, or `r exp(6)`. The average county has revenues of `r mean(dat$prop_tax_pc)`.
 
-**Introduction.** The practice problems here all use the data below. These data indicate the gender (male=1, female=0) of officially reported first and second born children in 100 two-child families.
+## Bivariate relationships between officers staffing levels and predictors
 
-*Hint:* Sum the total number of male births across first and second, and the total number of observed births for a binomial likelihood of the observed data. The code from the Easy questions can be re-tooled for this purpose.
+Below, I plot the log of property taxes against police officer staffing levels. We can see that there appears to be a weak positive association between tax revenues and officer staffing levels. These (untransformed) measures are correlated at $r=$ `r cor(dat$prop_tax_pc, dat$officers_pc)`
 
 ```{r}
-library(rethinking)
-library(tidyverse)
-data(homeworkch3)
-births<-tibble(birth1, birth2)
-head(births)
+plot(log(dat$prop_tax_pc), log(dat$officers_pc))
 ```
+## Regression model
 
-**H1:** Using grid approximation, compute the posterior distribution for the probability of a birth being a boy. Assume a uniform prior probability. Which parameter value maximizes the posterior probability?
+I model officer staffing levels as a funciton of property taxes and racial segregation. I suggest that places with higher tax revenues and more segregation will have more police per capita. To improve model fit, I log transform the per capita measures.
 
 ```{r}
-n_births<-length(birth1) + length(birth2)
-n_boys<-sum(birth1) + sum(birth2)
-p_grid <- seq(from=0 , to=1 , length.out=1000)
-prior <- rep(1 , 1000)
-likelihood <- dbinom(n_boys, size=n_births, prob=p_grid )
-posterior <- likelihood * prior
-posterior <- posterior / sum(posterior)
-# set.seed() sets the random seed your computer uses for sampling, guaranteeing the same results
-set.seed(100) 
-samples <- sample( p_grid , prob=posterior , size=1e4 , replace=TRUE)
+m1<-lm(log(officers_pc) ~ log(prop_tax_pc) + dissim_bw, 
+       data = dat)
+library(broom)
+tidy(m1)
 ```
-
-**H2:** Using the sample function, draw 10,000 random parameter values from the posterior distribution you calculated above. Use these samples to estimate the 50%, 89%, and 97% compatability intervals (central).
 
 ```{r}
-PI(samples, 0.5)
-PI(samples, 0.89)
-PI(samples, 0.97)
+fake_data<-data.frame("prop_tax_pc" = quantile(dat$prop_tax_pc, 0.95),
+                      "dissim_bw" = quantile(dat$dissim_bw, 0.95))
+
+yhat<-predict(m1, newdata = fake_data)
 ```
 
-**H3:** Use rbinom to simulate 10,000 replicates of 200 births. You should end up with 10,000 numbers, each one a count of boys out of 200 births. Compare the distribution of predicted numbers of boys to the actual count in the data (111 boys out of 200 births). There are many good ways to visualize the simulations, but the dens command (part of the rethinking package) is probably the easiest way in this case. Does it look like the model fits the data well? That is, does the distribution of predictions include the actual observation as a central, likely outcome?
+This model suggests that a county with high property tax revenue (at the 95th percentile) and a county with high segregation (at the 95th percentile) will have `r exp(yhat)` police officers per capita. 
 
 ```{r}
-preds<-rbinom(1e4, 200, prob = samples)
-plot_dat<-data.frame(x = preds)
-ggplot(plot_dat, aes(x=x)) + 
-  geom_density() + 
-  geom_vline(xintercept = n_boys)
+yhats<-predict(m1, newdata = dat)
+plot(log(dat$officers_pc), yhats)
+abline(0,1)
 ```
 
-**H4:** Now compare 10,000 counts of boys from 100 simulated first borns only to the number of boys in the first births, birth1. How does the model look in this light?
+The observed vs predicted plot suggests some major problems with model fit. The model underpredicts many counties in favor of fitting well for a subset of counties with relatively small officer_pc values. This is likely a function of the log transformation, ommitted variables, or a poor fit for the normal likelihood model.
 
 ```{r}
-preds<-rbinom(1e4, 100, prob = samples)
-plot_dat<-data.frame(x = preds)
-ggplot(plot_dat, aes(x=x)) + 
-  geom_density() + 
-  geom_vline(xintercept = sum(birth1))
+m2<-lm((officers_pc)~ prop_tax_pc + dissim_bw, 
+       data = dat)
+library(broom)
+tidy(m2)
+
+plot(dat$officers_pc, m2$fitted.values)
+abline(0,1)
 ```
 
-**H5:** The model assumes that sex of first and second births are independent. To check this assumption, focus now on second births that followed female first borns. Compare 10,000 simulated counts of boys to only those second births that followed girls. To do this correctly, you need to count the number of first borns who were girls and simulate that many births, 10,000 times. Compare the counts of boys in your simulations to the actual observed count of boys following girls. How does the model look in this light? Any guesses what is going on in these data?
+Here too, we see a very poor model fit. We should consider adding additional predictors and/or seeking another kind of model (hint: Poisson is a good candidate!).
 
-```{r}
-births_after_girls<-birth2[birth1==0]
-preds<-rbinom(1e4, length(births_after_girls), prob = samples)
-plot_dat<-data.frame(x = preds)
-ggplot(plot_dat, aes(x=x)) + 
-  geom_density() + 
-  geom_vline(xintercept = sum(births_after_girls))
-```
+## Theoretical interpretation of results
 
+Something brilliant about criminology here.

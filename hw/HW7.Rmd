@@ -1,25 +1,56 @@
 ---
-title: "HW7"
+title: "HW7 - Categorical and Count data"
 author: "Frank Edwards"
-date: "3/27/2020"
+date: "4/8/2019"
 output: html_document
 ---
 
-For this homework, use titanic.csv in ./hw/data/titanic.csv
+```{r echo = FALSE, message = FALSE}
+library(tidyverse)
+fe<-read_csv("./data/fe_division_rural.csv")
+```
 
-The data contains the following variables:
+DUE 5/26, 10AM
 
-- Survived: a binary indicating survival
-- Pclass: a categorical indicating passenger class (first being the most expensive)
-- Name: the passenger's name
-- Sex: the passenger's sex (character)
-- Age: the passenger's age
-- Siblings/Spouses Aboard: an integer with how many sibs/spouses a passenger had aboard
-- Parents/Children Aboard: an integer with how many parents or children a passenger had aboard
-- Fare: The cost of the passenger's ticket
+This assignment uses aggregated data from Fatal Encounters.
 
-For this homework, you will provide an analysis of why some passengers died on the Titanic while others survived. Use any of the included measures, and specify any model that you think is appropriate. Provide an appropriate description and exploration of the data, an explanation of your theoretical approach (DAGs may be helpful for thinking about causation), a description and justification for your model, and summaries and visualizations of any statistical models estimated.
+This data contains the following measures:
 
-Based on your empirical inspection of your model, you may choose to revise your initial modeling decisions. Feel free to use the compare() function for this purpose. Remember to add the argument log_lik = TRUE to ulam() if you want to use compare().
+- fips: a 5-digit FIPS county code
+- state: a two-letter state abbreviation
+- ur.code: a six category urban-rural classification from the CDC
+- division: a nine category Census regional division classificaiton
+- black.men, white.men, latino.men: adult male population by race/ethnicity
+- tot.men: total adult male population
+- d.asian, d.black, d.latino, d.other, d.white, d.na, d.total: men killed by police by race/ethnicity
 
-Provide me with adequate written detail to follow your reasoning, and enough information to support your claims. Conclude with a theoretically motivated and empirically informed statement about who was likely to die and who was likely to survive on the Titanic. 
+## Section 1: Categorical models
+
+1. Explore the distribution of adult male population across county metro types (ur.code).
+2. Explore how this distribution varies by census division
+3. Estimate a multinomial regression model with ur.code as the outcome. See if you can predict a county's metropolitan type based on variables in the dataset. Explain your modeling choices.
+4. Interpret your model.
+
+## Section 2: Count models
+
+Use the data frame fe_long, created from included code in the .Rmd file that reshapes the data from wide to long. 
+
+```{r echo = FALSE, message = FALSE}
+#First, transform the data using this code
+fe_long_pop<-fe%>%
+  select(fips, state, ur.code, division, black.men, white.men, latino.men)%>%
+  rename(black = black.men, white = white.men, latino = latino.men)%>%
+  gather(key = "race", value = "pop", -fips, -state, -ur.code, -division)
+
+fe_long<-fe%>%
+  select(fips, state, ur.code, division, d.black, d.latino, d.white)%>%
+  rename(black = d.black, latino = d.latino, white = d.white)%>%
+  gather(key = "race", value = "deaths", -fips, -state, -ur.code, -division)%>%
+  left_join(fe_long_pop)
+```
+
+1. Explore counts of death by division
+2. Explore counts of death by ur.code
+3. Explore counts of death by race
+4. Include at least one additional data visual that you find informative.
+5. Provide an analysis of whether race/ethnicity correlates with rates at which men are killed by police. Include any regression predictors you find appropriate. Use any model you find appropriate. Explain your choices clearly and interpret your results.

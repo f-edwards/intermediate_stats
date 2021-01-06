@@ -1,159 +1,238 @@
 ---
-title: "HW5"
+title: "HW5 Solutions"
 author: "Frank Edwards"
-date: "2/21/2020"
+date: "3/8/2019"
 output: html_document
 ---
 
-**Due via email by 10AM 2/28 to cs1215@scj.rutgers.edu**
-
-```{r setup, include=FALSE}
+```{r setup, echo = FALSE, message = FALSE}
 library(tidyverse)
-library(rethinking)
+library(broom)
+library(xtable)
+set.seed(1)
+
+options(xtable.comment = FALSE)
+theme_set(theme_minimal())
+
+titanic<-read_csv("./data/titanic.csv")
 ```
 
-All three exercises below use the same data, data(foxes) (part of rethinking). The urban fox (Vulpes vulpes) is a successful exploiter of human habitat. Since urban foxes move in packs and defend territories, data on habitat quality and population density is also included. The data frame has five columns:
+### Exploratory data analysis
 
 ```{r}
-data(foxes)
-head(foxes)
-d<-foxes
+titanic<-titanic%>%
+  mutate(Pclass = as.character(Pclass))%>%
+  rename(sibs = `Siblings/Spouses Aboard`, kids = `Parents/Children Aboard`)
+
+## Summarize survival
+mean(titanic$Survived)
+
+## survival rates by class, sex, age
+## can use xtable() to make these pretty
+titanic%>%
+  group_by(Pclass)%>%
+  summarise(p_surv = mean(Survived))
+
+titanic%>%
+  group_by(Sex)%>%
+  summarise(p_surv = mean(Survived))
+
+titanic%>%
+  group_by(Age<18)%>%
+  summarise(p_surv = mean(Survived))
 ```
 
-1. group: Number of the social group the individual fox belongs to 
-2. avgfood: The average amount of food available in the territory 
-3. groupsize: The number of foxes in the social group
-4. area: Size of the territory
-5. weight: Body weight of the individual fox
-
-**1.** Fit two bivariate Gaussian regressions, using quap: (1) body weight as a linear function of territory size (area), and (2) body weight as a linear function of groupsize. Plot the results of these regressions, displaying the MAP regression line and the 89% interval of the mean. Is either variable important for predicting fox body weight?
+### A simple model
 
 ```{r}
-d<-d %>% 
-  mutate(avgfood.s = as.vector(scale(avgfood)),
-         groupsize.s = as.vector(scale(groupsize)),
-         area.s = as.vector(scale(area)),
-         weight.s = as.vector(scale(weight)))
-### weight ~ area
-mArea<-quap(alist(
-  weight.s ~ dnorm(mu, sigma),
-  mu<- a + b_a * area.s,
-  a ~ dnorm(0, 0.2),
-  b_a ~ dnorm(0, 0.5),
-  sigma ~ dexp(1)
-), data = d)
-## weight ~ groupsize
-mGroup<-quap(alist(
-  weight.s ~ dnorm(mu, sigma),
-  mu<- a + b_g * groupsize.s,
-  a ~ dnorm(0, 0.2),
-  b_g ~ dnorm(0, 0.5),
-  sigma ~ dexp(1)
-), data = d)
-### extract results and plot
-new_dat<-data.frame(groupsize.s = seq(-2, 2, length.out = 100),
-                    area.s = seq(-2, 2, length.out = 100))
+m1<-glm(Survived~
+          Age,
+        data = titanic,
+        family = "binomial")
+m1_results<-tidy(m1)
+m1_results$odds_ratio<-exp(m1_results$estimate)
+m1_results
+```
 
-mArea_post<-link(mArea, data = new_dat)
-mArea_mu<-apply(mArea_post, 2, mean)
-mArea_PI<-apply(mArea_post, 2, PI)
-mArea_plot<-data.frame(mu = mArea_mu,
-                       mu_upr = mArea_PI[2,],
-                       mu_lwr = mArea_PI[1,],
-                       x = seq(-2, 2, length.out = 100),
-                       model = "mArea")
+#### Look at model performance - crude check
 
-mGroup_post<-link(mGroup, data = new_dat)
-mGroup_mu<-apply(mGroup_post, 2, mean)
-mGroup_PI<-apply(mGroup_post, 2, PI)
-mGroup_plot<-data.frame(mu = mGroup_mu,
-                       mu_upr = mGroup_PI[2,],
-                       mu_lwr = mGroup_PI[1,],
-                       x = seq(-2, 2, length.out = 100),
-                       model = "mGroup")
+```{r}
+### make a check results function
+check_logit_results<-function(m){
+  ### generate predicted probabilities for observed data
+  yhat<-predict(m, type = "response")
+  ### make a df with yhat and observed to check performance
+  check<-bind_cols(Survived = titanic$Survived, yhat = yhat)
+  check<-check%>%
+    group_by(Survived)%>%
+    summarise(yhat_median = median(yhat),
+              yhat_5th = quantile(yhat, 0.05),
+              yhat_95th = quantile(yhat, 0.95))  
+  return(check)
+}
 
-plot_dat<-bind_rows(mArea_plot, mGroup_plot)
+simple_roc <- function(labels, scores){
+  labels <- labels[order(scores, decreasing=TRUE)]
+  data.frame(TPR=cumsum(labels)/sum(labels), 
+             FPR=cumsum(!labels)/sum(!labels), labels,
+             probs=scores[order(scores, decreasing = TRUE)])
+}
 
-ggplot(plot_dat, 
-       aes(x = x, y = mu, ymax = mu_upr, ymin = mu_lwr)) + 
+
+check1<-check_logit_results(m1)
+check1
+
+```
+
+This isn't terrible. We're definitely picking up on something. But we can do better!
+
+### A more elaborate model
+
+```{r}
+m2<-glm(Survived~
+          Sex + Age,
+        data = titanic,
+        family = "binomial")
+m2_results<-tidy(m2)
+m2_results$odds_ratio<-exp(m2_results$estimate)
+m2_results
+
+check2<-check_logit_results(m2)
+```
+
+Add Pclass
+
+```{r}
+m3<-glm(Survived~
+          Pclass + Sex + Age,
+        data = titanic,
+        family = "binomial")
+m3_results<-tidy(m3)
+m3_results$odds_ratio<-exp(m3_results$estimate)
+m3_results
+
+check3<-check_logit_results(m3)
+```
+
+Let's compare these three just to see where we're at
+
+```{r}
+### make a list of models
+models<-list(m1, m2, m3)
+names<-c("age", "+sex", "+class")
+### make an empty list for our output
+roc_out<-list()
+### loop over each model, create roc curve for each
+for(i in 1:length(models)){
+  roc_out[[i]]<-simple_roc(titanic$Survived, 
+                           predict(models[[i]],
+                                   type = "response"))
+  ### add a label for plotting
+  roc_out[[i]]$model<-names[i]
+}
+
+roc_plot<-bind_rows(roc_out)
+
+### plot it!
+ggplot(roc_plot,
+       aes(x = FPR, y = TPR, color = model)) + 
   geom_line() + 
-  geom_ribbon(alpha = 0.5) + 
-  facet_wrap(~model)
+  geom_abline()
 ```
 
+OK - so it wan't just "women and children first". It was "women, children, and the rich first"!
 
-
-**2.** Now fit a multiple linear regression with weight as the outcome and both area and groupsize as predictor variables. Plot the predictions of the model for each predictor, holding the other predictor constant at its mean. What does this model say about the importance of each variable? Why do you get different results than you got in the exercise just above?
+### Let's keep trying!
 
 ```{r}
-m2<-quap(alist(
-  weight.s ~ dnorm(mu, sigma),
-  mu<- a + b_g * groupsize.s + b_a * area.s,
-  a ~ dnorm(0, 0.2),
-  b_g ~ dnorm(0, 0.5),
-  b_a ~ dnorm(0, 0.5),
-  sigma ~ dexp(1)
-), data = d)
+m4<-glm(Survived~
+          Pclass + Sex + Age + (sibs>0) + (kids>0),
+        data = titanic,
+        family = "binomial")
+tidy(m4)
+check_logit_results(m4)
+```
 
-coeftab(mArea, mGroup, m2)
+### Let's go nuts with interactions.
 
-x_seq<-seq(-2, 2, length.out = 100)
+Maybe the effect of sex, age, and class all depend on each other. For example, maybe rich kids did better than poor kids? Maybe girls did better than boys? Maybe the super rich among the first class passengers did better? 
 
-area_cfact<-sim(m2, data = 
-                  data.frame(area.s = x_seq, 
-                             groupsize.s = 0))
-area_cfact_mu<-apply(area_cfact, 2, mean)
-area_cfact_pi<-apply(area_cfact, 2, PI)
+```{r}
+m5<-glm(Survived~
+          Pclass * (Sex * Age) + kids + sibs,
+        data = titanic,
+        family = "binomial")
+tidy(m5)
+```
 
-group_cfact<-sim(m2, data = 
-                  data.frame(area.s = 0, 
-                             groupsize.s = x_seq))
-group_cfact_mu<-apply(group_cfact, 2, mean)
-group_cfact_pi<-apply(group_cfact, 2, PI)
+### Compare m1, m2, m3, m4, m5
 
-plot_dat_area<-data.frame(mu = area_cfact_mu, 
-                          w_lwr = area_cfact_pi[1,],
-                          w_upr = area_cfact_pi[2,],
-                          variable = "Area")
+```{r}
+### make a list of models
+models<-list(m1, m2, m3, m4, m5)
+names<-c("age", "+sex", "+class", "+kids/sibs", "+interactions")
+### make an empty list for our output
+roc_out<-list()
+### loop over each model, create roc curve for each
+for(i in 1:length(models)){
+  roc_out[[i]]<-simple_roc(titanic$Survived, 
+                           predict(models[[i]],
+                                   type = "response"))
+  ### add a label for plotting
+  roc_out[[i]]$model<-names[i]
+}
 
-plot_dat_group<-data.frame(mu = group_cfact_mu, 
-                          w_lwr = group_cfact_pi[1,],
-                          w_upr = group_cfact_pi[2,],
-                          variable = "Groupsize")
+roc_plot<-bind_rows(roc_out)
 
-plot_dat<-plot_dat_area %>% 
-  bind_rows(plot_dat_group)
-
-ggplot(plot_dat, aes(x = rep(x_seq, 2), y = mu,
-                     ymin = w_lwr, ymax = w_upr)) + 
+### plot it!
+ggplot(roc_plot,
+       aes(x = FPR, y = TPR, color = model)) + 
   geom_line() + 
-  geom_ribbon(alpha = 0.5) + 
-  facet_wrap(~variable)
+  geom_abline()
 ```
 
+We're not gettinghuge performance increases, but looks like the +interactions model is doing best by a hair. Let's proceed with that one.
 
-**3.** Finally, consider the avgfood variable. Fit two more multiple regressions: (1) body weight as an additive function of avgfood and groupsize, and (2) body weight as an additive function of all three variables, avgfood and groupsize and area. Compare the results of these models to the previous models you’ve fit, in the first two exercises. (a) Is avgfood or area a better predictor of body weight? If you had to choose one or the other to include in a model, which would it be? Support your assessment with any tables or plots you choose. (b) When both avgfood or area are in the same model, their effects are reduced (closer to zero) and their standard errors are larger than when they are included in separate models. Can you explain this result?
+### Checking some counterfactuals
+
+Let's see the chances of survival for some counterfactual cases. We'll set sibs and kids equal to 1 for all cases.
+
+- Case 1: 5 year old boy, 1st class
+- Case 2: 5 year old girl, 1st class
+- Case 3: 5 year old boy, 3rd class
+- Case 4: 5 year old girl, 3rd class
+- Case 5: 40 year old man, 1st class
+- Case 6: 40 year old woman, 1st class
+- Case 7: 40 year old man, 3rd class
+- Case 8: 40 year old woman, 3rd class
 
 ```{r}
-m3<-quap(alist(
-  weight.s ~ dnorm(mu, sigma),
-  mu<- a + b_g * groupsize.s + b_f * avgfood.s,
-  a ~ dnorm(0, 0.2),
-  b_g ~ dnorm(0, 0.5),
-  b_f ~ dnorm(0, 0.5),
-  sigma ~ dexp(1)
-), data = d)
+### make out counterfactual dataframe
+cf_cases<-data.frame(
+  Pclass = c("1", "1", "3", "3", "1", "1", "3", "3"),
+  Sex = rep(c("male", "female"), 
+            4),
+  Age = c(rep(5, 4), rep(40, 4)),
+  sibs = rep(1,8),
+  kids = rep(1,8)
+  )
 
-m4<-quap(alist(
-  weight.s ~ dnorm(mu, sigma),
-  mu<- a + b_g * groupsize.s + b_f * avgfood.s + b_a * area.s,
-  a ~ dnorm(0, 0.2),
-  b_g ~ dnorm(0, 0.5),
-  b_f ~ dnorm(0, 0.5),
-  b_a ~ dnorm(0, 0.5),
-  sigma ~ dexp(1)
-), data = d)
-
-coeftab(m2, m3, m4)
+cf_cases
 ```
 
+Now predict the probabilities of survival for these unfortunate souls we've just conjured.
+
+```{r}
+yhat<-predict(m5, newdata = cf_cases, type = "response")
+cf_cases<-bind_cols(yhat = yhat, cf_cases)
+```
+
+Plot it to compare
+
+```{r}
+ggplot(cf_cases,
+       aes(y = yhat, shape = as.character(Age), x = Pclass, color = Sex)) + 
+  geom_jitter(width = 0.05)
+```
+
+OK - rich women were most likely to survive, rich girls next, then rich boys, then poor girls, then poor women, then rich men, then poor boys. Poor men basically all died...
