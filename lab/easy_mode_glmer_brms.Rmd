@@ -64,7 +64,7 @@ head(admissions)
 ## Logistic regression
 
 ```{r}
-m3<-glm(admit ~ gre + gpa + rank, 
+m3<-glm(admit ~ gre + gpa + factor(rank), 
         data = admissions, 
         family = "binomial")
 tidy(m3)
@@ -127,13 +127,13 @@ library(lme4)
 ```
 
 - lme4 syntax follows basic R formula syntax, but now adds variable intercept and slope terms
-- basic format: outcome ~ predictors + (1|varying slope) + (varying intercept | varying slope), data = data
+- basic format: outcome ~ predictors + (1|varying slope) + (varying slope | varying intercept), data = data
 
 ## Estimating a multilevel model: country intercepts
 
 ```{r size = "tiny"}
 library(gapminder)
-m7<-lmer(lifeExp ~ year + (1|country), 
+m7<-lmer(lifeExp ~ year + (1|country) + (1|continent), 
          data = gapminder)
 tidy(m7)
 ```
@@ -208,6 +208,14 @@ brm0<-brm(Divorce ~ Marriage,
                   prior(exponential(1), class = sigma))
         )
 
+ulam0<-ulam(alist(
+  Divorce ~ dnorm(mu, sigma),
+  mu <- alpha + beta * Marriage,
+  alpha ~ dnorm(0,2),
+  beta ~ dnorm(0,2),
+  sigma ~ dexp(1)
+  ), data = WaffleDivorce)
+
 ```
 
 ## Results
@@ -238,8 +246,9 @@ post_mu<-posterior_linpred(brm0, newdata = sim_dat)
 
 sim_dat<-sim_dat %>% 
   mutate(mu_lwr = apply(post_mu, 2, function(x) quantile(x, 0.05)),
-         mu_upr = apply(post_mu, 2, function(x)quantile(x, 0.95)),
+         mu_upr = apply(post_mu, 2, function(x) quantile(x, 0.95)),
          mu_mn = apply(post_mu, 2, mean))
+
 ggplot(sim_dat, aes(x = Marriage, y = mu_mn)) + 
   geom_line() + 
   geom_ribbon(aes(ymin = mu_lwr, ymax = mu_upr), alpha = 0.5)
@@ -252,7 +261,9 @@ brm1<-brm(admit ~ gre + gpa,
           family = bernoulli,
           data = admissions,
           prior = c(prior(normal(0.5, 1), class = Intercept),
-                     prior(normal(0, 1), class = b)))
+                    prior(normal(0, 1), class = b),
+                    prior(normal(0,2), coef = "gre")
+          ))
 ```
 
 ## Output
@@ -269,6 +280,7 @@ summary(brm1)
 gapminder<-gapminder %>% 
   mutate(L_c = scale(lifeExp),
          year_c = ((year - min(year))/5))
+
 brm7<-brm(L_c ~ year_c + (year_c|country), 
          data = gapminder, family = gaussian,
          prior = c(prior(normal(0, 5), class = Intercept),

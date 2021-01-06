@@ -467,7 +467,7 @@ drawdag(MAR)
 
 ```{r}
 P<-ifelse(S>0, 0.5, 0)
-D<-rbinom(N, 1, p = P)
+D<-rbinom(N, 1, prob = P)
 H_obs<-H
 H_obs[D==1]<-NA
 summary(H_obs)
@@ -475,7 +475,7 @@ summary(H_obs)
 
 ## How does the missingness affect inference? List-wise deletion
 
-```{r, size = "tiny", cache = T, results = "hide"}
+```{r, size = "tiny",  results = "hide"}
 d<-data.frame(H_obs = H_obs, S = S) %>% filter(!is.na(H_obs))
 mar_0<-brm(H_obs ~ S, data = d)
 ```

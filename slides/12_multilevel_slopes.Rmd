@@ -312,7 +312,7 @@ plot_dat<-observed %>%
 
 ## The observed and posterior mean for $\alpha$ and $\beta$ for each cafe
 
-```{r}
+```{r, size = "tiny", fig.height = 3}
 ggplot(plot_dat, 
        aes(x = a0, y = b)) + 
   geom_point(alpha = 0.4) + 
@@ -377,7 +377,7 @@ plot_dat<-dat %>%
   mutate(post_mn = apply(sim_dat, 2, mean))
 
 ggplot(plot_dat %>% 
-         filter(continent == "Americas"), 
+         filter(continent == "Africa"), 
        aes(x = year, y = L_c)) + 
   geom_line(alpha = 0.5) + 
   geom_line(aes(y = post_mn), color = "blue") + 
@@ -407,7 +407,7 @@ post<-link(m_gm2)
 plot_dat<-dat %>% 
   mutate(l_mn = apply(post, 2, mean))
 ggplot(plot_dat %>% 
-         filter(continent=="Americas"), 
+         filter(continent=="Asia"), 
        aes(x = year, y = L_c)) + 
   geom_line()+
   geom_line(aes(y = l_mn), color = "blue") +
