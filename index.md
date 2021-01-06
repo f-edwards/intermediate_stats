@@ -80,13 +80,9 @@ Course grading is based on a combination of homework assignments (80 percent) an
 
 ### Homework
 
-1. DataCamp
+- DataCamp: DataCamp provides interactive lessons in programming, and features a great library of R courses. I've set up a free account for all students in this course. I will assign DataCamp courses throughout the semester to push our programming skills forward. These assignments should typically take 4-8 hours (can be split easily into multiple sessions), and you will generally have two weeks to complete them. These will be completed entirely online through our course page on DataCamp. 
 
-DataCamp provides interactive lessons in programming, and features a great library of R courses. I've set up a free account for all students in this course. I will assign DataCamp courses throughout the semester to push our programming skills forward. These assignments should typically take 4-8 hours (can be split easily into multiple sessions), and you will generally have two weeks to complete them. These will be completed entirely online through our course page on DataCamp. 
-
-2. Problem sets
-
-I will assign a weekly selection of homework problems from the Gelman, Hill, and Vehtari book. These assignments should be completed in RMarkdown and submitted to our TA via email by the beginning of the next week's lecture. 
+- Problem sets: I will assign a weekly selection of homework problems from the Gelman, Hill, and Vehtari book. These assignments should be completed in RMarkdown and submitted to our TA via email by the beginning of the next week's lecture. 
 
 ## Course topics and schedule
 
