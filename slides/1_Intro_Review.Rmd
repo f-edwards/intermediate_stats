@@ -2,7 +2,7 @@
 title: "Intermediate statistics: introduction"
 author: "Frank Edwards"
 institute: School of Criminal Justice, Rutgers - Newark
-date: "1/25/2019"
+date: "1/27/2021"
 output: binb::metropolis
 ---
 
@@ -18,16 +18,6 @@ knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
 ```
 
 
-## Basics
-
-*Contact:* frank.edwards@rutgers.edu
-
-*Office hours:* email for appointments
-
-*Course webpage and syllabus:* https://f-edwards.github.io/intermediate_stats/
-
-*Slack:* https://ru-intermed-stats.slack.com/messages
-
 # Introductions: What are you planning to do with statistical models?
 
 ## Before we begin
@@ -41,82 +31,9 @@ Remember: All models are wrong, some are useful.
 - Developing a workflow for producing replicable quantitative social science \pause
 - Some advanced topics that are relevant for the kinds of data we're dealing with in the course, subject to class interest
 
-# Quick assessment of where we're at with programming
-
-## 1. Explain what this code does and expected output
-
-```{r eval=FALSE}
-for(i in 1:10){
-  print(i^2)
-}
-```
-
-## 2. Explain what this code does and expected output
-
-```{r eval=FALSE}
-a<-c(1, 2, 3)
-b<-c(2, 3, 4)
-a*b
-```
-
-## 3. Explain what this code does and expected output
-
-```{r eval=FALSE}
-whatsitdo<-function(x){
-  a<-min(x)
-  return(1/a)
-}
-z<-c(4,5,6)
-whatsitdo(z)
-```
-
-## 4. Explain what this code does and expected output
-
-```{r eval=FALSE}
-library(dplyr)
-dat<-data.frame("var1" = c(1,2,3), 
-                "var2" = c(4, 5, 6))
-dat%>%
-  summarise(total = sum(var1 + var2))
-```
-
-## 5. Explain what z is and what m1 is
-
-```{r eval=FALSE}
-y<-c(1,2,3,4,5)
-x<-c(3,4,5,6,7)
-z<-solve(t(x)%*%x)%*%t(x)%*%y
-m1<-lm(y~x)
-```
-
-## Discussion on how we could proceed with programming in the course
-
-*Self assessment:* 
-
-\begin{center}Were these problems easy? Hard? Completely foreign? Which parts were most unfamiliar? \end{center} \pause
-
-*Question for the class:* 
-
-\centering{Would it be helfpul to cover basic programming concepts (i.e. functions, loops)? \pause
-  Using the tidyverse packages? \pause
-  Using RMarkdown? \pause} 
-
 ## Review the syllabus
 
 https://f-edwards.github.io/intermediate_stats/
-
-## How I will run seminars
-
-- Basic statistical theory \pause
-- Applied data analysis and modeling in R 
-
-## Expectations
-
-- Bring a laptop: we will be writing code in class \pause
-
-- Make space for everyone: respect varying levels of comfort with statistics and programming \pause
-
-- Come prepared and complete assignments on time
 
 ## My general approach to data analysis
 
@@ -220,10 +137,10 @@ https://happygitwithr.com/
 
 \LaTeX is a powerful typesetting tool that works well with RMarkdown. It makes very attractive academic papers and slides. 
 
-Install it here: *Install TexLive*: 
-https://tug.org/texlive/acquire-netinstall.html
+Install it from the console
 
-# Questions so far? 
+`install.packages("tinytex")`
+`tinytex::install_tinytex()`
 
 # Break
 
