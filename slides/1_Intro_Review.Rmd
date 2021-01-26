@@ -8,13 +8,15 @@ output: binb::metropolis
 
 ```{r message = FALSE, warning = FALSE, echo=FALSE}
 library(tidyverse)
+### configure for variable text size with chunk option
 def.chunk.hook  <- knitr::knit_hooks$get("chunk")
 knitr::knit_hooks$set(chunk = function(x, options) {
   x <- def.chunk.hook(x, options)
   ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
 })
 knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
-
+### set to project roots
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
 
@@ -140,6 +142,7 @@ https://happygitwithr.com/
 Install it from the console
 
 `install.packages("tinytex")`
+
 `tinytex::install_tinytex()`
 
 # Break
@@ -180,13 +183,12 @@ Before beginning your work each session, pull updates I've pushed to the repo wi
 Now you have an intermediate_stats folder with all code, slides, and data. Data is in intermediate_stats/data
 
 ## Read in 
-```{r}
+```{r size = "tiny"}
 #library(tidyverse)
 ### directly from the web
-cj_budgets<-read_csv("https://github.com/f-edwards/intermediate_stats/raw/master/data/revenue_dat.csv")
+cj_budgets<-read_csv("./hw/data/revenue_dat.csv")
 ### from a project directory root
-#setwd("C:/intermediate_stats") # set working directory
-#cj_budgets<-read_csv("./data/revenue_dat.csv")
+#cj_budgets<-read_csv("./hw/data/revenue_dat.csv")
 ```
 
 ## About the data
@@ -203,7 +205,7 @@ https://github.com/f-edwards/police-mort-revenue
 
 ## Evaluate the structure of the data
 
-```{r tidy=TRUE}
+```{r size = "tiny"}
 head(cj_budgets)
 ```
 
@@ -214,12 +216,6 @@ nrow(cj_budgets)
 table(cj_budgets$year_range)
 ```
 
-## Evaluate the structure of the data
-
-```{r}
-names(cj_budgets)
-```
-
 ## Descriptives
 
 ```{r}
@@ -228,7 +224,6 @@ summary(cj_budgets$pop_pct_deep_pov)
 
 ## Visualize the distribution of a variable
 
-Call individual variables (columns) in a data frame with \$, like \texttt{USArrests$Murder}
 
 ```{r fig.width=6, fig.height=3}
 qplot(cj_budgets$pop_pct_deep_pov)
@@ -236,7 +231,7 @@ qplot(cj_budgets$pop_pct_deep_pov)
 
 ## Visualize a bivariate relationship
 
-```{r fig.width=6, fig.height=3}
+```{r fig.width=6, fig.height=3, size = "tiny"}
 qplot(pop_blk/pop_tot,
       pop_pct_deep_pov,
       data = cj_budgets)
@@ -251,21 +246,21 @@ model_1<-lm(pop_pct_deep_pov ~
 
 ## Display the model fit
 
-```{r}
+```{r size = "tiny"}
 summary(model_1)
 ```
 
 
 ## Display the model fit (nicer)
 
-```{r}
+```{r size = "tiny"}
 library(broom)
 tidy(model_1)
 ```
 
 ## Visualize the model fit
 
-```{r fig.width=6, fig.height=2.5}
+```{r fig.width=6, fig.height=2.5, size = "tiny"s}
 library(ggplot2)
 ggplot(cj_budgets,
        aes(x=pop_blk/pop_tot, y=pop_pct_deep_pov))+
@@ -275,7 +270,7 @@ ggplot(cj_budgets,
 
 ## Visualize the model fit (against the data)
 
-```{r fig.width=6, fig.height=2.5}
+```{r fig.width=6, fig.height=2.5, size = "tiny"}
 library(ggplot2)
 ggplot(cj_budgets,
        aes(x=pop_blk/pop_tot, y=pop_pct_deep_pov))+
@@ -286,7 +281,7 @@ ggplot(cj_budgets,
 
 ## Residuals vs fitted
 
-```{r}
+```{r size = "tiny", fig.width=6, fig.height=2.5}
 sd_outcome<-sd(cj_budgets$pop_pct_deep_pov)
 plot_dat<-data.frame(resid = model_1$residuals, yhat = model_1$fitted.values)
 ggplot(plot_dat, aes(y = resid, x = yhat)) + 
