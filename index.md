@@ -11,7 +11,7 @@ layout: default
 
 [Lecture slides](https://github.com/f-edwards/intermediate_stats/tree/master/slides)
 
-[Homework](https://github.com/f-edwards/intermediate_stats/tree/master/HW)
+[Homework](https://github.com/f-edwards/intermediate_stats/tree/master/hw)
 
 [Datacamp](https://learn.datacamp.com)
 
@@ -88,7 +88,7 @@ Course grading is based on a combination of homework assignments (80 percent) an
 
 |1/20| Fundamentals: probability, regression | GHV Chapters 1-3 |
 |1/27| Inference and simulation | GHV Chapters 4-5 |
-|2/3| Linear regression (1) | GHV Chapters 6-7 |
+|2/3| Linear regression (1) | GHV Chapters 6-7, HW1 due |
 |2/10| Linear regression (2) | GHV Chapters 8-9 |
 |2/17| Linear regression (3) | GHV Chapters 10-12|
 |2/24| Logistic regression (1) | GHV Chapter 13 |
