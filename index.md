@@ -100,7 +100,7 @@ Course grading is based on a combination of homework assignments (80 percent) an
 |4/7| Causal inference in experiments | GHV Chapter 18|
 |4/14| Causal inference in observational settings | GHV Chapter 20 - 21 |
 |4/21| Advanced topics: multilevel models | GHV 22.1-22.5|
-|4/28| Advanced topis: nonparametric models | GHV 22.6-22.8 |
+|4/28| Advanced topics: nonparametric models | GHV 22.6-22.8 |
 
 
 
