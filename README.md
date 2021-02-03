@@ -1,1 +1,1 @@
-This is the course repository for intermediate statistics in the School of Criminal Justice at Rutgers-Newark. The syllabus and schedule can be found at [https://f-edwards.github.io/intermediate_stats/](the course homepage).
+This is the course repository for intermediate statistics in the School of Criminal Justice at Rutgers-Newark. The syllabus and schedule can be found at [the course homepage](https://f-edwards.github.io/intermediate_stats/).
