@@ -353,13 +353,71 @@ What variables might be associated with police spending across places?
 names(budget)
 ```
 
+```{r}
+## police staffing probably
+cor(budget$exp_police, budget$ft_sworn, use = "complete.obs")
+ggplot(budget,
+       aes(x = ft_sworn, y = exp_police)) + 
+  geom_point() + 
+  scale_y_log10() + 
+  scale_x_log10()
+
+### population too
+ggplot(budget,
+       aes(x = pop_tot, y = exp_police)) + 
+  geom_point() + 
+  scale_y_log10() + 
+  scale_x_log10()
+
+### let's adjust for pop size and exclude very small pop counties
+
+ggplot(budget %>% 
+         filter(pop_tot>50000),
+       aes(x = pop_tot, y = exp_police/pop_tot)) + 
+  geom_point()
+```
+
+```{r}
+### maybe we want to look at per capita spending
+budget<-budget %>% 
+  mutate(exp_police_pc = exp_police / pop_tot)
+```
+
+Theory: what drives police spending? 
+
+- Maybe it's murder
+
+```{r}
+budget <- budget %>% 
+  mutate(murder.yr.pc  = murder.yr / pop_tot * 1e5)
+```
+
+- Maybe it's wealth
+
+```{r}
+budget<- budget %>% 
+  mutate(rev_prop_tax_pc = rev_prop_tax / pop_tot)
+```
+
+
 ## Let's build a model to match our theory
 
 Describe a linear model that matches the concepts we developed in our theory
 
+police spending = murder rate * slope1 + property tax revenue * slope 2
+
+\[y_i \sim N(\mu_i, \sigma^2)\]
+\[\mu_i = \beta_0 + \beta_1 x_{1i} + \beta_2 x_{2i}\]
+
 ## Let's estimate the model
 
 Fit the model using `lm()`
+
+```{r}
+m0<-lm(exp_police_pc ~ murder.yr.pc + rev_prop_tax_pc,
+       data = budget)
+```
+
 
 ## Interpret the model
 
@@ -369,6 +427,58 @@ What is the meaning of each $\beta$ parameter? What is the meaning of the standa
 
 Construct an appropriate visual for this model to aid in interpretation
 
+```{r}
+### small n prediction
+
+fake_data<-data.frame(murder.yr.pc = c(0, 0.53, 1.34),
+                      rev_prop_tax_pc = 665)
+
+fake_data<-fake_data %>% 
+  mutate(yhat = predict(m0, newdata = fake_data))
+
+ggplot(fake_data,
+       aes(x = murder.yr.pc, y = yhat)) + 
+  geom_point() + 
+  geom_line() + 
+  ylim(2, 400)+
+  xlim(0, 2)
+
+### large n prediction
+
+fake_data<-data.frame(murder.yr.pc = seq(from = 0, 
+                                         to = 2, 
+                                         by = 0.1),
+                      rev_prop_tax_pc = 665)
+
+fake_data<-fake_data %>% 
+  mutate(yhat = predict(m0, newdata = fake_data))
+
+ggplot(fake_data,
+       aes(x = murder.yr.pc, y = yhat)) + 
+  geom_point() + 
+  geom_line()
+
+
+### small n prediction
+
+fake_data<-data.frame(murder.yr.pc = rep(seq(from = 0, 
+                                         to = 2, 
+                                         length.out = 100),
+                                         5),
+                      rev_prop_tax_pc = rep(c(200, 400, 600, 800, 1000),
+                                            each = 100))
+
+fake_data<-fake_data %>% 
+  mutate(yhat = predict(m0, newdata = fake_data))
+
+ggplot(fake_data,
+       aes(x = murder.yr.pc, y = yhat,
+           color = factor(rev_prop_tax_pc))) + 
+  geom_point() + 
+  geom_line()
+```
+
+
 ## Add an appropriate interaction
 
 Theorize then model an interaction that makes sense for this model
@@ -376,6 +486,32 @@ Theorize then model an interaction that makes sense for this model
 ## Visualize the interaction
 
 Visualize the interaction for multiple values of each predictor
+
+
+
+```{r}
+### small n prediction
+m1<-lm(exp_police_pc ~ murder.yr.pc + rev_prop_tax_pc + 
+         fips_st * rev_prop_tax_pc,
+       data = budget)
+
+fake_data<-data.frame(murder.yr.pc = rep(seq(from = 0, 
+                                         to = 2, 
+                                         length.out = 100),
+                                         5),
+                      rev_prop_tax_pc = rep(c(200, 400, 600, 800, 1000),
+                                            each = 100))
+
+fake_data<-fake_data %>% 
+  mutate(yhat = predict(m1, newdata = fake_data))
+
+ggplot(fake_data,
+       aes(x = murder.yr.pc, y = yhat,
+           color = factor(rev_prop_tax_pc))) + 
+  geom_point() + 
+  geom_line()
+```
+
 
 ## Interpret your model
 

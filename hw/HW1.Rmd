@@ -18,10 +18,63 @@ library(tidyverse)
 
 For this problem, we will use data built into R. Load the data using the console command data(anscombe). 
 
+```{r}
+data("anscombe")
+```
+
+
 - Describe the relationships between y1 and x1, y2 and x2, y3 and x3, and y4 and x4 in sequence using a correlation coefficient. 
+
+```{r}
+with(anscombe, cor(x1, y1))
+with(anscombe, cor(x2, y2))
+with(anscombe, cor(x3, y3))
+with(anscombe, cor(x4, y4))
+
+### instead of with() could also use anscombe$x1, anscombe$y1
+```
+
+
+
 - Construct linear regression models for each pair. Describe your results.
+
+```{r}
+### estimate models
+m1<-lm(y1~x1, data = anscombe)
+m2<-lm(y2~x2, data = anscombe)
+m3<-lm(y3~x3, data = anscombe)
+m4<-lm(y4~x4, data = anscombe)
+### show model coefficient estimates
+coef(m1)
+coef(m2)
+coef(m3)
+coef(m4)
+
+### whoa they are all the same...
+```
+
+
 - Draw a scatterplot for each pair
+
+```{r}
+ans_df<-data.frame(anscombe)
+ggplot(ans_df, aes(x = x1, y = y1)) + 
+  geom_point()
+
+ggplot(ans_df, aes(x = x2, y = y2)) + 
+  geom_point()
+
+ggplot(ans_df, aes(x = x3, y = y3)) + 
+  geom_point()
+
+ggplot(ans_df, aes(x = x4, y = y4)) + 
+  geom_point()
+```
+
+
 - Summarize your findings
+
+Weird! Always look at your data! Don't rely on summary statistics!
 
 ## Question 2
 
@@ -33,13 +86,31 @@ Use the data in revenue_dat.csv in the course repository.
 cj_budgets<-read_csv("./hw/data/revenue_dat.csv")
 ```
 
+2. Use the mutate() function in the dplyr package to construct a new variable for property tax revenue per capita called prop_tax_pc using the variables rev_prop_tax and pop_tot
 
-2. Use the mutate() function in the dplyr package to construct a new variable for property tax revenue per capita called prop_tax_pc using the variables rev_prop_tax and tot_pop.
+```{r}
+cj_budgets<-cj_budgets %>% 
+  mutate(prop_tax_pc = rev_prop_tax / pop_tot)
+```
 
 3. Transform prop_tax_pc into a binary variable equal to TRUE if property tax revenues per capita are greater than or equal to the median value of the variable, FALSE otherwise
 
+```{r}
+cj_budgets<-cj_budgets %>% 
+  mutate(prop_tax_pc = prop_tax_pc>=median(prop_tax_pc))
+```
+
+
 4. Run a linear regression model of the proportion of the population in deep poverty (pop_pct_deep_pov) as a function of property tax revenues per capita (your binary measure).
+
+```{r}
+m1<-lm(pop_pct_deep_pov ~ prop_tax_pc, 
+       data = cj_budgets)
+```
+
 
 ## Question 3
 
 Interpret your findings from the regression model.
+
+Counties with below median property tax revenue in the data had a deep poverty rate of about `r round(coef(m1)[1],3)*100` (equal to $\beta_0 \times 100$) percent of the population. Counties with above median property tax revenue in the data had a deep poverty rate of about `r round(coef(m1)[1] + coef(m1)[2],3) * 100` percent of the population ($\beta_0 + \beta_1 \times 100$). The difference between high and low property tax revenue counties is equal to $\beta_1$.
