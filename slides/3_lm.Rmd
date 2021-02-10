@@ -1,0 +1,395 @@
+---
+title: "Linear regression review"
+author: "Frank Edwards"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: binb::metropolis
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+library(MASS)
+library(tidyverse)
+library(rstanarm)
+
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+
+options(xtable.comment = FALSE)
+theme_set(theme_bw())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = F, size = "small")
+```
+
+## Linear regression: IPV data
+
+```{r size = "tiny"}
+ipv<-read_csv("./slides/data/dhs_ipv.csv") 
+
+head(ipv)
+```
+
+## Research question
+
+- Are secondary school completion rates for women associated with lower levels of acceptance of intimate partner violence? 
+
+## Visualizing associations: scatterplots
+
+```{r size = "tiny", fig.height = 4}
+ggplot(ipv, 
+       aes(x = sec_school, y = beat_goesout)) +
+  geom_point()
+```
+
+## Describing linear associations: correlation
+
+```{r size = "tiny", fig.height = 4}
+cor(ipv$sec_school, ipv$beat_goesout, use = "complete")
+ggplot(ipv, 
+       aes(x = sec_school, y = beat_goesout)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F)
+```
+
+
+## The linear regression model
+
+\[ Y = \beta_0 + \beta_1 X + \varepsilon \]
+
+$\beta_0$: The value of $y$ when $x$ is equal to zero \pause
+
+$\beta_1$: The average increase in $y$ when $x$ increases by one unit \pause
+
+$\varepsilon$: The distance between the line $y = \beta_0 + \beta_1 X$ and the actual observed values of $y$. Allows us to estimate the line, even when x and y do not fall exactly on a line. \pause
+
+The line $y = \beta_0 + \beta_1 X$ provides a prediction for the values of $y$ based on the values of $x$.
+
+
+## Understanding the regression line for real data
+
+```{r echo = FALSE, size = "tiny"}
+r<-0.95
+sample <- mvrnorm(n=10, 
+                  mu=c(1, 1), 
+                  Sigma=matrix(c(1, r, r, 1), nrow=2), 
+                  empirical=TRUE)
+
+sample<-data.frame(x = sample[,1], y = sample[,2])
+
+m1<-lm(y~x, data = sample)
+coefs<-coef(m1)
+
+as_tibble(sample)
+```
+
+$\beta_0 =$ `r coefs[1]`, $\beta_1 =$ `r coefs[2]`
+
+- Estimate $\hat{Y}$. Recall that $\hat{Y} = \beta_0 + \beta_1 X$ 
+- Estimate $\varepsilon$. Recall that $\varepsilon = Y - \hat{Y}$
+
+## Understanding the regression line
+
+$\beta_0 =$ `r coefs[1]`, $\beta_1 =$ `r coefs[2]`
+
+```{r echo = FALSE, fig.height = 4}
+yhat<-fitted(m1)
+ggplot(sample, aes(x=x,y=y)) + 
+  geom_point() #+ 
+  #geom_abline(slope = coefs[2], intercept = coefs[1]) + 
+  #geom_point(aes(x=x, y = yhat), color = 2)
+```
+
+## Understanding the regression line: adding the fit
+
+$\beta_0 =$ `r coefs[1]`, $\beta_1 =$ `r coefs[2]`
+
+```{r echo = FALSE, fig.height = 4}
+yhat<-fitted(m1)
+ggplot(sample, aes(x=x,y=y)) + 
+  geom_point() + 
+  geom_abline(slope = coefs[2], intercept = coefs[1]) #+ 
+  #geom_point(aes(x=x, y = yhat), color = 2)
+```
+
+## Understanding the regression line: adding $\hat{y}$
+
+$\beta_0 =$ `r coefs[1]`, $\beta_1 =$ `r coefs[2]`
+
+```{r echo = FALSE, fig.height = 4}
+yhat<-fitted(m1)
+ggplot(sample, aes(x=x,y=y)) + 
+  geom_point() + 
+  geom_abline(slope = coefs[2], intercept = coefs[1]) + 
+  geom_point(aes(x=x, y = yhat), color = 2)
+```
+
+## Understanding the regression line: adding $\varepsilon$
+
+$\beta_0 =$ `r coefs[1]`, $\beta_1 =$ `r coefs[2]`
+
+```{r echo = FALSE, fig.height = 4}
+yhat<-fitted(m1)
+ggplot(sample, aes(x=x,y=y)) + 
+  geom_point() + 
+  geom_abline(slope = coefs[2], intercept = coefs[1]) + 
+  geom_point(aes(x=x, y = yhat), color = 2, size = 2)  +
+  geom_segment(aes(x = x, xend =x, y = y, yend = yhat), lty =2)
+```
+
+## Asking a question with regression
+
+*Are secondary school completion rates for women associated with lower levels of acceptance of intimate partner violence?* 
+
+Write a linear regression formula that will allow us to test this question. \pause
+
+## Two ways of writing a linear regression
+
+\[y = \beta_0 + \beta_1x_1 + \varepsilon\]
+\[\varepsilon \sim N(0, \sigma^2)\]
+
+\pause
+
+\[y \sim N(\mu, \sigma ^2)\]
+\[\mu = \beta_0 + \beta_1x_1\]
+
+## Estimating a regression model in R
+
+```{r}
+library(broom)
+## models take the general form
+## lm(outcome ~ predictor, data)
+ipv_model<-lm(beat_goesout ~ sec_school, 
+              data = ipv)
+
+tidy(ipv_model)
+```
+
+Interpret this model
+
+## Using rstanarm
+
+```{r message = F}
+library(rstanarm)
+library(broom.mixed)
+
+ipv_model_stan<-stan_glm(beat_goesout ~ sec_school,
+                         data = ipv)
+```
+
+
+## Visualize the model
+
+```{r echo = T, size = "tiny", fig.height = 4}
+ggplot(ipv %>% 
+         filter(!(is.na(sec_school)), !(is.na(beat_goesout))), 
+       aes(x=sec_school, y = beat_goesout)) + 
+  geom_point() + 
+  geom_abline(aes(intercept = coef(ipv_model)[1], 
+                  slope = coef(ipv_model)[2])) 
+```
+
+## Visualize the model: expected values of y
+
+```{r echo = T, size = "tiny", fig.height = 4}
+ggplot(ipv %>% 
+         filter(!(is.na(sec_school)), !(is.na(beat_goesout))), 
+       aes(x=sec_school, y = beat_goesout)) + 
+  geom_point() + 
+  geom_abline(aes(intercept = coef(ipv_model)[1], 
+                  slope = coef(ipv_model)[2])) + 
+  geom_point(aes(x = sec_school, y = fitted(ipv_model)), color = "magenta") 
+```
+
+## Visualize the model: error term (residuals)
+
+```{r echo = T, size = "tiny", fig.height = 4}
+ggplot(ipv %>% 
+         filter(!(is.na(sec_school)), !(is.na(beat_goesout))), 
+       aes(x=sec_school, y = beat_goesout)) + 
+  geom_point() + 
+  geom_abline(aes(intercept = coef(ipv_model)[1], 
+                  slope = coef(ipv_model)[2])) + 
+  geom_point(aes(x = sec_school, y = fitted(ipv_model)), color = "magenta") + 
+  geom_segment(aes(x = sec_school, xend = sec_school,
+                   y = beat_goesout, yend = fitted(ipv_model)), lty =2)
+```
+
+## Linear regression with multiple predictors
+
+We can extend the linear regression model:
+
+\[y \sim N(\mu, \sigma^2)\]
+\[ \mu = \beta_0 + \beta_1x_1\] 
+
+to include more than one predictor. \pause
+
+We rewrite the equation as:
+
+\[y \sim N(\mu, \sigma^2)\]
+\[\mu = \beta_0 + \beta_1 x_1 + \beta_2 x_2 \cdots \beta_p x_p\] \pause
+
+## In matrix notation
+
+To be more compact:
+
+\[ Y = \beta X + \varepsilon\]
+
+Where $Y$ is the vector of predictors, $\beta$ is the vector of coefficients (including the intercept), $X$ is the matrix of all predictors, and $\varepsilon$ is the error term.
+
+## Linear regression with multiple predictors
+
+Let's start with a single predictor for region
+
+```{r}
+m2<-lm(beat_goesout ~ region, 
+               data = ipv)
+```
+
+## Interpreting a regression model with intercepts only
+
+```{r size = "tiny"}
+coef(m2)
+
+ipv %>% group_by(region) %>% 
+  summarise(beat_goesout = mean(beat_goesout, na.rm=T))
+```
+
+## Add a continuous predictor
+
+```{r size = "tiny"}
+m3<-lm(beat_goesout~sec_school + region, 
+       data = ipv)
+
+coef(m3)
+```
+
+Recall that $\hat{y} = \beta_0 + \beta_1 x_1 + \beta_2 x_2$
+
+What do we predict will be the level of tolerance for IPV among women 
+
+- if sec_school = 50 and region = Latin America \pause
+- if sec_school = 50 and region = Middle East and Central Asia 
+
+
+## Visualizing the model
+
+```{r echo = FALSE}
+ipv_new<-ipv %>% 
+  filter(!(is.na(sec_school)), !(is.na(beat_goesout)))
+
+coefs<-coef(m3)
+
+ggplot(ipv_new,
+       aes(x = sec_school, y = beat_goesout, color = region)) + 
+  geom_point() + 
+  geom_abline(aes(intercept = coefs[1], slope = coefs[2]), color ="#F8766D") + 
+  geom_abline(aes(intercept = coefs[1] + coefs[3], slope = coefs[2]), color ="#7CAE00") + 
+  geom_abline(aes(intercept = coefs[1] + coefs[4], slope = coefs[2]), color ="#00BFC4") + 
+  geom_abline(aes(intercept = coefs[1] + coefs[5], slope = coefs[2]), color ="#C77CFF") 
+```
+
+## Interactions
+
+The prior model allowed each region to have its own starting level of tolerance for IPV. What if we thought the relationship (effect) of secondary schooling on IPV depended on region?
+
+We can add *interaction terms* to our model to model processes where we believe the relationship between $y$ and $x_1$ is a function of $x_2$. 
+
+\[ y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_1 x_2 + \varepsilon\]
+
+## Estimating interactions in R
+
+```{r size = "tiny"}
+ipv_model3<-lm(beat_goesout ~ sec_school + region + 
+                 region * sec_school,
+               data = ipv)
+```
+
+### Interpreting an interaction model
+
+```{r}
+coef(ipv_model3)
+```
+
+
+## How interactions work
+
+- What is the predicted level of IPV tolerance in a country where sec_school = 20 in Latin America?
+- In Sub-Saharan Africa?
+
+Recall that Asia is the reference category
+
+## Visualizing interactions
+
+```{r echo = FALSE}
+ipv_new<-ipv %>% 
+  filter(!(is.na(sec_school)), !(is.na(beat_goesout)))
+
+coefs<-coef(ipv_model3)
+
+ggplot(ipv_new,
+       aes(x = sec_school, y = beat_goesout, color = region)) + 
+  geom_point() + 
+  geom_abline(aes(intercept = coefs[1], slope = coefs[2]), color ="#F8766D") + 
+  geom_abline(aes(intercept = coefs[1] + coefs[3], slope = coefs[2] + coefs[6]), color ="#7CAE00") + 
+  geom_abline(aes(intercept = coefs[1] + coefs[4], slope = coefs[2] + coefs[7]), color ="#00BFC4") + 
+  geom_abline(aes(intercept = coefs[1] + coefs[5], slope = coefs[2] + coefs[8]), color ="#C77CFF") 
+```
+
+## Practice with real data
+
+```{r size = "tiny"}
+budget<-read_csv("./slides/data/revenue_dat.csv")
+
+glimpse(budget)
+```
+
+## Let's build a theory: police spending
+
+What variables might be associated with police spending across places? 
+
+```{r size = "tiny"}
+names(budget)
+```
+
+## Let's build a model to match our theory
+
+Describe a linear model that matches the concepts we developed in our theory
+
+## Let's estimate the model
+
+Fit the model using `lm()`
+
+## Interpret the model
+
+What is the meaning of each $\beta$ parameter? What is the meaning of the standard deviation of this estimate?
+
+## Visualize the model
+
+Construct an appropriate visual for this model to aid in interpretation
+
+## Add an appropriate interaction
+
+Theorize then model an interaction that makes sense for this model
+
+## Visualize the interaction
+
+Visualize the interaction for multiple values of each predictor
+
+## Interpret your model
+
+Make sure you interpret the model in terms of *conditional means*. Do *not* interpret this model using causal language. We haven't designed for causal inference, but can use the model descriptively.
+
+## Homework
+
+Repeat this process with a new outcome: `violent.yr`. This variable is a measure of the average number of violent index crimes known to police in a county per year. Build a model that helps us explain variation in violent crime across counties and/or over time. 
+
+1. Describe your theory in plain english.
+2. Describe a linear model that matches your theory (provide equations for the model).
+3. Fit that model using `lm()`
+4. Interpret the parameter estimates for that model. 
+5. Visualize this model
+6. Add an appropriate interaction term. Explain your choice.
+7. Visualize this new model with an interaction
+8. Interpret the model 
