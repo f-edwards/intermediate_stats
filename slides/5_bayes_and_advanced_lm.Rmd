@@ -1,0 +1,360 @@
+---
+title: "Bayes!"
+author: "Frank Edwards"
+date: "2/24/2021"
+output: binb::metropolis
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(rstan)
+library(rstanarm)
+### to optimize stan model fitting for your computer, enable parallel processing
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+
+
+
+theme_set(theme_bw())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+```
+
+## Interpret these results
+
+```{r size = "scriptsize"}
+library(broom)
+data(mtcars)
+## mpg is miles per gallon, wt is weight in 1000 lbs
+m1<-lm(mpg ~ wt, data = mtcars)
+tidy(m1)
+```
+
+## Uncertainty in parameter estimates: frequentist
+
+```{r}
+### The Frequentist confidence interval: interpret
+confint(m1)
+```
+
+## Motivating two common approaches
+
+::: incremental 
+
+- **Frequentist**: The truth is fixed, we can estimate it using repeated sampling and large number theorems, assuming our measurement is one of many that could have resulted 
+- **Bayesian**: Given our assumptions and the data, which probability distribution is the most plausible answer? 
+
+:::
+
+## Uncertainty in parameter estimates: Bayesian
+
+```{r size = "tiny"}
+### estimate the model as a Bayesian lm
+m1_b<-stan_glm(mpg ~ wt, data = mtcars)
+
+### format the posterior as a tibble
+m1_b_post<-as_tibble(m1_b)
+
+### what the heck is this
+head(m1_b_post)
+```
+
+## Using posterior draws
+
+```{r}
+### now directly compute uncertainty interval
+m1_b_post %>% 
+  summarize(intercept_md = median(`(Intercept)`),
+            intercept_lwr = quantile(`(Intercept)`, 0.025),
+            intercept_upr = quantile(`(Intercept)`, 0.975))
+```
+
+## Using posterior draws
+
+```{r fig.height= 3}
+### or plot it!
+ggplot(m1_b_post) + 
+  geom_histogram(aes(x = `(Intercept)`))
+```
+
+## Using posterior draws
+
+```{r fig.height = 3}
+### or plot it!
+ggplot(m1_b_post) + 
+  geom_point(aes(x = `(Intercept)`, y = wt))
+```
+
+## Using posterior draws: fitted regression lines
+
+```{r fig.height = 3}
+### or plot it!
+ggplot(mtcars, aes(y = mpg, x = wt)) + 
+  geom_point()+
+  geom_abline(data = m1_b_post,
+              aes(intercept = `(Intercept)`,
+                  slope = wt),
+              alpha = 0.1)
+```
+
+## Some quick math: The likelihood
+
+The likelihood function is the probability density of the data, conditional on the parameters and predictors. Here, we use the Normal probability density function to model the likelihood of y. We routinely use a probability distribution to express the likelihood  
+
+\[p(y|X) \sim N(\mu, \sigma)\]
+
+\pause
+
+To estimate frequentist linear regression models, we can use **Maximum Likelihood Estimation**.
+
+\[p(y|a, b, \sigma, X) = \prod_{i=1}^n{\textrm{Normal}(y_i|a+bx_i, \sigma^2)}\]
+
+\pause
+
+We can solve for the maximum of the likelihood equation by taking the product of all Normal PDF values at each data point. The most likely parameter values are those values where the likelihood is maximized.
+
+## Maximum likelihood estimation (MLE)
+
+\[p(y|a, b, \sigma, X) = \prod_{i=1}^n{\textrm{Normal}(y_i|a+bx_i, \sigma^2)}\]
+
+We can solve for the maximum of the likelihood equation by taking the product of all Normal PDF values at each data point. The most likely parameter values are those values where the likelihood is maximized.
+
+\pause
+
+We can use the Normal PDF: 
+
+\[\frac{1}{\sigma\sqrt{2\pi}} e^{-\frac{1}{2}\left(\frac{x - \mu}{\sigma}\right)^2}\]
+
+To estimate the likelihood for any values of $x, \mu, \sigma$
+
+## Some quick math: Bayesian model estimation
+
+**Bayes' rule**
+
+\[p(A|B) = \frac{p(B|A) \cdot p(A)}{p(B)}\]
+
+\pause
+
+**Bayes' rule: model form**
+
+\[p(\textrm{parameter}|\textrm{Data}) = \frac{p(\textrm{Data}|\textrm{parameter}) \cdot p(\textrm{parameter})}{p(\textrm{Data})}\]
+
+
+## Translating this further
+
+**Bayes' rule: model form**
+
+\[p(\textrm{parameter}|\textrm{Data}) = \frac{p(\textrm{Data}|\textrm{parameter}) \cdot p(\textrm{parameter})}{p(\textrm{Data})}\]
+
+\pause
+
+\[\textrm{posterior} \propto \textrm{likelihood} \cdot \textrm{prior}\]
+
+# An example
+
+## Let's flip coins!
+
+We are going to flip 15 coins, but have no idea how likely this coin is to land on heads.
+
+\pause
+
+**Likelihood**
+
+\[y_i \sim Binomial(15, p)\]
+
+\pause
+
+We can express this lack of insight by stating our prior beliefs:
+
+**Prior for p**
+
+\[p \sim \textrm{Uniform}(0,1)\]
+
+## Probability densities
+
+Our prior, a uniform distribution for a proportion on [0,1]
+
+```{r echo = F, fig.height = 4}
+ggplot(data = data.frame(x = c(-0, 1)), aes(x)) +
+  stat_function(fun = dunif, n = 101, args = list(min = 0, max =1)) + ylab("") +
+  ggtitle("x ~ Unif(0,1)")
+```
+
+## So far
+
+We are assuming that the data have a Bernoulli likelihood. We have no idea what p is. 
+
+\pause
+
+Let's collect data!
+
+```{r}
+coins<-rbinom(15, 1, prob = 0.4)
+coins
+```
+
+## Now let's compute a likelihood for possible values of p
+
+```{r, size = "tiny"}
+p<-data.frame(p_seq = seq(0, 1, 0.05))
+
+### use dbinom to compute the probabilities
+p<-p %>% 
+  mutate(likelihood = dbinom(sum(coins), 15, p_seq),
+         prior = 1,
+         posterior = prior * likelihood)
+
+p
+```
+
+## And visualize it!
+
+```{r fig.height = 3}
+ggplot(p,
+       aes(x = p_seq, y = prior)) + 
+  geom_line(lty = 2) + 
+  geom_line(aes(y = posterior)) + 
+  geom_vline(xintercept = sum(coins)/15, color = "red") + 
+  geom_vline(xintercept = 0.4, color = "blue") +
+  labs(subtitle = "dashed line is prior, solid line is posterior, red line is observed, blue is true p",
+       y = "probability density", x= "parameter value")
+```
+
+## What if we used a different prior?
+
+What if we brought in our prior knowledge that $p(coin) = 0.5$.
+
+```{r size = "tiny"}
+p<-data.frame(p_seq = seq(0, 1, 0.05))
+
+### use dbinom to compute the probabilities
+p<-p %>% 
+  mutate(likelihood = dbinom(sum(coins), 15, p_seq),
+         prior = ifelse(p_seq==0.5, 1, 0),
+         posterior = prior * likelihood)
+
+### weird...
+p
+```
+
+# Back to regression
+
+## The mpg data again
+
+```{r size = "tiny"}
+m1_bayes<-stan_glm(mpg ~ wt,
+                   data = mtcars)
+
+### check out the default weakly informative priors
+prior_summary(m1_bayes)
+```
+
+## What do those priors tell us?
+
+\[p(\beta_0) \sim N(20, 15)\]
+\[p(\beta_1) \sim N(0, 15)\]
+
+## Interpreting in a Bayesian vs frequentist context
+
+```{r}
+confint(m1)
+
+posterior_interval(m1_bayes)
+```
+
+## Working with Bayesian models: posterior parameter inference
+
+```{r size = "tiny"}
+## let's play with this
+m1_bayes_post<-as_tibble(m1_bayes)
+glimpse(m1_bayes_post)
+```
+
+## Posterior prediction
+
+```{r size = "tiny"}
+### predict over each observed value of mpg
+### and make it tidy, because tidy is nice
+m1_preds<-as_tibble(posterior_predict(m1_bayes)) %>% 
+  pivot_longer(cols = everything())
+
+head(m1_preds)
+
+## add the observed mpg value back in
+m1_preds<-m1_preds %>% 
+  left_join(mtcars %>% 
+  mutate(name = rownames(mtcars)) %>% 
+  select(name, mpg))
+```
+
+## And then plot it!
+
+```{r size = "tiny", fig.height = 4}
+ggplot(m1_preds,
+       aes(x = value)) + 
+  geom_density() + 
+  geom_vline(aes(xintercept = mpg)) + 
+  facet_wrap(~name)
+```
+
+## Well, this is easy
+
+```{r}
+plot(m1_bayes, "areas")
+```
+
+## Let's make a more informative posterior prediction
+
+```{r size = "tiny", fig.height = 3}
+fake_data<-tibble(wt = seq(1.5, 5.5, 0.1))
+
+pred_out<-as_tibble(posterior_predict(m1_bayes, newdata = fake_data)) %>% 
+  pivot_longer(cols = everything(), names_to = "wt", values_to = "mpg_hat") %>% 
+  mutate(wt = as.numeric(wt), mpg_hat = as.numeric(mpg_hat))
+
+ggplot(pred_out, aes(x = wt, y = mpg_hat)) +
+  geom_point(alpha = 0.1)
+```
+
+## More exciting models
+
+Maybe fuel efficiency is a joint function of weight and engine power?
+
+```{r}
+m2_bayes<-stan_glm(mpg ~ scale(wt) + scale(hp),
+                   data = mtcars)
+posterior_interval(m2_bayes)
+```
+
+What's this scale() nonsense?
+
+## Interactions!
+
+```{r}
+m3_bayes<-stan_glm(mpg ~ scale(wt) + scale(hp) + 
+                     scale(wt)*scale(hp),
+                   data = mtcars)
+
+posterior_interval(m3_bayes)
+```
+
+## Which one is a better fit?
+
+We can use leave-one-out cross validation to compare model fits
+
+```{r}
+loo_m1<-loo(m1_bayes)
+loo_m2<-loo(m2_bayes)
+loo_m3<-loo(m3_bayes)
+loo_compare(loo_m1, loo_m2, loo_m3)
+```
+
+## Homework
+
+Repeat HW3 with Bayesian regression models.
+
+Use appropriate techniques to describe your findings. 
