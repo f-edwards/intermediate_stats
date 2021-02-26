@@ -98,7 +98,7 @@ ggplot(mtcars, aes(y = mpg, x = wt)) +
   geom_abline(data = m1_b_post,
               aes(intercept = `(Intercept)`,
                   slope = wt),
-              alpha = 0.1)
+              alpha = 0.01)
 ```
 
 ## Some quick math: The likelihood
@@ -313,8 +313,8 @@ plot(m1_bayes, "areas")
 fake_data<-tibble(wt = seq(1.5, 5.5, 0.1))
 
 pred_out<-as_tibble(posterior_predict(m1_bayes, newdata = fake_data)) %>% 
-  pivot_longer(cols = everything(), names_to = "wt", values_to = "mpg_hat") %>% 
-  mutate(wt = as.numeric(wt), mpg_hat = as.numeric(mpg_hat))
+  pivot_longer(cols = everything(), names_to = "index", values_to = "mpg_hat") %>% 
+  mutate(mpg_hat = as.numeric(mpg_hat))
 
 ggplot(pred_out, aes(x = wt, y = mpg_hat)) +
   geom_point(alpha = 0.1)
@@ -325,6 +325,10 @@ ggplot(pred_out, aes(x = wt, y = mpg_hat)) +
 Maybe fuel efficiency is a joint function of weight and engine power?
 
 ```{r}
+
+m2_bayes_noscale<-stan_glm(mpg ~ wt + hp,
+                   data = mtcars)
+
 m2_bayes<-stan_glm(mpg ~ scale(wt) + scale(hp),
                    data = mtcars)
 posterior_interval(m2_bayes)
@@ -347,11 +351,39 @@ posterior_interval(m3_bayes)
 We can use leave-one-out cross validation to compare model fits
 
 ```{r}
+m4_bayes<-stan_glm(mpg ~ scale(wt) + scale(hp) + scale(cyl)+
+                     scale(wt)*scale(hp),
+                   data = mtcars)
+
+
 loo_m1<-loo(m1_bayes)
 loo_m2<-loo(m2_bayes)
 loo_m3<-loo(m3_bayes)
-loo_compare(loo_m1, loo_m2, loo_m3)
+loo_m4<-loo(m4_bayes)
+loo_compare(loo_m1, loo_m2, loo_m3, loo_m4)
 ```
+
+```{r}
+### predict over each observed value of mpg
+### and make it tidy, because tidy is nice
+m3_preds<-as_tibble(posterior_predict(m3_bayes)) %>% 
+  pivot_longer(cols = everything())
+
+head(m3_preds)
+
+## add the observed mpg value back in
+m3_preds<-m3_preds %>% 
+  left_join(mtcars %>% 
+  mutate(name = rownames(mtcars)) %>% 
+  select(name, mpg))
+
+ggplot(m3_preds,
+       aes(x = value)) + 
+  geom_density() + 
+  geom_vline(aes(xintercept = mpg)) + 
+  facet_wrap(~name)
+```
+
 
 ## Homework
 
