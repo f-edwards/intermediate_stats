@@ -252,7 +252,7 @@ This is the direct interpretation in terms of `admit`
 
 What does $\beta_1$ mean?
 
-##
+## What do these models mean?
 
 ```{r}
 coef(m1_b)
@@ -321,7 +321,7 @@ ggplot(new_dat, aes(x = gpa, y = probability)) +
 
 What else might predict admission?
 
-```{r}
+```{r size = "tiny"}
 head(admissions)
 ```
 
