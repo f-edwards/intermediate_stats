@@ -195,7 +195,7 @@ new_dat<-new_dat %>%
   mutate(logit_p = logit(p))
 #3.
 ggplot(new_dat,
-       aes(x = p, y = logit_p)) + 
+       aes(y = p, x = logit_p)) + 
   geom_line()
 ```
 
@@ -212,10 +212,10 @@ ggplot(new_dat,
 new_dat<-tibble(x = seq(-10, 10, by = 0.1))
 #2.
 new_dat<-new_dat %>% 
-  mutate(inv_logit_x = inv_logit(x))
+  mutate(inv_logit_x = inv_logit(x)) 
 #3.
 ggplot(new_dat,
-       aes(x = x, y = inv_logit(x))) + 
+       aes(x = inv_logit(x), y = x)) + 
   geom_line()
 ```
 
@@ -271,7 +271,15 @@ Because $\textrm{logit}(p_i) = \log(\frac{p}{1-p})= \beta_0 + \beta_1x_i$ \pause
 We can interpret $\beta_1$ several ways
 
 - Log odds: $\beta_1$ \pause
-- Odds ratio: $e^{\beta_1 }$ \pause 
+- Odds ratio: $e^{\beta_1 }$ \pause
+
+```{r}
+p<-seq(0.1, 0.9, by = 0.05)
+odds<-p/(1-p)
+plot(odds, p)
+```
+
+
 - Probability: $logit^{-1}(x) = \frac{exp(X \beta)}{exp(X \beta) + 1}$
 
 ## The challenge of interpretation 
@@ -289,6 +297,20 @@ ggplot(new_dat,
 1. Compute the expected probability of admission for a student with a 2.0 GPA \pause
 2. For a student with a 3.0 GPA \pause
 3. Assume the 2.0 and 3.0 student each bumped their GPA up by 0.5. How much does their expected probability of admission change?
+
+
+```{r}
+p2<-inv_logit(-4.37 + 1.06 *2)
+p2.5<-inv_logit(-4.37 + 1.06 *2.5)
+
+diff2<-p2.5 - p2
+
+p3<-inv_logit(-4.37 + 1.06 *3)
+p3.5<-inv_logit(-4.37 + 1.06 *3.5)
+
+diff3<-p3.5 - p3
+```
+
 
 ## The challenge of interpretation
 
@@ -326,8 +348,109 @@ head(admissions)
 ```
 
 1. Write out a model 
+
+\[\textrm{logit}(p_i) = \beta_0 + \beta_1\textrm{GPA}_i + \beta_2\textrm{GRE}_i\]
+\[\textrm{admit} \sim \textrm{Bernoulli}(p)\]
+
 2. Fit the model
+
+```{r}
+m1<-stan_glm(admit ~ gpa, 
+             data = admissions,
+             family = "binomial")
+
+### FOR A BAYESIAN MODEL
+m2<-stan_glm(admit ~ gpa + gre, 
+             data = admissions,
+             family = "binomial")
+
+
+new_dat<-tibble(gpa = 3.39,
+                gre = seq(220, 800, by = 10))
+
+ppd<-posterior_linpred(m2, newdata = new_dat)
+
+ppd<-as_tibble(ppd) %>% 
+  pivot_longer(cols = everything()) %>% 
+  mutate(name = as.numeric(name)) %>% 
+  group_by(name) %>% 
+  summarise(p_med = inv_logit(median(value)),
+            p_lwr = inv_logit(quantile(value, 0.05)),
+            p_upr = inv_logit(quantile(value, 0.95)))
+
+new_dat<-new_dat %>% 
+  bind_cols(ppd)
+
+ggplot(new_dat, 
+       aes(x= gre, y = p_med, ymin = p_lwr, ymax = p_upr)) +
+  geom_line()+ 
+  geom_ribbon(alpha= 0.5)
+
+#### FOR A FREQUENTIST MODEL
+new_dat<-tibble(gpa = 3.39,
+                gre = seq(220, 800, by = 10))
+
+m2<-glm(admit ~ gpa + gre, 
+             data = admissions,
+             family = "binomial")
+
+new_dat<-new_dat %>% 
+  mutate(yhat = predict(m2, new_dat, type = "response"))
+
+ggplot(new_dat, aes(x = gre, y = yhat)) + 
+  geom_line() + 
+  ylim(0, 0.6)
+```
+
 3. Think about revising the model
+
+```{r}
+m3<-glm(admit ~ gpa + gre + factor(rank),
+        data = admissions)
+
+#### FOR A FREQUENTIST MODEL
+new_dat<-tibble(gpa = 3.39,
+                gre = rep(seq(220, 800, length.out = 100), 4),
+                rank = rep(seq(1, 4, by = 1), each = 100))
+
+new_dat<-new_dat %>% 
+  mutate(yhat = predict(m3, new_dat))
+
+ggplot(new_dat, aes(x = gre, y = yhat,
+                    color = factor(rank))) + 
+  geom_line() + 
+  ylim(0, 0.6)
+
+### FAVOR THE MODEL WITH THE LOWER SCORE HERE
+AIC(m3)
+AIC(m2)
+
+
+m3<-stan_glm(admit ~ gpa + gre + factor(rank),
+        data = admissions)
+
+m4<-glm(admit ~ gpa * gre,
+        data = admissions)
+
+AIC(m4)
+AIC(m3)
+AIC(m2)
+
+### USE LEAVE ONE OUT CROSS VALIDATION FOR BAYES
+loo_m2<-loo(m2)
+loo_m3<-loo(m3)
+
+loo_compare(loo_m2, loo_m3)
+
+m4<-stan_glm(admit ~ gpa * gre,
+        data = admissions)
+
+loo_m4<-loo(m4)
+
+loo_compare(loo_m2, loo_m3, loo_m4)
+```
+
+
 4. Compare model fits
 5. Interpret the model 
 
