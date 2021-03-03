@@ -1,7 +1,7 @@
 ---
 title: "Logistic regression, 1"
 author: "Frank Edwards"
-date: "2/22/2019"
+date: "3/3/2021"
 output: binb::metropolis
 ---
 
