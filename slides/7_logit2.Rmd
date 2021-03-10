@@ -1,0 +1,518 @@
+---
+title: "Interpreting logistic models"
+author: "Frank Edwards"
+date: "3/10/2021"
+output: binb::metropolis
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+library(tidyverse)
+library(rstan)
+library(rstanarm)
+library(broom)
+### to optimize stan model fitting for your computer, enable parallel processing
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+
+
+
+theme_set(theme_bw())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+```
+
+## Quick review
+
+- Remember that logistic regression is a GLM with a logit link function \pause
+- A GLM takes the form: $g(y) = \textrm{X}\beta$ \pause
+- Logistic regression is the special case where g is the logit function: $\textrm{logit}(y) = \textrm{X}\beta$ \pause
+- A logistic regression model returns $\textrm{X}\beta$ on the logit scale \pause
+- How can we convert $\textrm{x}\beta$ to something useful?
+
+## Let's return to the grad school admission example
+
+```{r}
+admits<-read_csv("./data/binary.csv")
+summary(admits)
+```
+
+
+## Let's explore our outcome
+
+Huh, all this tells us is mean(admits) = `r mean(admits$admit)`
+
+```{r fig.height=3}
+hist(admits$admit)
+```
+
+## Let's look at this as the distribution of the probability of admissions across the data
+
+- First, fit an intercept-only logistic regression model
+
+```{r}
+m0<-glm(admit ~ 1, data = admits, family = "binomial")
+m0_est<-tidy(m0)
+```
+
+- What does this model tell us? 
+
+## What does this model tell us?
+
+```{r size = "tiny"}
+m0_est$estimate ## log odds
+exp(m0_est$estimate) ## odds
+invlogit(m0_est$estimate) ## probability
+mean(admits$admit) ## mean admission probability
+```
+
+## Let's add a predictor
+
+```{r}
+m1<-glm(admit ~ 1 + gre, data = admits, family = "binomial")
+m1
+```
+
+## Before and after - what's going on?
+
+```{r echo = F}
+par(mfrow=c(1,2))
+hist(predict(m0, type = "response"), main = "Intercept only")
+hist(predict(m1, type = "response"), main = "With GRE predictor")
+```
+
+## Two linear predictors
+
+Why do these generate such different predictions?
+
+**Intercept only model (m0)**: $p(admit) = \beta_0$
+**With GRE predictor (m1)**: $p(admit) = \beta_0 + \beta_1 GRE_i$
+
+## To ease interpretation, let's scale GRE
+
+Scale mean-centers and SD scales variables: $\textrm{scale}(x_i) = \frac{x_i - \bar{x}}{sd(x)}$
+
+## Linear transformations of variables: mean-center and SD scale
+
+```{r echo = F}
+plot_dat<-admits %>% 
+  mutate(gre_s = as.vector(scale(gre)))
+
+par(mfrow=c(1,2))
+plot(density(plot_dat$gre))
+plot(density(plot_dat$gre_s))
+```
+
+
+## Re-estimate the model: much nicer to look at
+```{r}
+admits<-admits%>%
+  mutate(gre_s = as.numeric(scale(gre)))
+m1<-glm(admit ~ 1 + gre_s, data = admits, family = "binomial")
+m1_est<-tidy(m1)
+m1_est
+```
+
+## Interpret the model
+
+```{r}
+m1_est
+```
+
+
+Remember: $\textrm{logit}(y) = \textrm{X}\beta = \textrm{log}\left(\frac{y}{1-y}\right)$
+
+So: $y = \textrm{logit}^{-1}(\textrm{X}\beta) = \frac{\textrm{exp}(\textrm{X}\beta)}{\textrm{exp}(\textrm{X}\beta) + 1}$ \pause
+
+- What is $\beta_0$? \pause
+- What is $\beta_1$?
+
+## Refresher on exponentials
+
+$$e^{y_1 + y_2} = e^{y_1} e^{y_2}$$ \pause
+
+and 
+
+$$e^{y_1 - y_2} = \frac{e^{y_1}}{e^y_2}$$ \pause
+
+so how can we rewrite: 
+
+$$\textrm{exp}(\textrm{logit}(y)) = \frac{y}{1-y} = e^{\beta_0 + \beta_1x_1} $$
+
+## Non-linear relationships
+
+On the log scale, $\beta_0$ and $\beta_1$ are related to y multiplicatively because
+
+$$e^{\beta_0 + \beta_1x_1} = e^{\beta_0}e^{\beta_1x_1}$$
+
+## Odds 
+
+Odds are defined as the probability of the event occurring divided by the probability of probability of the event not occurring. To obtain odds in a logistic regression, we exponentiate both sides: 
+
+$$\frac{y}{1-y} = e^{\beta_0 + \beta_1x_1}$$ \pause
+
+The odds of $y==1$ are simply $e^{X\beta}$
+
+## Odds ratios
+
+The odds ratio is the ratio of two odds - or the proportional change in odds. We can obtain an isolated estimate for the relationship between $\beta_1x_{1i}$ and $y$ this way:
+
+$$\frac{Odds(y |x_1 = 1)}{Odds(y|x_1 = 0)} =  \frac{e^{X\beta + \beta_1}} {e^{X\beta}} = \frac{e^{X\beta} \times e^{\beta_1}} {e^{X\beta}} =  e^{\beta_1}$$
+
+The odds ratio can be interpreted as the change in odds of $y==1$ for a one-unit change in $x_1$. 
+
+## Interpreting odds ratios
+
+- Odds ratios appear convenient - $e^{\beta_1}$ is a percent change in $y$ for a one-unit change in $x_1$ \pause
+
+How do they work?
+
+## In our example: what do these figures mean?
+
+```{r size = "scriptsize"}
+new_dat<-c(1,0) # for scale(gre) == 0, mean score
+odds_0<-exp(new_dat%*%m1_est$estimate)
+odds_0
+new_dat1<-c(1,1)
+odds_1<-exp(new_dat1%*%m1_est$estimate)
+odds_1
+odds_1/odds_0 # odds ratio
+exp(m1_est$estimate[2]) # exp(beta_1)
+```
+
+## Interpreting the odds ratio
+
+The odds of admission are `exp(m1_est$estimate[2])` times higher for a student with a GRE score one standard deviation above the mean than they are for a student with a mean GRE score. \pause
+
+Any trouble you can anticipate here? \pause
+
+## A visual example: the "effect" of 1 SD increase in GRE scores on Pr(admit==1)
+
+```{r, echo = FALSE}
+new_dat<-data.frame(gre_s=seq(-3, 0.8, by = 0.001))
+p<-predict(m1, newdata = new_dat, type = "response")
+new_dat2<-new_dat%>%mutate(gre_s = gre_s + 1)
+p2<-predict(m1, newdata = new_dat2, type = "response")
+par(mfrow=c(1,3))
+plot_dat<-data.frame(p = p2, gre_s = new_dat2$gre_s, type = "P(admit)")
+plot_dat<-plot_dat%>%
+  bind_rows(data.frame(p = p2 - p, gre_s = new_dat2$gre_s, type = "P(admit|gre_s+1)-P(admit)"))
+            
+ggplot(plot_dat, aes(x = gre_s, y = p, color = type)) + geom_line()
+
+```
+
+## It is easy enough to work on the probability scale
+
+To obtain predicted probabilities of the observed:
+
+- p_hat<-invlogit(predict(m1))
+- p_hat<-predict(m1, type = "response")
+
+## On the probability scale
+
+```{r size = "scriptsize", fig.height = 2}
+preds<-predict(m1, type = "response")
+p_hat<-data.frame(gre = admits$gre,
+                  p = preds)
+
+ggplot(p_hat, aes(x = gre, y = p)) + 
+  geom_line()
+```
+
+## The basic logic of prediction
+
+1. Choose scenarios of theoretical interest
+2. Define these in terms of "counterfactual" (fake) data
+3. Plug these fake data into the linear predictor (regression equation)
+4. Visualize!
+
+## The basic logic of prediction
+
+Reminder: our model is 
+
+$$logit(p(admit_i)) = \beta_0 + \beta_1GRE_i$$
+$$admit_i \sim Binomial(1, p)$$
+```{r}
+m1<-glm(admit ~ gre, data = admits, family = "binomial")
+```
+
+1. Choose scenarios of theoretical interest
+
+Low GRE, average GRE, high GRE
+
+## Define these scenarios in R
+
+2. Define these in terms of "counterfactual" (fake) data
+
+```{r size = "tiny"}
+## Look at the distribution of the data to think about scenarios
+mean(admits$gre)
+sd(admits$gre)
+```
+
+\pause
+
+Let's define scenarios at the mean, 1 SD below the mean, and 1 SD above the mean
+
+```{r size = "tiny"}
+fake_data<-data.frame(gre = c(
+  mean(admits$gre),
+  mean(admits$gre) - sd(admits$gre),
+  mean(admits$gre) + sd(admits$gre)
+))
+
+fake_data
+```
+
+## Generating expected probabilities
+
+3. Plug these fake data into the linear predictor (regression equation)
+
+Because $logit(p(admit_i)) = \beta_0 + \beta_1x_i$, we can compute the expected probability of admission for a student with mean GRE scores as
+
+```{r}
+coef(m1)
+### mean GRE scenario: linear predictor
+-2.9 + 0.0036 * 587.7
+```
+
+\pause
+
+```{r}
+### on probability scale
+invlogit(-2.9 + 0.0036 * 587.7)
+```
+
+## Generating expected probabilities
+
+3. Plug these fake data into the linear predictor (regression equation)
+
+The `predict()` function makes life very easy here
+
+```{r}
+## linear predictor
+predict(m1, newdata = fake_data)
+## probability scale (inverse logit)
+predict(m1, newdata = fake_data, type = "response")
+```
+
+## Intrepretation through visuals
+
+4. Visualize!
+
+```{r size = "tiny", fig.height = 2, fig.width = 2}
+### set up our data frame with predictions for plotting
+fake_data<-fake_data %>% 
+  mutate(p_hat = predict(m1, newdata = fake_data, type = "response"))
+
+ggplot(fake_data,
+       aes(x = gre, y = p_hat)) + 
+  geom_point()
+```
+
+# Break
+
+## Fitting a Bayesian logistic regression model
+
+```{r}
+m1_b<-stan_glm(admit ~ gre,
+               family = "binomial",
+               data = admits)
+```
+
+## Examining our fit
+
+The posterior samples *are* our parameter estimates
+
+```{r}
+m1_b_post<-as.data.frame(m1_b)
+str(m1_b_post)
+```
+
+```{r echo = F, fig.height = 3}
+par(mfrow=c(1,2))
+plot(density(m1_b_post[,1]))
+plot(density(m1_b_post[,2]))
+```
+
+## Posterior parameter estimates and uncertainty
+
+90 percent of parameter values that are compatible with our data and priors fall between
+
+```{r}
+quantile(m1_b_post$`(Intercept)`, probs = c(0.05, 0.95))
+quantile(m1_b_post$gre, probs = c(0.05, 0.95))
+```
+
+\pause
+
+How do we summarize uncertainty in `p`?
+
+## Uncertainty in the linear predictor
+
+We have two sources of uncertainty in our linear predictor $logit(p) = \beta_0 + \beta_1x_1$
+
+\pause
+
+If an applicant had a GRE score of 600, our posterior expected value of $logit(p)$ is
+
+```{r}
+### evaluate the linear equation at all draws of the posterior parameters
+logit_p_hat<-m1_b_post$`(Intercept)` + m1_b_post$gre * 600
+summary(logit_p_hat)
+### on the probability scale using inverse logit
+summary(invlogit(logit_p_hat))
+```
+
+## Uncertainty in the linear predictor
+
+The same operation can be performed (more easily!) with `posterior_linpred()` for the linear predictor (logit) scale, and `posterior_epred()` for the original scale (probability)
+
+```{r}
+fake_data<-data.frame(gre = 600)
+logit_p_hat2<-posterior_linpred(m1_b, newdata = fake_data)
+p_hat2<-posterior_epred(m1_b, newdata = fake_data)
+```
+
+```{r echo=F, fig.height = 3}
+par(mfrow=c(1,2))
+plot(density(logit_p_hat2))
+plot(density(p_hat2))
+```
+
+## Generating uncertainty estimates for a series of scenarios
+
+```{r}
+fake_data<-data.frame(gre = 400:800)
+p_hat<-posterior_epred(m1_b, newdata = fake_data)
+### This produces a 4000 row x 401 column matrix, 4000 simulated draws for each scenario
+dim(p_hat)
+```
+
+## Visualizing the uncertainty
+
+Let's compute 90 percent intervals for each scenario, then plot the results
+
+```{r}
+### convert to data frame and make it long for plotting
+p_hat<-as_tibble(p_hat)
+p_hat<-p_hat %>% 
+  pivot_longer(cols = everything(),
+               names_to = "scenario",
+               values_to = "p_hat")
+
+## compute the uncertainty interval and posterior mean
+p_hat<-p_hat %>% 
+  mutate(scenario = as.numeric(scenario)) %>% 
+  group_by(scenario) %>% 
+  summarise(y_lwr = quantile(p_hat, 0.05), 
+            y_upr = quantile(p_hat, 0.95),
+            y_mn = mean(p_hat))
+
+head(p_hat)
+```
+
+## Now plot it
+
+```{r size = "tiny"}
+## attach the GRE scores using scenario number (row number)
+fake_data<-fake_data %>% 
+  mutate(scenario = 1:n())
+### join to p_hat
+p_hat<-p_hat %>% 
+  left_join(fake_data)
+## plot with uncertainty interval
+ggplot(p_hat,
+       aes(x = gre, y = y_mn, ymin = y_lwr, ymax = y_upr)) + 
+  geom_ribbon(alpha = 0.5)+
+  geom_line()
+```
+
+## Posterior uncertainty: parameters and predictions
+
+`p_hat` describes our uncertainty in $p$, driven by our estimated uncertainty in $\beta_0$ and $\beta_1$.
+
+Does it describe our uncertainty in `admit`?
+
+\pause
+
+Recall that our model is:
+
+
+$$logit(p(admit_i)) = \beta_0 + \beta_1GRE_i$$
+$$admit_i \sim Binomial(1, p)$$
+
+\pause
+
+Uncertainty in `admit` is driven by the binomial distribution
+
+## The posterior predictive distribution
+
+We can now take our posterior estimates for $p$, and draw predictions from the *posterior predictive distribution*. This approach averages over our uncertainty in both the parameters, and in sampling the outcome.
+
+We can use our uncertainty in $p$ to estimate uncertainty in `admit` for new applicants
+
+```{r size = "tiny"}
+p_hat<-posterior_epred(m1_b, newdata = fake_data)
+### first few draws of p for scenario 1, GRE = 400
+head(p_hat[,1])
+### simulate admissions for each value of p_hat
+admit_hat_scen1<-rbinom(4000, 1, p_hat[,1])
+```
+
+## The posterior predictive distribution
+
+```{r size = "tiny"}
+mean(admit_hat_scen1)
+sd(admit_hat_scen1)
+### compare admit_hat to p_hat
+mean(p_hat[,1])
+sd(p_hat[,1])
+```
+
+## The posterior predictive distribution
+
+```{r}
+admit_hat<-posterior_predict(m1_b, newdata = fake_data)
+dim(admit_hat)
+admit_hat[1:10, 1:10]
+```
+
+# Back to the Titanic
+
+## Let's work through a Bayesian fit 
+
+1. Define the model
+2. Estimate the model
+3. Visualize the model
+
+## Prediction and logistic regression
+
+1. Subset the data into training and test data
+2. Estimate the model on the training data
+3. Predict on the test data
+4. Evaluate accuracy
+
+```{r echo = F}
+dat<-read_csv("./data/titanic.csv")
+### set up test and training data with a simple random sample
+training1<-dat %>% 
+  sample_frac(0.75)
+test1<-dat %>% 
+  anti_join(training1)
+write_csv(training1, "./data/titanic_training1.csv")
+write_csv(test1, "./data/titanic_test1.csv")
+
+training2<-dat %>% 
+  filter(Age>18)
+test2<-dat %>% 
+  anti_join(training2)
+write_csv(training2, "./data/titanic_training2.csv")
+write_csv(test2, "./data/titanic_test2d.csv")
+
+```
+
