@@ -43,6 +43,24 @@ nwsl_players<-player
 head(nwsl_players)
 ```
 
+## make a joined table with players names
+
+```{r}
+### attaching names
+dat<-nwsl_stats %>% 
+  left_join(nwsl_players %>% 
+              select(person_id, player))
+
+### check to ensure that the dimensions are what we want
+nrow(dat) == nrow(nwsl_stats)
+
+### if we have multiple positions for players
+dat<-nwsl_stats %>% 
+  left_join(nwsl_players)
+```
+
+
+
 # Approaches to modeling count data
 
 ## The Poisson model
@@ -91,9 +109,129 @@ pois_demo%>%group_by(lambda)%>%
 For a count variable $y$, we can specify a Poisson GLM with a log link function
 
 $$ y \sim Poisson(\lambda) $$
-$$ \lambda = \beta X = \beta_0 + \beta_1 x_1 \cdots \beta_n x_n $$
+$$ \lambda = e^{\beta X} = e^{\beta_0 + \beta_1 x_1 \cdots \beta_n x_n} $$
 $$E(y|x) = e^\lambda $$
 $$log(E(y|x)) = \lambda = \beta X $$
+
+## Model NWSL data as a Poisson GLM
+
+```{r}
+m0_mp<-glm(mp ~ 
+             1,
+           data = dat,
+           family = "poisson")
+
+### check to see if the data looks similar to the poisson
+data_sim<-data.frame(
+  y_pred = rpois(nrow(dat), 13.54815),
+  mp = dat$mp
+)
+
+## evaluate the distributions
+ggplot(data_sim,
+       aes(x = y_pred)) + 
+  geom_histogram(fill = "red", alpha = 0.5) + 
+  geom_histogram(aes(x = mp), fill = "blue", alpha = 0.5)
+
+```
+
+## Modeling assists
+
+```{r}
+assist_0<-glm(ast ~ 1,
+              data = dat,
+              family = "poisson")
+
+sim_dat<-data.frame(
+  y_pred = rpois(nrow(dat), 0.9782119),
+  ast = dat$ast
+)
+
+ggplot(sim_dat,
+       aes(x = y_pred)) + 
+  geom_histogram(fill = "red", alpha =0.5) + 
+  geom_histogram(aes(x = ast), fill = "blue", alpha = 0.5)
+
+assist_1<-lm(ast~1,
+             data = dat)
+
+sim_dat<-sim_dat %>% 
+  mutate(y_pred_norm = rnorm(nrow(dat), 0.9782, 1.492429))
+
+ggplot(sim_dat,
+       aes(x = y_pred)) + 
+  geom_histogram(fill = "red", alpha =0.5) + 
+  geom_histogram(aes(x = ast), fill = "blue", alpha = 0.5) + 
+  geom_histogram(aes(x = y_pred_norm), fill = "black", alpha =0.5)
+```
+
+
+```{r}
+assist_2<-glm(ast~
+                gls,
+              data = dat,
+              family = "poisson")
+
+### let's compare model fits to see if we are doing better
+BIC(assist_0)
+BIC(assist_2, assist_0)
+### model 2 is a big improvement
+
+sim_dat<-sim_dat %>% 
+  mutate(y_pred2 = rpois(nrow(dat),
+                         predict(assist_2, type = "response")))
+
+
+ggplot(sim_dat,
+       aes(x = y_pred2)) + 
+  geom_histogram(fill = "red", alpha = 0.5)+
+  geom_histogram(aes(x = ast), fill = "blue", alpha = 0.5)
+
+BIC(assist_2, assist_0)
+
+```
+
+```{r}
+assist_3<-glm(ast~
+                gls + mp,
+              data = dat,
+              family = "poisson")
+
+BIC(assist_3, assist_2, assist_0)
+
+sim_dat<-sim_dat %>% 
+  mutate(y_pred3 = rpois(nrow(dat),
+                         predict(assist_3, type = "response")))
+
+ggplot(sim_dat,
+       aes(x = y_pred3)) + 
+  geom_histogram(fill = "red", alpha = 0.5)+
+  geom_histogram(aes(x = ast), fill = "blue", alpha = 0.5)
+
+```
+
+## let's generate predictions for players
+
+```{r}
+### take our two predictors
+### define reasonable ranges to predict over
+mp<-1:24
+gls<-0:5
+### generate expected values
+fake_data<- expand_grid(mp, gls) 
+
+fake_data<-fake_data%>% 
+  mutate(expected_assists = 
+           predict(assist_3, fake_data,
+                   type = "response"))
+
+ggplot(fake_data,
+       aes(x = mp, y = expected_assists,
+           color = factor(gls))) + 
+  geom_line()
+```
+
+
 
 ## Advantages of the Poisson distribution for regression
 
@@ -110,6 +248,6 @@ $$\lambda = E(y|x) = var(y)$$
 1. Visualize the distribution of goals across players for the 2019 season (your choice on geom)
 2. Define a linear predictor for goals made during a season, where the players' position is the only predictor.
 3. Estimate this model with a Normal likelihood (OLS)
-4. Estimate this model with a Poisson likelihood (family = "Poisson")
+4. Estimate this model with a Poisson likelihood (family = "poisson")
 5. Generate predictions for each position for both models
 6. Compare the predictions. Which model do you prefer? Why? 
