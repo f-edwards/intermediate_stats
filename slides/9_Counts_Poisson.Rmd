@@ -1,0 +1,115 @@
+---
+title: "Count data and the Poisson distribution"
+author: "Frank Edwards"
+output: binb::metropolis
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+rm(list=ls())
+library(tidyverse)
+library(broom)
+select<-dplyr::select
+set.seed(1)
+
+options(xtable.comment = FALSE)
+theme_set(theme_bw())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+```
+
+## Count data
+
+- Counts are cumulative totals of the number of incidences of some event, generally across time or place \pause
+- Counts are positive integers $\in [0,\infty]$  \pause
+
+## Counts as extensions of binary data
+
+- Counts can be thought of as repeated binary trials
+- $\sum{y_i}$ where y is equal to 1 or 0 provides a count
+- Generally, we could treat \texttt{sum(y==1) + sum(y==0)} or \texttt{nrow(y)} as the exposure, or denominator for a rate. Why?
+
+## An example of count data
+```{r message = FALSE, size = "tiny"}
+load("./data/fieldplayer_overall_season_stats.rda")
+load("./data/player.rda")
+
+nwsl_stats<-fieldplayer_overall_season_stats
+nwsl_players<-player
+
+head(nwsl_players)
+```
+
+# Approaches to modeling count data
+
+## The Poisson model
+
+Where y is a non-negative integer (count)
+
+$$y \sim Poisson (\lambda)$$
+$$E(y) = \bar{y} = \lambda$$
+$$Var(y)=\lambda $$
+$$Pr(y = k) = \frac{\lambda^k e^{-\lambda}}{k!} $$
+
+## Shape of the Poisson distribution
+```{r, echo = FALSE}
+p1<-rpois(10000, 1)
+p2<-rpois(10000, 2)
+p3<-rpois(10000, 3)
+p4<-rpois(10000, 4)
+p5<-rpois(10000, 5)
+p6<-rpois(10000, 6)
+p7<-rpois(10000, 7)
+p8<-rpois(10000, 8)
+p9<-rpois(10000, 9)
+
+
+pois_demo<-data.frame(count = c(p1, p2, p3, p4, p5, p6, p7, p8, p9), 
+                      lambda = rep(1:9, each = 10000))
+```
+
+```{r}
+ggplot(pois_demo, aes(x=count)) + 
+  geom_density(adjust = 1/4) + 
+  facet_wrap(~lambda)
+```
+
+## Let's look at each Poisson variable
+
+```{r size = "scriptsize"}
+pois_demo%>%group_by(lambda)%>%
+  
+  summarise(mean = mean(count),
+            variance = var(count))
+```
+
+## Poisson models as a GLM
+
+For a count variable $y$, we can specify a Poisson GLM with a log link function
+
+$$ y \sim Poisson(\lambda) $$
+$$ \lambda = \beta X = \beta_0 + \beta_1 x_1 \cdots \beta_n x_n $$
+$$E(y|x) = e^\lambda $$
+$$log(E(y|x)) = \lambda = \beta X $$
+
+## Advantages of the Poisson distribution for regression
+
+1. Constrained to non-negative integers
+2. Variance scales with the expectation of y 
+3. Relatively simple to interpret
+
+However: 
+
+$$\lambda = E(y|x) = var(y)$$
+  
+## Homework
+
+1. Visualize the distribution of goals across players for the 2019 season (your choice on geom)
+2. Define a linear predictor for goals made during a season, where the players' position is the only predictor.
+3. Estimate this model with a Normal likelihood (OLS)
+4. Estimate this model with a Poisson likelihood (family = "Poisson")
+5. Generate predictions for each position for both models
+6. Compare the predictions. Which model do you prefer? Why? 

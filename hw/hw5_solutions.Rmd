@@ -1,0 +1,112 @@
+---
+title: "Untitled"
+author: "Frank Edwards"
+date: "3/8/2021"
+output: html_document
+---
+
+## Homework 5
+
+Who was most (and least) likely to die on the Titanic? Use `~/hw/data/titanic.csv` for this one.
+
+```{r}
+## set up packages and rstan options
+library(tidyverse)
+library(rstan)
+library(rstanarm)
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+### read in data
+dat<-read_csv("./data/titanic.csv")
+```
+
+1. Write out a model 
+
+This is a model that says survival probability is a linear function of age, sex, and passenger class
+
+\[logit(p_i) = \beta_0 + \beta_1 age_i + \beta_2 pclass_i + \beta_3sex_i \]
+\[Survival_i \sim Binomial(1, p_i)\]
+
+2. Fit the model
+
+```{r}
+### frequentist
+m1<-glm(Survived ~ Age + Pclass + Sex,
+        data = dat, 
+        family = "binomial")
+
+### bayesian
+m1_b<-stan_glm(Survived ~ Age + Pclass + Sex,
+        data = dat, 
+        family = "binomial")
+### display the fits
+coef(m1)
+coef(m1_b)
+### cool that looks similar
+```
+
+Interpreting these fits. Let's look at survival as a function of age/sex/class
+
+```{r}
+Age<-0:85
+Sex<-c("male", "female")
+Pclass<-1:3
+### expand_grid is really useful to make a tibble with all possible 
+### combinations of provided variables
+fake_data<-expand_grid(Age, Sex, Pclass)
+
+### frequentist prediction to start
+fake_data<-fake_data %>% 
+  mutate(phat = predict(m1, newdata = fake_data, 
+                        type = "response"))
+### plot it
+ggplot(fake_data,
+       aes(x = Age, y = phat, 
+           color = factor(Pclass))) + 
+  geom_line() + 
+  facet_grid(~Sex)
+```
+
+3. Think about revising the model
+
+Maybe the impact of age depends on sex and passenger class, that is first class boys may be more likely to survive than 3rd class women?
+
+```{r}
+m2<-glm(Survived ~ Age * Pclass * Sex,
+        data = dat, 
+        family = "binomial")
+
+m2_b<-stan_glm(Survived ~ Age * Pclass * Sex,
+        data = dat, 
+        family = "binomial")
+
+fake_data<-fake_data %>% 
+  mutate(phat = predict(m2, fake_data,
+                        type = "response"))
+
+ggplot(fake_data,
+       aes(x = Age, y = phat, 
+           color = factor(Pclass))) + 
+  geom_line() + 
+  facet_grid(~Sex)
+```
+
+Yep! That's a really different fit for 1st and 2nd class women! Basically, no 1st class women died.
+
+4. Compare model fits
+
+```{r}
+BIC(m1)
+BIC(m2)
+
+### for bayesian models, we can do leave one out
+loo_m1<-loo(m1_b)
+loo_m2<-loo(m2_b)
+loo_compare(loo_m1, loo_m2)
+```
+
+M2 has a slightly smaller BIC, so there's a slight preference to the frequentist model m2. When using leave one out cross validation with the Bayesian models, m2 does appear to fit the data better than m1. 
+
+5. Interpret the model 
+
+First class women didn't die. 2nd class women rarely died. Survival for 3rd class women and all men was a function of age, with first class men more likely to survive that other across these groups.

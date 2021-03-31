@@ -544,30 +544,3 @@ ggplot(p_hat_plot,
 ```
 
 
-
-## Prediction and logistic regression
-
-1. Subset the data into training and test data
-2. Estimate the model on the training data
-3. Predict on the test data
-4. Evaluate accuracy
-
-```{r echo = F}
-dat<-read_csv("./data/titanic.csv")
-### set up test and training data with a simple random sample
-training1<-dat %>% 
-  sample_frac(0.75)
-test1<-dat %>% 
-  anti_join(training1)
-write_csv(training1, "./data/titanic_training1.csv")
-write_csv(test1, "./data/titanic_test1.csv")
-
-training2<-dat %>% 
-  filter(Age>18)
-test2<-dat %>% 
-  anti_join(training2)
-write_csv(training2, "./data/titanic_training2.csv")
-write_csv(test2, "./data/titanic_test2d.csv")
-
-```
-
