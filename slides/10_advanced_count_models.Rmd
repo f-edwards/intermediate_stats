@@ -461,4 +461,4 @@ Data derived from Fatal Encounters and US Census
 - d.other: men with other race/ethnicity identified killed by police
 - d.white: white men killed by police
 - d.na: men with missing race/ethnicity data killed by policy
-- d.total: total men killed by police
+- d.total: total men killed by police 
