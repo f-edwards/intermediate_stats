@@ -1,0 +1,196 @@
+---
+title: "hw7_solutions"
+author: "Frank Edwards"
+date: "4/21/2021"
+output: pdf_document
+---
+
+```{r}
+library(tidyverse)
+library(rstanarm)
+
+```
+
+## Homework 7 Due in two weeks (4/21)
+
+\scriptsize 
+
+Replicate (kinda) my paper on police violence, race, and place: `https://ajph.aphapublications.org/doi/abs/10.2105/AJPH.2018.304559`
+
+1. Load in data on men killed by police by county (./hw/data/fe_division_rural.csv)
+
+```{r}
+fe<-read_csv("./hw/data/fe_division_rural.csv")
+
+fe<-fe %>% 
+  mutate(black.men = black.men+1,
+         white.men = white.men+1,
+         latino.men = latino.men+1,
+         tot.men = tot.men +1)
+```
+
+2. Compute and visualize death rates for each racial / ethnic group in the data (per 100,000 population)
+
+```{r}
+black.rate<-sum(fe$d.black)/sum(fe$black.men) * 1e5
+white.rate<-sum(fe$d.white)/sum(fe$white.men) * 1e5
+latino.rate<-sum(fe$d.latino)/sum(fe$latino.men) * 1e5
+
+
+fe<-fe %>% 
+  mutate(black.rt = d.black / black.men * 1e5,
+         white.rt = d.white / white.men * 1e5,
+         latino.rt = d.latino / latino.men * 1e5,
+         tot.rt = d.total / tot.men * 1e5)
+
+
+ggplot(fe,
+       aes(x = tot.rt)) + 
+  geom_histogram() 
+
+ggplot(fe)+
+  geom_histogram(aes(x = white.rt)) 
+
+ggplot(fe)+ 
+  geom_histogram(aes(x = black.rt)) 
+
+### pivot solution
+
+plot_dat<-fe %>% 
+  select(black.rt:tot.rt) %>% 
+  pivot_longer(cols = black.rt:tot.rt,
+               names_to = "race_ethn", values_to = "death_rt")
+
+ggplot(plot_dat,
+       aes(x = death_rt)) + 
+  geom_histogram() + 
+  lims(x = c(-1, 50)) + 
+  facet_wrap(~race_ethn)
+```
+
+3. Compute and visualize differences in death rates across Census divisions (`division`) and racial groups
+
+```{r}
+div<-fe %>% 
+  group_by(division) %>% 
+  summarise(black.rate = sum(d.black)/ sum(black.men) * 1e5,
+            latino.rate = sum(d.latino)/sum(latino.men) * 1e5)
+
+plot_dat<-div %>% 
+  pivot_longer(cols = black.rate:latino.rate,
+               names_to = "race_ethn",
+               values_to = "death_rt")
+
+ggplot(plot_dat,
+       aes(x = death_rt, y = division,
+           fill = race_ethn)) + 
+  geom_col(position = position_dodge()) 
+```
+
+
+4. Compute and visualize differences in death rates across county types (`ur.code`) and racial groups
+
+```{r}
+ur<-fe %>% 
+  group_by(ur.code) %>% 
+  summarise(black.rate = sum(d.black)/ sum(black.men) * 1e5,
+            latino.rate = sum(d.latino)/sum(latino.men) * 1e5)
+
+plot_dat<-ur %>% 
+  pivot_longer(cols = black.rate:latino.rate,
+               names_to = "race_ethn",
+               values_to = "death_rt")
+
+ggplot(plot_dat,
+       aes(x = death_rt, y = ur.code,
+           fill = race_ethn)) + 
+  geom_col(position = position_dodge()) 
+```
+
+5. Estimate a negative binomial model for counts of Black men killed by police using an appropriate offset
+
+```{r}
+m1<-stan_glm(d.black ~ 1,
+             offset = log(black.men),
+             family = neg_binomial_2,
+             data = fe,
+             cores = 4)
+```
+
+6. Estimate a negative binomial model for counts of white men killed by police using an appropriate offset
+
+```{r}
+m2<-stan_glm(d.white ~ 1,
+             offset = log(white.men),
+             family = neg_binomial_2,
+             data = fe,
+             cores = 4)
+```
+
+7. Compare the posterior intervals for expected deaths for Black and white men
+
+```{r}
+pred1<-posterior_interval(m1)
+exp(pred1[1,]) * 1e5
+
+pred2<-posterior_interval(m2)
+exp(pred2[1,]) * 1e5
+
+### full posterior
+post1<-as.matrix(m1)
+plot(density(post1[,1]))
+### to look at as death rate per 100k
+plot(density(exp(post1[,1])* 1e5))
+
+### full posterior
+post2<-as.matrix(m2)
+plot(density(post2[,1]))
+### to look at as death rate per 100k
+plot(density(exp(post2[,1])* 1e5))
+```
+
+8. Estimate new models using predictors for county type and census division and briefly describe your findings
+
+```{r}
+m_black<-stan_glm(d.black ~ division + 
+                    ur.code,
+             offset = log(black.men),
+             family = neg_binomial_2,
+             data = fe,
+             cores = 4)
+
+
+fake_data<-expand_grid(
+  division = unique(fe$division),
+  ur.code = unique(fe$ur.code),
+  black.men = 1e5
+)
+
+preds_m_black<-posterior_linpred(m_black, 
+                                 newdata = fake_data,
+                                 offset = log(fake_data$black.men))
+
+apply(preds_m_black,2,  mean)
+
+fake_data<-fake_data %>% 
+  mutate(d.black.hat = apply(preds_m_black, 2, mean))
+
+ggplot(fake_data,
+       aes(y = ur.code, x = d.black.hat)) + 
+  geom_point() + 
+  facet_wrap(~division)
+
+```
+
+
+
+9. Use leave-one-out cross validation to compare the models including county and division predictors to the intercept-only models (questions 5 and 6)
+
+
+```{r}
+loo_m1<-loo(m1)
+loo_mb<-loo(m_black)
+
+loo_compare(loo_m1, loo_mb)
+```
+

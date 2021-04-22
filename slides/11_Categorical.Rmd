@@ -115,6 +115,21 @@ m_virginica<-glm(Species=="virginica" ~
               data = iris, 
               family = "binomial")
 
+### want to predict which species a flower with
+### petal.width = 1.5, petal.length =5 belongs to
+
+fake_data<-data.frame(Petal.Length = 5, Petal.Width = 1.5)
+
+pred_s<-predict(m_setosa, newdata = fake_data,
+                type = "response")
+
+
+pred_vi<-predict(m_versicolor, newdata = fake_data,
+                type = "response")
+
+
+pred_ve<-predict(m_virginica, newdata = fake_data,
+                type = "response")
 ```
 
 ## Check the model results

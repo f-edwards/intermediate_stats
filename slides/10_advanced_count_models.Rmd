@@ -96,7 +96,7 @@ var(pois_demo)
 
 ```{r}
 ### Load in NWLS data
-load("./data/fieldplayer_overall_season_stats.rda")
+load("./slides/data/fieldplayer_overall_season_stats.rda")
 nwsl_stats<-fieldplayer_overall_season_stats 
 ### Check if mean == variance
 mean(nwsl_stats$gls)
@@ -155,6 +155,14 @@ positions
 
 - Problem 1: Scoring is *clustered* by player position \pause
 
+```{r}
+ggplot(nwsl_stats %>% 
+         filter(pos %in% c("DF", "FW")),
+       aes(x = gls, fill = pos)) +
+  geom_histogram()
+```
+
+
 ## Wait what's a cluster
 
 A cluster is a subset of the population that has similar values to other members of the subset, and  systematically different values from other subsets of the population.
@@ -188,7 +196,7 @@ $$var(x) = \bar{x} = \lambda$$
 
 \pause
 
-If $var(x) > \bar{x}$, then the data are *overdispresed* relative to predictions from the Poisson model.
+If $var(x) > \bar{x}$, then the data are *overdispersed* relative to predictions from the Poisson model.
 
 ## Clustering and overdispersion
 
@@ -291,7 +299,6 @@ colnames(sim_pois)<-fake_data$pos
 sim_negbin<-posterior_predict(goals_negbin, newdata = fake_data)
 colnames(sim_negbin)<-fake_data$pos
 
-### let's look at values for person_id 6 (row 3, a forward)
 ##### POISSON
 mean(sim_pois[,which(fake_data$pos=="FW")]) 
 var(sim_pois[,which(fake_data$pos=="FW")])
