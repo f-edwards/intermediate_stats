@@ -1,0 +1,527 @@
+---
+title: "Understanding and addressing missing data"
+author: Frank Edwards
+output: binb::metropolis
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+rm(list=ls())
+library(MASS)
+library(tidyverse)
+library(broom)
+library(mice)
+library(lubridate)
+library(knitr)
+select<-dplyr::select
+set.seed(1)
+
+options(xtable.comment = FALSE)
+theme_set(theme_bw())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+```
+
+# Review of GLMs
+
+## The Generalized Linear Model
+
+A linear predictor $\eta$: 
+
+$$ \eta = \mathbf{X} \mathbf{\beta} $$ 
+
+A link function $g$
+
+$$ g(E(Y|X)) = \eta $$ 
+
+A mean expectation $E(Y|X) = \mu$
+
+$$ \mu =  g^{-1}(\eta) $$
+
+## The Normal model
+
+OLS:
+
+$$ y|X \sim Normal(\mu, \sigma^2) $$ 
+
+$$ E(Y|X) = X\beta = \mu $$
+In GLM form:
+
+$$ g(E(Y|X)) = X\beta = \mu $$
+Where g is the Identity function ($f(x) = x$)
+
+In R: ```lm(y~x)```
+
+## The Logistic model
+
+$$ Y|X \sim Bernoulli(p) $$ 
+
+$$ logit(E(Y|X)) = X\beta = logit(p)$$
+$$ p = logit^{-1}(X\beta) $$
+
+In R: ```glm(y~x, family = binomial)```
+
+## The Multinomial model
+
+$$ Y|X \sim Multinomial(p_1, p_2 \cdots p_k) $$ 
+
+$$log \frac{Pr(y_i =1)}{Pr(y_i=K)} =  \beta x_i$$
+
+$$ \cdots$$
+
+$$log \frac{Pr(y_i =K-1)}{Pr(y_i=K)} =  \beta x_i$$
+
+In R: ```nnet::multinom(y~x)```
+
+## The Poisson model
+
+$$ y \sim Poisson(\lambda) $$
+
+$$E(y|x) = e^\lambda $$
+
+$$log(E(y|x)) = \lambda = \beta X $$
+
+In R: ```glm(y~x, family = poisson)```
+
+# Missing data
+
+## Why should we care?
+
+* Most statistical software will conduct "complete-case analysis" by default
+* This may result in throwing away a lot of perfectly good information!
+* Listwise deletion understates uncertainty, may result in bias
+
+## Three general causes of missing data: MCAR
+
+* **Missing completely at random (MCAR)**: The probability of a value being missing is the same for all observations in the data. Missingness is determined by a coin flip/dice roll
+* Potential MCAR mechanisms: survey non-response due to exogenous factors: e.g. lost mail, bad weather, software errors. 
+* Can be verified by comparing group means of missing and non-missing data on observables: for large N, values are equal
+
+## Three general causes of missing data: MAR
+
+* **Missing at random (MAR)**: The probability of a value being missing is *not* completely at random.
+* The probability of a value being missing is determined by other variables in the data
+* After controlling for other values in the data, missingess is random
+* Potential MAR mechanisms: people with high income less likely to report total wealth; places with high poverty less likely to submit voluntary administrative data; news reports unlikely to identify other characteristics of child victims of crime / violence; 
+
+## Three general causes of missing data: MNAR
+
+* **Missing not at random (MNAR)**: The probability of a value being missing depends on either *A)* some unobserved variable or *B)* the value itself (censorship)
+* Examples: police departments with high crime opt-out of the UCR; police departments with high levels of use-of-force opt-out of reporting to federal arrest-related-deaths programs; persons who do not vaccinate their children opt-out of answering a survey question about vaccination; people who die (unrecorded) do not respond to a wave of a survey
+* We cannot distinguish between MAR and MNAR: you must think carefully about missing data mechanisms
+
+## Mechanisms of missing data
+
+* Missing completely at random: missingness determined by a coin flip
+* Missing (conditionally) at random: missingness on variable x determined by some other variable y
+* Missing not at random: missingness on variable x depends only on variable x (or some unobserved variable z)
+
+# Let's look at some missing data
+
+## Returning to the Fatal Encounters data: Is race Missing at Random?
+
+```{r echo = FALSE, message = FALSE}
+fe<-read_csv("./data/fe_1_25_19.csv")
+names(fe)<-c("id", "name", "age", "sex", "race", "URL", "death_date", 
+                 "loc_address", "loc_city", "state", "loc_zip", "loc_county", 
+                 "loc_full_address", "Latitude", "Longitude", "agency", 
+                 "cause","cause_description", "official_disposition", 
+                 "news_url", "mental_illness", "video", "dateanddesc", 
+                 "id_formula", "id2", "year")
+fe<-fe%>%
+  select(age, sex, race, state, cause, year)%>%
+  filter(!(is.na(state)), !(is.na(cause)), !(is.na(year)))
+
+fe<-fe%>%
+  mutate(age = ifelse(grepl("18 months", age), "1", age),
+         age = ifelse(grepl("mon", age), "0", age),
+         age = ifelse(grepl("days", age), "0", age),
+         age = ifelse(age=="18-25", 21, age),
+         age = ifelse(age=="46/53", 49, age),
+         age = ifelse(age=="20s", 25, age),
+         age = ifelse(age=="30s", 35, age),
+         age = ifelse(age=="40s", 45, age),
+         age = ifelse(age=="50s", 55, age),
+         age = ifelse(age=="60s", 65, age),
+         age = ifelse(age=="70s", 75, age),
+         age = ifelse(age=="55.", 55, age),
+         age = ifelse(age=="20s-30s", 30, age),
+         age = ifelse(age=="40-50", 45, age),
+         age = ifelse(age=="25-30", 27, age),
+         age = ifelse(age=="24-25", 24, age),
+         age = ifelse(age=="45 or 49", 47, age),
+         age = ifelse(age=="25`", 25, age))%>%
+  mutate(age = as.numeric(age)) 
+
+fe<-fe%>%
+  mutate(sex = ifelse(substr(sex, 1, 1)=="F", "F", 
+                      ifelse(substr(sex, 1, 1)=="M", "M", NA)))
+```
+
+```{r}
+kable(fe%>%group_by(race)%>%summarise(count = n()))
+```
+
+## MAR check: age, sex
+
+```{r size = "tiny"}
+kable(fe%>%group_by(race=="Race unspecified")%>%
+        
+        summarise(mean_age = mean(age, na.rm=TRUE),
+                  
+                  pct_male = sum(sex=="M", na.rm=TRUE)/n(),
+                                                          
+                  pct_female = sum(sex=="F", na.rm=TRUE)/n()))
+
+```
+
+## MAR check: year
+
+```{r size = "tiny"}
+ggplot(fe%>%group_by(year)%>%
+        summarise(pct_missing = sum(race=="Race unspecified")/n())) + 
+  geom_line(aes(x = year, y = pct_missing))
+```
+
+# Is race missing completely at random? Why?
+
+# Is race missing at random? Why?
+
+# Is race missing not at random? Why?
+
+# How do we handle missing data?
+
+## Basic approaches to missing data
+
+* Listwise deletion (complete case analysis)
+     + Appropriate for data with very few missing observations, and when missingness is completely at random 
+* Using alternative information (e.g. borrowing observation of sex from prior survey wave)
+* Imputation of missing values (deterministic, stochastic)
+
+## Basic approaches to missing data, deterministic
+
++ Missing value is generated by a fixed (non-random) procedure
++ Many examples: linear interpolation, last observed, regression imputation
++ This is generally a bad idea. Covariance estimates and standard errors are biased downward
+
+## Basic approaches to missing data, stochastic
+
+* Missing value is generated through random sampling
+* Many approaches, but multiple imputation has become industry standard
+
+## Multiple imputation
+
++ Iterative modeling of all missing outcomes/predictors in model
++ Produces series of fake datasets where missing values are predicted with from regression model (with error)
++ Allows you to estimate uncertainty generated by missing data
++ Does not recover "true" values
++ Under missing at random assumption, generates unbiased parameter and variance estimates
+
+## What muliple imputation does:
+
+* Has two effects on model uncertainty
+     * Increases your N because we aren't deleting data (pushes standard errors downward)
+     * Adds in appropriate noise due to uncertainty around where missing values are (pushes standard errors upward)
+* If missingess is associated with observables, MI can correct bias in parameter estimates
+
+## Examples of alternative approaches on a time series
+
+```{r echo = FALSE, message = FALSE}
+sim<-data.frame(yr = 0:18, obs= rnorm(19,0,3) + (0:18))
+na_vals<-sample(1:nrow(sim), 5)
+sim_mcar<-sim
+sim_mcar[na_vals, "obs"]<-NA
+ggplot(sim, aes(x = yr, y = obs)) + geom_point() + geom_smooth(method = "lm")
+```
+
+## Listwise deletion (remove missing values)
+
+```{r, echo = FALSE}
+ggplot(sim, aes(x = yr, y = obs)) + geom_point() + geom_smooth(method = "lm", fill = "blue") + 
+  geom_jitter(data = sim_mcar, aes(x = yr, y = obs), color = "red") + 
+  geom_smooth(data = sim_mcar, aes(x = yr, y = obs), method = "lm", color = "red", fill = "red")
+```
+
+## Listwise deletion (remove missing values)
+
+```{r, size = "tiny"}
+tidy(lm(obs~yr, data = sim))
+tidy(lm(obs~yr, data = sim_mcar))
+```
+
+## Single regression linear imputation
+
+```{r}
+m1<-lm(obs~yr, data = sim_mcar)
+preds<-predict(m1, newdata=sim_mcar%>%filter(is.na(obs)))
+sim_reg_imp<-sim_mcar
+sim_reg_imp[which(is.na(sim_reg_imp$obs)), "obs"]<-preds
+```
+
+## Single regression linear imputation
+
+```{r, echo = FALSE}
+ggplot(sim, aes(x = yr, y = obs)) + geom_point() + geom_smooth(method = "lm", fill = "blue") + 
+  geom_jitter(data = sim_reg_imp, aes(x = yr, y = obs), color = "red") + 
+  geom_smooth(data = sim_reg_imp, aes(x = yr, y = obs), method = "lm", color = "red", fill = "red")
+```
+
+## Single regression linear imputation
+
+```{r}
+tidy(lm(obs~yr, data = sim))
+tidy(lm(obs~yr, data = sim_reg_imp))
+```
+
+## Multiple imputation
+
+```{r, message = FALSE}
+imps<-mice(sim_mcar, m = 5, printFlag=FALSE, method = "norm")
+sims_imp<-complete(imps, include = FALSE, action = "long")
+
+```
+
+## Multiple imputation
+
+```{r, echo = FALSE}
+ggplot(sim, aes(x = yr, y = obs)) + geom_point() + geom_smooth(method = "lm", fill = "blue") 
+```
+
+## Multiple imputation
+
+```{r, echo = FALSE}
+ggplot(sim, aes(x = yr, y = obs)) + geom_point() + geom_smooth(method = "lm", fill = "blue") + 
+  geom_point(data = sims_imp, aes(x = yr, y = obs), color = "black", alpha = 0.3) 
+```
+
+## Multiple imputation
+
+```{r, echo = FALSE}
+ggplot(sim, aes(x = yr, y = obs)) + geom_point() + geom_smooth(method = "lm", fill = "blue") + 
+  geom_point(data = sims_imp, aes(x = yr, y = obs), color = "black", alpha = 0.3) + 
+  geom_smooth(data = sims_imp, aes(x = yr, y = obs, group = .imp), method = "lm", color = "red", fill = "red",
+              alpha = 0.2) + 
+  facet_wrap(~.imp)
+```
+
+## Multiple imputation: regression output
+
+```{r size = "tiny"}
+tidy(lm(obs~yr, data = sim))
+summary(pool(with(data = imps, lm(obs~yr))))
+```
+
+# Practice
+
+## Let's first simulate some MCAR data
+
+```{r size = "tiny"}
+summary(mtcars$mpg)
+## randomly delete some observations
+to_delete<-sample(1:nrow(mtcars), 6, replace = F)
+mtcars[to_delete, "mpg"]<-NA
+###
+summary(mtcars$mpg)
+```
+
+
+## My preferred approach
+
+* Understand your data!
+     + Read the documentation
+     + Do plenty of exploratory data analysis (cross tabs, data visuals, descriptives, look at the raw data)
+     + Develop an understanding of the mechanisms of missing data in each dataset you use
+     + Test your ideas for mechanisms of missing data when feasible
+
+## My preferred approach
+
+* Use available information
+     + Borrow data from other observations when possible
+     + Some variables are time-stable (age) and can be borrowed from prior observations - but remember cautions against deterministic imputation and inducing bias
+
+## My preferred approach
+
+* If MAR is a reasonable assumption (it often is), conduct multiple imputation
+     + Because MAR is conditional on observables, including many variables in imputation models is often a good idea
+* Apply preferred final model / analysis over each imputed dataset, combine with Rubin's rules (mice::pool), report revised estimates.
+
+# Applying missing data methods to FE: a very brief introduction
+
+## Load in packages and data
+```{r message = FALSE, warning = FALSE, echo = TRUE}
+### load required packages
+library(mice)
+fe<-fe%>%
+  mutate(race = ifelse(race=="Race unspecified", NA, race))
+kable(fe%>%summarise_all(function(x)(sum(is.na(x)))/n()))
+```
+
+## See missing data patters
+
+```{r message = FALSE, warning = FALSE, echo = TRUE}
+md.pattern(fe)
+```
+
+## Setting up our MI models
+
+- ```mice()``` estimates a separate model for each variable with missing data
+- In this case: age, sex, race
+- What kind of model should we use to predict age? sex? race?
+
+## Setting up the models: first steps
+
+```{r, size = "tiny"}
+## convert characters to desired type
+fe<-fe%>%
+  mutate(sex = factor(sex), race = factor(race), state = factor(state), cause = factor(cause))
+## We can manually set the regression methods, though mice usually picks good defaults
+## these go in the order of the column names, or names(fe)
+## normal = OLS, logreg = Logistic, polyreg = Multinomial, pmm = Partial Mean Matching
+methods<-c("norm", "logreg", "polyreg", "", "", "")
+```
+
+## Setting up the models: first steps
+
+```{r, size = "tiny"}
+## Predictor matrix
+imp_init<-mice(fe, m=1, maxit=0, printFlag = FALSE)
+pred_mat<-imp_init$predictorMatrix
+pred_mat
+## 1 means that predictor (column) is included in the model for the outcome (row)
+## we aren't predicting state, cause, or year. Let's set those rows to zero 
+pred_mat["state", ] <- 0 
+pred_mat["cause", ] <- 0
+pred_mat["year", ] <- 0
+```
+
+## Proceeding with MI
+
+* Assumptions: 
+     + Age is missing at random, conditional on sex, race, state, cause, and year
+     + Sex is MAR, conditional on sex, race, state, cause, and year
+     + Race is MAR, conditional on sex, race, state, cause, and year
+* We sequentially estimate OLS models for age, race, sex, after predicting values for other missing data in the set, then iterate. This introduces noise into the models (desirable!), and is similar to a Bayesian procedure called Markov Chain Monte Carlo estimation, where we produce estimates though random sampling. 
+
+## Setting up the models
+
+```{r impute, cache = TRUE, size = "tiny"}
+## rule of thumb: do 10 imputations. 5 is ok when there isn't much missing data. 
+## Use m>10 when there is a high volume of missing data
+## set a random seed so your results will be consistent when you re-run it
+set.seed(43)
+imps_fe<-mice(fe, m = 10, method = methods, predictorMatrix = pred_mat)
+## be patient... this takes awhile
+```
+
+## Check out convergence - We don't want to see obvious trends here
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+plot(imps_fe)
+```
+
+## Check out effects of imputation
+
+```{r, message = FALSE, warning = FALSE, echo = TRUE, size = "tiny"}
+imputed<-complete(imps_fe, action = "long", include = TRUE)
+imputed_race_check<-imputed%>%
+  filter(!(is.na(race)))%>%
+  group_by(race, .imp)%>%
+  summarise(count = n())%>% ### make counts of race by imputation
+  left_join(imputed%>% ### join to total case count by imputation (remember we dropped NAs from observed here)
+              filter(!(is.na(race)))%>%
+              group_by(.imp)%>%
+              summarise(total = n()))%>%
+  mutate(pct = count / total)
+```
+
+## Check out effects of imputation
+
+```{r echo = FALSE}
+ggplot(imputed_race_check, aes(y = race, x = pct, color = .imp==0)) + 
+  geom_jitter(alpha = 0.5, width = 0, height = 0.1)
+```
+
+## Compare imputed to original data
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+ggplot(imputed, aes (y = age, x = factor(.imp))) + geom_boxplot()
+```
+
+## Compare imputed to original data
+
+```{r, message = FALSE, warning = FALSE}
+imputed_sex_check<-imputed%>%
+  filter(!(is.na(sex)))%>%
+  group_by(sex, .imp)%>%
+  summarise(count = n())%>%
+  left_join(imputed%>%
+              filter(!(is.na(sex)))%>%
+              group_by(.imp)%>%
+              summarise(total= n()))%>%
+  mutate(pct = count / total)
+```
+
+
+## Compare imputed to original data
+
+```{r echo = FALSE}
+ggplot(imputed_sex_check, aes(x = sex, y= pct, color = .imp==0)) + 
+  geom_jitter(alpha = 0.5, width = 0, height = 0.1)
+```
+
+## Procedure for regression modeling
+
+- Explore your data and determine if data are MCAR, MAR, or MNAR
+- Build imputation models if appropriate
+- Evaluate convergence and effects of imputation models: adjust if needed
+- Fit desired regression model on each imputed dataset
+
+## Using MI data for regression: estimating $\beta$ by hand
+
+Don't worry, there's an automatic way too
+
+Rubin's rules for combination of parameter estimates
+
+$$\bar{\beta} = \frac{1}{m}\left(\sum_{i=1}^m\beta_i\right)$$
+or in R ```mean(beta)```
+
+## Estimating standard errors by hand
+
+This is where it gets tricky. We need to account for variance both across and within imputations. 
+
+Within imputation variance is simply the average of the variance across imputations, or ```mean(SE^2)```. We'll call this $var_w$
+
+Between imputation variance is a little more complex.
+
+$$var_b = \frac{1}{m} \sum_{i=1}^m\left(\beta_i - \bar{\beta}\right) $$
+
+We can provide the pooled standard error as $var(\bar{\beta}) = var_w + var_b$
+
+## Conduct a pooled analysis: the easy way
+```{r message = FALSE, warning = FALSE, echo = TRUE}
+### predict victim sex by age, race
+fit_imp<-with(imps_fe, glm(sex ~ age + race ,
+                       family = "binomial"))
+## Pool results with Rubin's rules
+pooled<-pool(fit_imp)
+### just with observed data
+fit_obs<-glm(sex ~ age + race ,
+                       family = "binomial", data = fe)
+```
+
+## Final notes
+
+* Approaches to missing data are not one-size fits all.
+* Think hard about why your data are missing
+* If they are MAR conditional on observables, MI may be appropriate
+
+## Further reading
+
+* Rubin, "Multiple Imputation for Nonresponse in Surveys"
+* Gelman and Hill, "Data Analysis Using Regression and Multilevel/Hierarchical Models"
+* van Buuren, "mice: Multivariate Imputation by Chained Equations in R"
+
+# Thanks for a great semester!
