@@ -235,6 +235,8 @@ na_vals<-sample(1:nrow(sim), 5)
 sim_mcar<-sim
 sim_mcar[na_vals, "obs"]<-NA
 ggplot(sim, aes(x = yr, y = obs)) + geom_point() + geom_smooth(method = "lm")
+
+ggplot(sim_mcar, aes(x = yr, y = obs)) + geom_point() + geom_smooth(method = "lm")
 ```
 
 ## Listwise deletion (remove missing values)
@@ -279,9 +281,11 @@ tidy(lm(obs~yr, data = sim_reg_imp))
 ## Multiple imputation
 
 ```{r, message = FALSE}
-imps<-mice(sim_mcar, m = 5, printFlag=FALSE, method = "norm")
-sims_imp<-complete(imps, include = FALSE, action = "long")
+imps<-mice(sim_mcar, m = 100, method = "norm")
+sims_imp<-complete(imps, include = TRUE, action = "long") 
 
+
+temp<-sims_imp %>% filter(.id==6)
 ```
 
 ## Multiple imputation

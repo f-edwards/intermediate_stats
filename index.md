@@ -19,7 +19,7 @@ layout: default
 
 ## Course description
 
-This is the course syllabus for Intermediate Statistics, Spring 2020. Continuous outcomes that meet the assumptions of ordinary least squares regression are relatively rare in the social sciences. This course focuses our attention on how to estimate regression models for discrete outcomes including binary, categorical, and count variables. We use both frequentist and Bayesian methods to estimate a series of generalized linear models. These flexible tools allow us to more accurately model a wide range of outcomes.
+This is the course syllabus for Intermediate Statistics, Spring 2021. Continuous outcomes that meet the assumptions of ordinary least squares regression are relatively rare in the social sciences. This course focuses our attention on how to estimate regression models for discrete outcomes including binary, categorical, and count variables. We use both frequentist and Bayesian methods to estimate a series of generalized linear models. These flexible tools allow us to more accurately model a wide range of outcomes.
 
 ## Communication
 
