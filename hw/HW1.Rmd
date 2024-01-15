@@ -20,9 +20,9 @@ For this problem, we will use data built into R. Load the data using the console
 
 ## Question 2
 
-Use the data in revenue_dat.csv in the course repository. 
+Use the data in revenue_dat.csv in the course repository (github.com/f-edwards/intermediate_stats/data/). 
 
-1. Load in the data with read_csv()
+1. Load in the data with read_csv(). 
 
 2. Create a new data frame that subsets the data using select() to only the following columns: fips_st, fips_cnty, pop_tot, rev_prop_tax, pop_pct_deep_pov
 

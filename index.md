@@ -2,9 +2,10 @@
 layout: default
 ---
 
-|Intermediate Statistics   | 27:202:543  |  
-|Wednesday, 10:00-12:40   | Room: See Slack for zoom details  |
-|frank.edwards@rutgers.edu | Office hours Tuesday, 9:00 - 11:00|
+|Intermediate Statistics | 27:202:543 |  
+|Tuesday, 1:00-3:40 | Room: CLJ 572 |
+|frank.edwards@rutgers.edu | | 
+|Office hours Thursday, 1:00 - 3:00 | Room: CLJ 579B |
 
 
 ## Quick links
@@ -12,10 +13,6 @@ layout: default
 [Lecture slides](https://github.com/f-edwards/intermediate_stats/tree/master/slides)
 
 [Homework](https://github.com/f-edwards/intermediate_stats/tree/master/hw)
-
-[Datacamp](https://learn.datacamp.com)
-
-[Slack](https://rutgersinterm-idb9612.slack.com/)
 
 ## Course description
 
@@ -58,13 +55,9 @@ All instruction will be conducted in the R statistical programming language. R i
 
 We will be using the [RStudio integrated development environment](https://www.rstudio.com/products/rstudio/download/). RStudio provides a powerful text editor and a range of very useful utilities. 
 
-In addition to writing code, it is a great tool for writing reports, papers, and slides using [RMarkdown](https://rmarkdown.rstudio.com/lesson-1.html). This syllabus, most of my course materials, and most of my academic papers are based on Markdown and occasionally [LaTeX](https://www.overleaf.com/learn/latex/Learn_LaTeX_in_30_minutes). I strongly recommend that you use RStudio and RMarkdown to complete course assignments.  
+In addition to writing code, it is a great tool for writing reports, papers, and slides using [RMarkdown](https://rmarkdown.rstudio.com/lesson-1.html). This syllabus, most of my course materials, and most of my academic papers are based on Markdown. All course assignments should be completed in RMarkdown.
 
-Lastly, I recommend learning some form of version control to ensure your work is a) backed up, b) easily accessible to collaborators and c) reproducible. Git and GitHub are great and flexible tools for software development that have powerful applications for researchers. Here's a useful [intro to GitHub](https://happygitwithr.com/) for R users.
-
-## Book
-
-We won't be using a formal textbook this semester. I'll post readings on Canvas occasionally. 
+## Books (recommended, not required)
 
 These recommended books are very useful, and some examples are pulled from them:
 
@@ -76,13 +69,15 @@ McElreath, *Statistical Rethinking: A Bayesian Course with Examples in R and Sta
 
 ## Assignments and grading
 
-Course grading is based on a combination of homework assignments (80 percent) and a final project
+Course grading is based on a combination of homework assignments (50 percent) and a final project (50 percent)
 
 ### Homework
 
-- Problem sets: I will assign a weekly selection of homework problems. These assignments should be completed in RMarkdown and submitted to our TA via email by the beginning of the next week's lecture. 
+All assignments will be posted and submitted on Canvas
 
-- Final project: You will write or revise a quantitative paper during the semester. Guidelines will be provided by Week 3. Intermediate assignments for the final project will be due throughout the semester.
+- Problem sets: I will assign weekly homework. These assignments should be completed in RMarkdown and submitted via canvas before class begins the following week. 
+
+- Research project: You will write or revise a quantitative paper during the semester. 
 
 ## Course topics and schedule
 
