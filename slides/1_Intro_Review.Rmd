@@ -1,0 +1,228 @@
+---
+title: "Intermediate statistics: introduction"
+author: "Frank Edwards"
+institute: School of Criminal Justice, Rutgers - Newark
+date: "1/16/2024"
+output: binb::metropolis
+---
+
+```{r message = FALSE, warning = FALSE, echo=FALSE}
+library(tidyverse)
+### configure for variable text size with chunk option
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+```
+
+
+# Introductions: What are you planning to do with statistical models?
+
+## Before we begin
+
+Remember: All models are wrong, some are useful.
+
+## What we will cover
+
+- How to explore, visualize, and model diverse kinds of data with an emphasis on generalized linear models \pause
+- How to program in R \pause
+- Developing a workflow for producing replicable quantitative social science \pause
+- Some advanced topics that are relevant for the kinds of data we're dealing with in the course
+
+## My general approach to data analysis
+
+1. Explore and visualize data \pause
+2. Fit models \pause
+3. Assess model fit \pause
+4. Interpret and describe results through simulation
+
+## Review the syllabus
+
+https://f-edwards.github.io/intermediate_stats/
+
+## Set up and workflow basics
+
+1. Install R
+
+cran.r-project.org
+
+2. Install RStudio
+
+posit.co/download/rstudio-desktop/
+
+3. File structure and project organization basics
+
+4. R console basics
+
+# Break
+
+# The Generalized Linear Model
+
+## The linear model
+
+We know we can model data as:
+
+<!-- THIS IS THE LINEAR REGRESSION FORMULA -->
+<!-- where epsilon is the error term -->
+
+$$y = \beta_0 + \beta_1x_1 \cdots \beta_nx_n + \varepsilon$$ \pause
+
+Or, more succinctly:
+
+$$ y =  \mathbf{X} \mathbf{\beta} + \varepsilon $$ \pause
+
+Where the likelihood for the outcome conditional on the data takes the form:
+
+$$ Y|X \sim Normal(\mu, \sigma^2) $$ 
+
+## Generalzing the linear model
+
+The linear model: 
+
+$$ Y|X \sim Normal(\mu, \sigma^2) $$
+
+Can be written as a more general formulation for a likelihood function $f$
+
+$$ Y|X \sim f(\mu, \sigma^2) $$ \pause
+
+Now we can extend the (very) useful linear model to data with discrete outcomes
+
+## Generalizing the linear model
+
+An expected value $E(Y|X) = \mu$
+
+A linear predictor: 
+
+$$ \mathbf{X} \mathbf{\beta} $$ \pause
+
+A link function $g$
+
+$$ g(\mu) =  \mathbf{X} \mathbf{\beta} $$ \pause
+
+$$ \mu =  g^{-1}(\mathbf{X} \mathbf{\beta}) $$
+
+## From OLS to GLM
+
+OLS:
+
+$$ Y|X \sim Normal(\mu, \sigma^2) $$ 
+
+GLM, for a likelihood function $f$ with parameters $\theta$: 
+
+$$ Y|X \sim f(\theta) $$
+
+## Models we'll consider this semester
+
+- Binary data: logistic models \pause
+- Categorical data: Multinomial models \pause
+- Count data: Poisson and negative binomial models 
+
+# Returning to the linear model
+
+## What do we know about the linear regression model?
+
+$$ y =  \mathbf{X} \mathbf{\beta} + \varepsilon $$
+$$\varepsilon \sim Normal(0, \sigma^2)$$
+
+OR
+
+$$\mu =  \mathbf{X} \mathbf{\beta}$$
+$$y \sim Normal(\mu, \sigma^2)$$
+
+# Let's analyze some data
+
+## Two ways to access course data
+
+- All data is accessible through the the course website (see the data link, or data folder on the GitHub page)
+
+## Read in 
+```{r size = "tiny"}
+library(tidyverse)
+### data available in intermediate_stats/data/revenue_dat.csv
+cj_budgets<-read_csv("http://tinyurl.com/revenuedata1")
+```
+
+## About the data
+
+It documents police involved deaths, demographics, and local government budgets at the county-level for two time periods, 2007-11 and 2012-16. Sources include Fatal Encounters, American Community Survey 5-year data, Annual Survey of State and Local Government Finance, and Uniform Crime Reports.
+
+## Evaluate the structure of the data
+
+```{r size = "tiny"}
+head(cj_budgets)
+```
+
+## Descriptives
+
+```{r}
+summary(cj_budgets)
+```
+
+## Visualize the distribution of deep poverty across counties with ggplot
+
+```{r fig.width=6, fig.height=3}
+ggplot(cj_budgets,
+       aes(x = pop_pct_pov)) + 
+  geom_histogram()
+```
+
+## Create a new variable using mutate()
+
+```{r}
+cj_budgets <- cj_budgets %>% 
+  mutate(pop_prop_blk = pop_blk / pop_tot)
+```
+
+## Visualize a bivariate relationship with ggplot
+
+```{r fig.width=6, fig.height=3, size = "tiny"}
+ggplot(cj_budgets,
+       aes(y = pop_pct_pov,
+           x = pop_prop_blk)) +
+  geom_point()
+```
+
+## Fitting a linear model with lm()
+
+```{r}
+model_1<-lm(pop_pct_pov ~ 
+              pop_prop_blk,
+            data =cj_budgets)
+```
+
+## Display the model fit
+
+```{r size = "tiny"}
+summary(model_1)
+```
+
+## Display the model fit (nicer)
+
+```{r size = "tiny"}
+library(broom)
+tidy(model_1)
+```
+
+## Visualize the model fit
+
+```{r fig.width=6, fig.height=2.5, size = "tiny"}
+ggplot(cj_budgets,
+       aes(y=pop_pct_pov, x=pop_prop_blk))+
+  geom_point() + 
+  geom_smooth(method = "lm", 
+              formula = y~x) 
+```
+
+# Other relationships we could evaluate?
+
+# HW 1 guidelines
+
+## HW tips
+
+- Homework assignments are at github.com/f-edwards/intermediate_stats/hw/
+- 
+- Work together!
+- Google it: StackOverflow will become your best friend
+- Accept that this is hard and you will probably struggle with it
