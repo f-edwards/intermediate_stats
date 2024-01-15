@@ -84,7 +84,7 @@ All assignments will be posted and submitted on Canvas
 |1/16| Fundamentals: probability, regression | 
 |1/23| Inference and simulation | 
 |1/30| Linear regression review | 
-|2/|6| Binary variables and the Bernoulli distribution | 
+|2/6| Binary variables and the Bernoulli distribution | 
 |2/13| Linear regression (1) |
 |2/20| Logistic regression (2) |  
 |2/27| Models for count data (1) | 
