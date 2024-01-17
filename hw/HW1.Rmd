@@ -28,6 +28,6 @@ Use the data in revenue_dat.csv in the course repository (github.com/f-edwards/i
 
 3. Use the mutate() function in the dplyr package to construct a new variable for property tax revenue per capita called prop_tax_pc using the variables rev_prop_tax and pop_tot
 
-4. Run a linear regression model with the proportion of the population in deep poverty (pop_pct_deep_pov) as a predictor and property tax revenues per capita (prop_tax_pc) as a predictor. 
+4. Run a linear regression model with the proportion of the population in deep poverty (pop_pct_deep_pov) as an outcome and property tax revenues per capita (prop_tax_pc) as a predictor. 
 
 5. Interpret your findings from the regression model. Explain the meaning of the coefficients as well as the real-world meaning of the relationship you've modeled. Length should be 1-2 paragraphs.
