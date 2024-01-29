@@ -9,23 +9,23 @@ output: html_document
 
 In this assignment, you will write a brief analysis of police staffing levels across US counties using data on tax revenues, police spending, crime, and racial segregation. Be sure to interpret your findings and justify your decisions in manipulating the data. I expect this report to be relatively brief (about 500 - 1000 written words), but the actual document may be many pages with the inclusion of graphics and code output. 
 
-- Use the data hw_2_data.csv found in intermediate_stats/data
+- Use the data hw_3_data.csv found in intermediate_stats/data
 - Your outcome for this analysis is police officer staffing levels
 - Transform the data appropriately to create predictor variables
 -  Remember that many of these measures should be normalized for population size to make them comparable. Other transformations may also be in order
-- Explore and visualize your outcome and predictors using table(), hist(), and plot() as you see fit
+- Explore and visualize your outcome and predictors as you see fit
 - Present your writeup as either a .html or .pdf document using RMarkdown. Your code should be in-line with your narrative alternating between code chunks and text. Use the included section headers.
 - Delete the instructions and codebook before submitting the assignment. 
-- Note that unless you have a LaTeX installation, you will need to change output:pdf_document to output:html_document in the RMarkdown YAML header at the beginning of your Rmd file.
+
 
 ## Codebook
 
-All variables are at the county-level and include both local and county governments for 2012
+All variables are average county-level values and include both local and county governments for 2008 - 2012
 
 - fips: 5 digit county fips code
 - exp_police: expenditures on police in dollars
-- pop_tot: total population 
-- officers_pc: full-time sworn police officers
+- pop_tot: total population (count)
+- ft_sworn: full-time sworn police officers (count)
 - rev_prop_tax: property tax revenues in dollars
 - violent.crime: violent crimes (count)
 - dissim_bw: dissimilarity index of Black/White segregation
