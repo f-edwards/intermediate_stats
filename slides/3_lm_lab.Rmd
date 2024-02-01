@@ -2,7 +2,7 @@
 title: "Practice: Building a linear regression model"
 author: "Frank Edwards"
 institute: School of Criminal Justice, Rutgers - Newark
-date: "1/23/2024"
+date: "1/30/2024"
 output: binb::metropolis
 ---
 
@@ -93,7 +93,7 @@ How could we use coef() to plot a fitted line?
 
 ## Discuss HW3
 
-- HW2 asks you to provide a brief analysis and writeup on the cj_budgets data
+- HW3 asks you to provide a brief analysis and writeup on the cj_budgets data
 - Use RMarkdown to explore the data and write up your findings
 - Construct a multivariate regression model and interpret your results
 - Predict values for a theoretically interesting counterfactual
