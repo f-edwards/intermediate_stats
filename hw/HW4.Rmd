@@ -1,0 +1,19 @@
+---
+title: "HW 4"
+author: "Frank Edwards"
+date: "2/22/2019"
+output: html_document
+---
+
+Use the gapminder data -- library(gapminder) -- for this question
+
+1. Create an annual global measure of GDP Per Capita using group_by and summarize
+
+2. Attach this new measure to the gapminder data
+
+3. Create a measure that is equal to the ratio of a country-year's GDP per capita to this global average.
+
+4. Visualize the how this ratio of national GDP to global GDP variable varies across continents and over time. You may need to summarize the data first.
+
+5. Estimate a regression model with average life expectancy as the outcome. Choose theoretically appropriate predictors. Explain your decisions. Explain your findings with tables or visuals as appropriate. 
+
