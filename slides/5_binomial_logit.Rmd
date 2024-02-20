@@ -1,0 +1,338 @@
+---
+title: "Binary variables and logistic regression"
+author: "Frank Edwards"
+date: "2/13/2023"
+output: binb::metropolis
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+library(tidyverse)
+library(gapminder)
+library(broom)
+set.seed(1)
+
+options(xtable.comment = FALSE)
+theme_set(theme_minimal())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+```
+
+# Binary/Bernoulli data
+
+## Variables are sampled from probability distributions
+
+Recall that a normally distributed random variable $y$ with mean $\mu$ and variance $\sigma^2$ can be expressed as:
+
+$$y \sim Normal(\mu, \sigma^2) $$
+
+## Parameters and shape
+
+```{r}
+norm_sim<-rnorm(10000, mean = 0, sd = 1)
+qplot(norm_sim) + coord_cartesian(xlim = c(-10,10))
+```
+
+## Parameters and shape
+
+```{r}
+norm_sim<-rnorm(10000, mean = 0, sd = 3)
+qplot(norm_sim) + coord_cartesian(xlim = c(-10,10))
+```
+
+## Parameters and shape
+
+```{r}
+norm_sim<-rnorm(10000, mean = 2, sd = 3)
+qplot(norm_sim) + coord_cartesian(xlim = c(-10,10))
+```
+
+## All regressions model outcomes as random variables
+
+Recall that a linear regression treats $y$ as a random variable with mean expectation such that each $y_i$ can be modeled as
+
+$$y_i = X\beta + \varepsilon $$
+
+or 
+
+$$y \sim Normal(X\beta, \sigma^2) $$
+
+So each observation $y_i$ is treated as a draw from a Normal distribution with $\mu = X\beta$ and variance $\sigma^2$. 
+
+## Does one size fit all?
+
+Does the normal model describe all phenomena we study well?
+
+## An alternative: the Bernoulli distribution for binary data
+
+The Bernoulli distribution for random variable $X$
+
+$$\Pr(X=1)=p=1-\Pr(X=0)$$
+
+Parameterization:
+
+$$ y \sim Bernoulli(p) $$
+
+## Properties of random binary variables
+
+If $y$ is an i.i.d. Bernoulli variable with probability $p$:
+
+$$y \sim Bernoulli(p)$$
+
+$$E(y) = p$$ 
+$$Var(y) = p(1-p)$$ 
+
+## Recall the central limit theorem
+
+```{r, echo = FALSE}
+x1<-rnorm(5, 0,1); x2<-rnorm(30, 0, 1); x3<-rnorm(100, 0, 1); x4<-rnorm(10000, 0,1)
+par(mfrow=c(2,2))
+plot(density(x1))
+plot(density(x2))
+plot(density(x3))
+plot(density(x4))
+```
+
+## A Bernoulli variable as a coin flip
+
+```{r}
+flip_n_coins<-function(n){
+  rbinom(n, 1, 0.5)
+  }
+flip_n_coins(10)
+```
+
+## What does the distribution of a binary variable look like? 
+
+```{r, fig.height=4}
+y<-flip_n_coins(5)
+hist(y)
+abline(v = mean(y), col = 2)
+```
+
+## What does the distribution of a binary variable look like? 
+
+```{r, fig.height=4}
+y<-flip_n_coins(10)
+hist(y)
+abline(v = mean(y), col = 2)
+```
+
+## What does the distribution of a binary variable look like? 
+
+```{r, fig.height=4}
+y<-flip_n_coins(100)
+hist(y)
+abline(v = mean(y), col = 2)
+```
+
+## What does the distribution of a binary variable look like? 
+
+```{r, fig.height=4}
+y<-flip_n_coins(100000)
+hist(y)
+abline(v = mean(y), col = 2)
+```
+
+## Recap
+
+A binary variable $y$ takes on the values 1 or 0, with probability 
+
+$$Pr(y=1) = p$$
+and variance 
+
+$$Var(y) = p(1-p)$$
+
+# Logistic regression
+
+## Read in the data for today
+
+```{r size = "scriptsize"}
+admissions <- read.csv("https://stats.idre.ucla.edu/stat/data/binary.csv")
+head(admissions)
+nrow(admissions)
+```
+
+## Evaluate distribution of binary admission variable
+
+```{r}
+ggplot(admissions, aes(x = admit)) + geom_histogram()
+```
+
+## Properties of Bernoulli variables
+
+If $y$ is an i.i.d. Bernoulli variable with probability $p$:
+
+$$y \sim Bernoulli(p)$$
+$$\Pr(y=1)=p=1-\Pr(y=0)$$
+$$E(y) = \bar{y} = p$$ 
+$$Var(y) = p(1-p)$$ 
+
+## Summary of admit: What can we say about the probability of admission?
+
+```{r}
+mean(admissions$admit)
+sum(admissions$admit==1)/nrow(admissions)
+var(admissions$admit)
+mean(admissions$admit) * (1 - mean(admissions$admit))
+```
+
+## How does GRE relate to admission?
+
+```{r}
+ggplot(admissions,
+       aes(x = admit, y = gre)) + geom_point() + 
+  geom_smooth(method = "lm")
+```
+
+## GPA?
+
+```{r}
+ggplot(admissions,
+       aes(x = admit, y = gpa)) + geom_point() + 
+  geom_smooth(method = "lm")
+```
+
+## Can we fit a model to predict admission?
+
+```{r size = "scriptsize"}
+m1<-lm(admit ~ gre + gpa, 
+       data = admissions)
+```
+
+
+```{r echo = FALSE}
+new_dat<-data.frame("gre" = mean(admissions$gre), 
+                    "gpa" = seq(2,4, 0.01),
+                    "rank" = 1)
+yhat<-data.frame(predict(m1, interval = "confidence", newdata = new_dat))%>%
+  cbind(new_dat)
+ggplot(yhat, aes(x = gpa, y= fit, ymin = lwr, ymax = upr)) + 
+  geom_line() + 
+  geom_ribbon(alpha = 0.5)
+```
+
+## Let's try a different approach
+
+```{r size = "scriptsize"}
+m2<-glm(admit ~ gre + gpa, 
+        data = admissions, 
+       family = "binomial")
+```
+
+```{r echo = FALSE}
+new_dat<-data.frame("gre" = mean(admissions$gre), 
+                    "gpa" = seq(2,4, 0.01),
+                    "rank" = 1)
+yhat<-predict(m2,  
+              newdata = new_dat,
+              se.fit = TRUE)
+yhat_df<-data.frame(fit = exp(yhat$fit)/(1+exp(yhat$fit)), 
+                    upr = exp(yhat$fit + 2 * yhat$se.fit) / 
+                      (1 + exp(yhat$fit + 2 * yhat$se.fit)), 
+                    lwr = exp(yhat$fit - 2 *yhat$se.fit) / 
+                      (1 + exp(yhat$fit - 2 *yhat$se.fit)))%>%
+  cbind(new_dat)
+
+ggplot(yhat_df, aes(x = gpa, y= fit, ymin = lwr, ymax = upr)) + 
+  geom_line() + 
+  geom_ribbon(alpha = 0.5)
+```
+
+## A generalized linear model
+
+Our linear probability model was:
+
+$$Pr(admit = 1) = \beta_0 + \beta_1GRE + \beta_2GPA + \beta_3Rank + \varepsilon$$
+
+Our logistic regression model takes the form:
+
+$$logit(Pr(admit=1)) =\beta_0 + \beta_1GRE + \beta_2GPA + \beta_3Rank$$
+
+The logit function is our link between the linear predictor term $X \beta$ and the outcome $admit$. 
+
+## The logit function
+
+The logit function transforms a probability value on $[0,1]$ to a continuous distribution
+
+$$logit(p) = log \frac{p}{1-p} $$
+
+## The logit function
+
+```{r}
+p<-seq(0,1,0.001)
+plot(log(p/(1-p)), pch = ".", p)
+```
+
+## Logistic regression is a GLM with a logit link
+
+A generalized linear model with link function $g$ takes the form:
+
+$$g(y) = X \beta$$
+
+For OLS, the link function is the identity function $g(y) = y$
+
+For logistic regression, the link function is the logit function
+
+$$logit(y) = X \beta $$
+$$y = logit^{-1}(X \beta) $$
+
+## Defining logit and its inverse
+
+$$logit(p) = log \frac{p}{1-p}$$
+$$logit^{-1}(x) = \frac{exp(x)}{exp(x) + 1}$$ 
+
+We can use these functions to transform values back and forth from our logit-linear scale and the probability scale.
+
+## Logistic regression
+
+Uses the logit function to model the probability of a binary outcome being equal to 1. The logit function transforms the bounded interval $[0, 1]$ to a continuous distribution, allowing us to proceed with building a regression model as we ordinarily would.
+
+Logistic regression may have more accurate uncertainty estimates than a linear probability model for binary outcomes. Logistic regression also constrains model predictions to $[0, 1]$.
+
+## Running logistic models in R: the glm() function
+
+```{r}
+m1<-glm(admit ~ gpa, data = admissions, family = "binomial")
+tidy(m1)
+```
+
+How do we interpret the coefficients?
+
+## Common interpretations
+
+- Log odds: $\beta_1$
+- Odds ratio: $e^{\beta_1 }$ 
+- Probability: $logit^{-1}(x) = \frac{exp(X \beta)}{exp(X \beta) + 1}$
+
+I tend to prefer transforming to a probability scale, as log odds and odds ratios are a bit confusing to define and are not especially intuitive.
+
+## To get predicted probabilities from m1
+
+We need $X \beta$, then apply the logit inverse function
+
+```{r, fig.height=3, size = "scriptsize"}
+x<-cbind(rep(1, nrow(admissions)), admissions$gpa)
+log_odds<-coef(m1)%*%t(x)
+pr_y<-exp(log_odds)/(exp(log_odds) +1)
+par(mfrow=c(1,2))
+plot(x[,2], log_odds, xlab = "GPA")
+plot(x[,2], pr_y, xlab = "GPA")
+```
+
+## Alternatively
+
+```{r, fig.height=3, size = "scriptsize"}
+log_odds<-predict(m1)
+pr_y<-predict(m1, type = "response")
+```
+
+```{r, echo = FALSE, fig.height=3, size = "scriptsize"}
+par(mfrow=c(1,2))
+plot(x[,2], log_odds, xlab = "GPA")
+plot(x[,2], pr_y, xlab = "GPA")
+```
+

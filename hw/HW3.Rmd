@@ -33,11 +33,23 @@ All variables are average county-level values and include both local and county 
 
 ## Construction of measures
 
+```{r}
+dat<-read_csv("./data/hw_3_data.csv")
+
+dat <- dat %>% 
+  mutate(ft_sworn_rate = ft_sworn / pop_tot * 1e3,
+         prop_tax_rate = rev_prop_tax / pop_tot,
+         violent.crime.rate = violent.crimes / pop_tot * 1e5)
+```
+
+
 *Summarise your decisions and display code used to transform data into usable measures for analysis*
 
 ## Exploratory analysis of officer staffing across counties
 
 *Provide a description of your officer staffing level variable* 
+
+
 
 ## Exploratory analysis of focal predictors
 
@@ -50,6 +62,21 @@ All variables are average county-level values and include both local and county 
 ## Regression model
 
 *Estimate and describe the findings of a regression model with your officer staffing variable as the outcome. Predict officer staffing levels for an interesting counterfactual case*
+
+```{r}
+m1<- lm(ft_sworn_rate ~ 
+          violent.crime.rate,
+        data = dat)
+
+lwr<-quantile(dat$violent.crime.rate, 0.25)
+upr<-quantile(dat$violent.crime.rate, 0.75)
+
+predict_data<-data.frame(
+  violent.crime.rate = c(lwr, upr))
+
+
+```
+
 
 ## Theoretical interpretation of results
 

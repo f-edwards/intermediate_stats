@@ -1,0 +1,112 @@
+---
+title: "Logistic regression, 1"
+author: "Frank Edwards"
+date: "2/19/2023"
+output: binb::metropolis
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+library(tidyverse)
+library(gridExtra)
+
+theme_set(theme_bw())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+```
+
+## Read in the data for today
+
+```{r size = "scriptsize"}
+admissions <- read.csv("https://stats.idre.ucla.edu/stat/data/binary.csv")
+head(admissions)
+nrow(admissions)
+```
+
+## Evaluate distribution of binary admission variable
+
+```{r}
+table(admissions$admit)
+mean(admissions$admit)
+```
+
+## Evaluate bivariate relationships between admission and focal predictors
+
+```{r}
+admissions %>% 
+  group_by(admit) %>% 
+  summarize(gpa_mean = mean(gpa),
+            gre_mean = mean(gre))
+```
+
+## Lab: Let's fit a model
+
+What else might predict admission?
+
+```{r size = "tiny"}
+head(admissions)
+```
+
+### 1. Theorize
+
+Think carefully about what we want to accomplish. How do admissions work?
+
+## 2. Write a model 
+
+\[\textrm{admit} \sim \textrm{Bernoulli}(p)\]
+\[\textrm{logit}(p_i) = \beta_0 + \beta_1\textrm{GPA}_i + \beta_2\textrm{GRE}_i\]
+
+## 2. Fit the model
+
+```{r}
+m1<-glm(admit ~ gpa + gre, 
+             data = admissions,
+             family = "binomial")
+```
+
+## 3. Compare model fits
+
+```{r}
+## baseline gpa model
+m0<-glm(admit ~ gpa,
+        data = admissions,
+        family = "binomial")
+
+broom::tidy(m0)
+broom::tidy(m1)
+```
+
+## 3. Comparing model fits
+
+```{r}
+AIC(m1, m0)
+```
+
+## Iterate
+
+Repeat steps 1-3 until satisfied that we've built a theoretically justified well-fitting model. 
+
+## 4. Interpet
+
+1. Identify what we'd like to make inferences about. Which groups or cases would be theoretically interesting for our topic.
+
+2. Create these cases in a new data frame.
+
+3. Predict
+
+4. Visualize
+
+## Homework 5
+
+Who was most (and least) likely to die on the Titanic? Use `~/hw/data/titanic.csv` for this one.
+
+1. Develop a theory for survival
+2. Write a model
+3. Fit the model
+4. Think about revising the model
+5. Compare model fits
+6. Interpret the model 
+

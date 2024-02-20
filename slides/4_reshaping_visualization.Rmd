@@ -365,10 +365,21 @@ ggplot(data = iris,
 ```{r fig.height = 2, fig.width = 4, size = "tiny"}
 data <- data.frame(murder = USArrests$Murder, 
                    state = tolower(rownames(USArrests)))
+
 map <- map_data("state")
-ggplot(data, aes(fill = murder)) + 
+
+# map <- map %>% 
+#   left_join(data %>% 
+#               rename(region = state))
+
+ggplot(data, aes(fill = murder)) +
   geom_map(aes(map_id = state), map = map) +
-  expand_limits(x = map$long, y = map$lat) 
+  expand_limits(x = map$long, y = map$lat) + 
+  theme_void() + 
+  theme(legend.position = "bottom") + 
+  labs(title = "my cool murder map") + 
+  scale_fill_viridis_c()
+
 ```
 
 ## Shape files
