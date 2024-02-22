@@ -62,9 +62,90 @@ Think carefully about what we want to accomplish. How do admissions work?
 ## 2. Fit the model
 
 ```{r}
+### fit model
 m1<-glm(admit ~ gpa + gre, 
              data = admissions,
              family = "binomial")
+
+### create a counterfactual
+gre <- c(200, 400, 600, 800)
+gpa <- seq(from = 2, to = 4, by = 0.1)
+
+fake_data <- expand_grid(gre, gpa)
+### generate predictions
+fake_data <- fake_data %>% 
+  mutate(yhat = predict(m1,
+                        newdata = fake_data,
+                        type = "response"))
+### visualize
+p1<-ggplot(fake_data,
+       aes(x = gpa, y = yhat,
+           color = factor(gre))) + 
+  geom_line()
+
+#### THEN CRITIQUE AND REVISE THE MODEL
+
+### they probably depend on each other
+# write the math
+# logit(pr(admit)) = b0 + b1 gpa + b2 gre + b3 gpa * gre
+
+m2<-glm(admit ~ gpa * gre, 
+             data = admissions,
+             family = "binomial")
+
+m3<-glm(admit ~ gpa + gre + factor(rank), 
+             data = admissions,
+             family = "binomial")
+
+m4<-glm(admit ~ gpa * gre + factor(rank), 
+             data = admissions,
+             family = "binomial")
+
+
+fake_data<-fake_data %>% 
+  rename(yhat_m1 = yhat) %>% 
+  mutate(yhat_m2 = predict(m2,
+                           newdata = fake_data,
+                           type = "response"))
+
+ggplot(fake_data,
+       aes(x = gpa, y = yhat_m1,
+           color = factor(gre))) + 
+  geom_line() + 
+  labs(subtitle = "additive model")
+
+ggplot(fake_data,
+       aes(x = gpa, y = yhat_m2,
+           color = factor(gre))) + 
+  geom_line() + 
+  labs(subtitle = "interactive model")
+
+
+# ### define counterfactual scenarios
+# potato2 <- data.frame(gpa = seq(from = 0, to = 4, by = 0.1),
+#                       gre = 400) 
+# 
+# potato3 <- data.frame(gpa = seq(from = 0, to = 4, by = 0.1),
+#                       gre = 600) 
+# 
+# cupcake <- bind_rows(potato2, potato3)
+# ### estimate expected values using predict
+# cupcake <- cupcake %>% 
+#   mutate(yhat = predict(m1, 
+#                         newdata = cupcake, 
+#                         type = "response"))
+# ### visualize
+# ggplot(cupcake,
+#        aes(x = gpa, y = yhat, color = factor(gre))) + 
+#   geom_line()
+
+
+### same thing
+# yhat <- predict(m1, newdata = potato2,
+#         type = "response")
+
+
+
 ```
 
 ## 3. Compare model fits
@@ -75,8 +156,9 @@ m0<-glm(admit ~ gpa,
         data = admissions,
         family = "binomial")
 
-broom::tidy(m0)
-broom::tidy(m1)
+
+
+
 ```
 
 ## 3. Comparing model fits
@@ -101,7 +183,7 @@ Repeat steps 1-3 until satisfied that we've built a theoretically justified well
 
 ## Homework 5
 
-Who was most (and least) likely to die on the Titanic? Use `~/hw/data/titanic.csv` for this one.
+Who was most (and least) likely to die on the Titanic? Use `./data/titanic.csv` for this one.
 
 1. Develop a theory for survival
 2. Write a model
