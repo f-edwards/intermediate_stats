@@ -1,0 +1,289 @@
+---
+title: "Count data and the Poisson distribution"
+author: "Frank Edwards"
+output: binb::metropolis
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+rm(list=ls())
+library(tidyverse)
+library(broom)
+select<-dplyr::select
+set.seed(1)
+
+options(xtable.comment = FALSE)
+theme_set(theme_bw())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+```
+
+## Count data
+
+- Counts are cumulative totals of the number of incidences of some event, generally across time or place \pause
+- Counts are positive integers $\in [0,\infty]$  \pause
+
+## Counts as extensions of binary data
+
+- Counts can be thought of as repeated binary trials
+- $\sum{y_i}$ where y is equal to 1 or 0 provides a count
+- Generally, we could treat \texttt{sum(y==1) + sum(y==0)} or \texttt{nrow(y)} as the exposure, or denominator for a rate. Why?
+
+## An example of count data
+```{r message = FALSE, size = "tiny"}
+## data from https://github.com/adror1/nwslR
+## or devtools::install_github("adror1/nwslR")
+library(nwslR)
+data("player")
+data("fieldplayer_overall_season_stats")
+head(player, n=2)
+head(fieldplayer_overall_season_stats, n=2)
+# check the help files with ?(fieldplayer_overall_season_stats) for codebook
+```
+
+## make a joined table with players names
+
+```{r}
+### attaching names
+dat<-fieldplayer_overall_season_stats %>% 
+  left_join(player) %>% 
+  filter(!(is.na(min)))
+
+### check to ensure that the dimensions are what we want
+nrow(dat) == nrow(fieldplayer_overall_season_stats)
+```
+
+# Approaches to modeling count data
+
+## The Poisson model
+
+Where y is a non-negative integer (count)
+
+$$y \sim Poisson (\lambda)$$
+$$E(y) = \bar{y} = \lambda$$
+$$Var(y)=\lambda $$
+
+## Shape of the Poisson distribution for varying Lambda parameters
+
+```{r, echo = FALSE}
+p1<-rpois(10000, 1)
+p2<-rpois(10000, 2)
+p3<-rpois(10000, 3)
+p5<-rpois(10000, 5)
+p10<-rpois(10000, 10)
+p20<-rpois(10000, 20)
+p50<-rpois(10000, 50)
+p75<-rpois(10000, 75)
+p100<-rpois(10000, 100)
+pois_demo<-data.frame(count = c(p1, p2, p3, p5, p10, p20, p50, p75, p100), 
+                      lambda = rep(c(1, 2, 3, 5, 10, 20, 50, 75, 100), each = 10000))
+
+ggplot(pois_demo, aes(x=count)) + 
+  geom_histogram(bins = 50) + 
+  facet_wrap(~lambda, scales = "free_y") + 
+  labs(subtitle = "Poisson distributions for varying lambda")
+```
+
+## Let's look at each Poisson variable
+
+```{r size = "tiny"}
+pois_demo%>%group_by(lambda)%>%
+  summarise(mean = mean(count),
+            variance = var(count))
+```
+
+## Poisson models as a GLM
+
+For a count variable $y$, we can specify a Poisson GLM with a log link function
+
+$$ y \sim Poisson(\lambda) $$
+$$ \lambda = e^{\beta_0 + \beta_1 x_1 \cdots \beta_n x_n} $$
+\pause
+
+What is $\log(\lambda)$ equal to?
+
+## Poisson models as a GLM
+
+$$E(y|x) = e^\lambda $$
+$$log(E(y|x)) = \lambda =  X \beta$$
+
+\pause
+
+if a GLM is defined as $g(\mu) = X \beta$ with link function $g$, what is the link function for the Poisson GLM?
+
+# Model NWSL data using a Poisson GLM
+
+## Goal scoring
+```{r size = "tiny"}
+ggplot(dat,
+       aes(x = gls)) + 
+  geom_histogram(bins = 50) + 
+  labs(x = "Goals scored", y = "",
+       subtitle = "Count of NWSL goals per player and year, 2013 - 2019")
+```
+
+## Goal scoring
+```{r size = "tiny"}
+ggplot(dat,
+       aes(x = gls)) + 
+  geom_histogram(bins = 50) + 
+  facet_wrap(~pos, scales = "free_y") + 
+  labs(x = "Goals scored", y = "",
+       subtitle = "Count of NWSL goals per player and year, 2013 - 2019")
+```
+
+## Modeling goals
+```{r}
+goals_0<-glm(gls ~ pos,
+              data = dat,
+              family = "poisson")
+
+broom::tidy(goals_0)
+```
+
+## So how many goals does our model expect for each position?
+
+We could just do the math: $\lambda_i = E(y_i|X) = e^{\beta_0 + \beta_1x_1 ... \beta_n x_n}$
+
+```{r size = "tiny"}
+exp(coef(goals_0))
+```
+
+And because $e^{a + b} = e^a \times e^b$
+
+Expected goals for a forward under model 0 are $e^{\beta_0} \times e^{\beta_3}$
+
+```{r}
+# intercept is in row 1, b3 is in row 4
+exp(coef(goals_0)[4]) * exp(coef(goals_0)[1]) 
+```
+
+## So how many goals does our model expect for each position?
+
+Or we could have R handle everything using simulation
+
+```{r size = "tiny", tidy = T}
+sim_dat<-data.frame(pos = unique(dat$pos))
+sim_dat<-sim_dat %>% 
+  mutate(e_gls = predict(goals_0, newdata = sim_dat,
+         type = "response"))
+
+sim_dat
+```
+
+## Regression generates conditional means
+
+Not coincidentally:
+
+```{r}
+dat %>% group_by(pos) %>% summarize(gls = mean(gls))
+```
+
+## Fitting a more complex model
+
+Let's look at playing time as a predictor
+
+```{r size = "tiny"}
+ggplot(dat, 
+       aes(x = min)) + 
+  geom_histogram() + 
+  labs(x = "Playing time in minutes per season")
+```
+
+## Theory time
+
+How does playing time impact scoring? 
+
+\pause
+
+As an opportunity structure - more time = more chances
+
+\pause
+
+Is playing time likely to have the same effect on goal scoring for each position?
+
+\pause
+
+Let's evaluate two models: 
+
+$$m1: E(goals|position, minutes) = e^{\beta_0 + \beta_1position + \beta_2minutes}$$
+$$m2: E(goals|position, minutes) = e^{\beta_0 + \beta_1position \times \beta_2minutes}$$
+
+## Estimate the models
+
+```{r}
+goals_1<-glm(gls ~ pos + min,
+              data = dat,
+              family = "poisson")
+
+goals_2<-glm(gls ~ pos * min,
+              data = dat,
+              family = "poisson")
+```
+
+## Check our fits
+
+```{r}
+broom::tidy(goals_1)
+```
+
+## Check our fits
+
+```{r size= "tiny"}
+broom::tidy(goals_2)
+```
+
+## Compare goodness of fit with AIC
+
+```{r size = "tiny"}
+AIC(goals_0, goals_1, goals_2)
+# AIC is an adjusted measure for the log-likelihood of the model
+logLik(goals_0)
+logLik(goals_1) 
+logLik(goals_2)
+```
+
+What does this show? 
+
+## Let's look at model expectations with simulation
+
+```{r size = "tiny"}
+pos<-unique(dat$pos)
+min<-0:max(dat$min)
+sim_dat<-expand_grid(pos, min)
+# whoa that's a big object oh well!
+sim_dat <- sim_dat %>% 
+  mutate(e_gls_0 = predict(goals_0, newdata = sim_dat, type = "response"),
+         e_gls_1 = predict(goals_1, newdata = sim_dat, type = "response"),
+         e_gls_2 = predict(goals_2, newdata = sim_dat, type = "response"))
+
+sim_dat
+```
+
+## Now to visualize our model predictions
+```{r size = "tiny", fig.height = 5}
+ggplot(sim_dat,
+       aes(x = min)) + 
+  geom_line(aes(y = e_gls_0), color = "red") + 
+  geom_line(aes(y = e_gls_1), color = "blue") + 
+  geom_line(aes(y = e_gls_2), color = "green") + 
+  facet_wrap(~pos)
+```
+
+## Advantages of the Poisson distribution for regression
+
+1. Constrained to non-negative integers
+2. Variance scales with the expectation of y 
+3. Relatively simple to interpret
+
+## Homework
+
+1. Visualize the distribution of assists across players for the 2019 season (your choice on geom)
+2. Write a regression equation where position and matches played are predictors.
+3. Estimate this model with a Normal likelihood (OLS)
+4. Estimate this model with a Poisson likelihood (family = "poisson")
+5. Generate predictions for each position for both models
+6. Compare the predictions. Which model do you prefer? Why? 
