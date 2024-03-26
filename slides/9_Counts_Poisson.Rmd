@@ -141,6 +141,10 @@ goals_0<-glm(gls ~ pos,
               data = dat,
               family = "poisson")
 
+goals_0_no_intercept <- glm(gls ~ -1 + pos,
+                            data = dat,
+                            family = "poisson")
+
 broom::tidy(goals_0)
 ```
 
@@ -252,9 +256,11 @@ What does this show?
 
 ```{r size = "tiny"}
 pos<-unique(dat$pos)
-min<-0:max(dat$min)
+min<- 0:max(dat$min)
 sim_dat<-expand_grid(pos, min)
+
 # whoa that's a big object oh well!
+
 sim_dat <- sim_dat %>% 
   mutate(e_gls_0 = predict(goals_0, newdata = sim_dat, type = "response"),
          e_gls_1 = predict(goals_1, newdata = sim_dat, type = "response"),
@@ -270,7 +276,11 @@ ggplot(sim_dat,
   geom_line(aes(y = e_gls_0), color = "red") + 
   geom_line(aes(y = e_gls_1), color = "blue") + 
   geom_line(aes(y = e_gls_2), color = "green") + 
-  facet_wrap(~pos)
+  geom_point(data = dat, aes(x = min, y = gls),
+             alpha = 0.25, size = 0.25) + 
+  facet_wrap(~pos) + 
+  labs(x = "minutes played", y = "expected goals",
+       subtitle = "red: m0, blue: m1, green:m2")
 ```
 
 ## Advantages of the Poisson distribution for regression

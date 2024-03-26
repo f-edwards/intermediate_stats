@@ -98,6 +98,9 @@ admits<-admits%>%
 m1<-glm(admit ~ 1 + gre_s, data = admits, family = "binomial")
 m1_est<-tidy(m1)
 m1_est
+
+m1_alt<-glm(admit ~ scale(gre), data = admits,
+            family = "binomial")
 ```
 
 ## Interpret the model
@@ -144,7 +147,7 @@ The odds of $y==1$ are simply $e^{X\beta}$
 
 The odds ratio is the ratio of two odds - or the proportional change in odds. We can obtain an isolated estimate for the relationship between $\beta_1x_{1i}$ and $y$ this way:
 
-$$\frac{Odds(y |x_1 = 1)}{Odds(y|x_1 = 0)} =  \frac{e^{X\beta + \beta_1}} {e^{X\beta}} = \frac{e^{X\beta} \times e^{\beta_1}} {e^{X\beta}} =  e^{\beta_1}$$
+$$\frac{Odds(y |x_1 = 1)}{Odds(y|x_1 = 0)} =  \frac{e^{\beta_0 + \beta_1}} {e^{\beta_0}} = \frac{e^{\beta_0} \times e^{\beta_1}} {e^{\beta_0}} =  e^{\beta_1}$$
 
 The odds ratio can be interpreted as the change in odds of $y==1$ for a one-unit change in $x_1$. 
 
@@ -169,7 +172,7 @@ exp(m1_est$estimate[2]) # exp(beta_1)
 
 ## Interpreting the odds ratio
 
-The odds of admission are `r exp(m1_est$estimate[2])` times higher for a student with a GRE score one standard deviation above the mean than they are for a student with a mean GRE score. \pause
+The odds of admission are `r round(exp(m1_est$estimate[2]), 2)` times higher for a student with a GRE score one standard deviation above the mean than they are for a student with a mean GRE score. \pause
 
 Any trouble you can anticipate here? \pause
 

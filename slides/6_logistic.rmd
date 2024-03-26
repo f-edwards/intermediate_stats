@@ -192,3 +192,37 @@ Who was most (and least) likely to die on the Titanic? Use `./data/titanic.csv` 
 5. Compare model fits
 6. Interpret the model 
 
+```{r}
+dat<-read_csv("./data/titanic.csv")
+
+m1<-glm(Survived ~ Fare,
+        family = "binomial",
+        data = dat)
+
+
+```
+
+
+
+
+```{r}
+dat<-read_tsv("cause_of_death.txt")
+
+dat<-dat %>% 
+  mutate(Deaths = as.numeric(Deaths)) %>% 
+  select(State, Gender, 
+         `Single Race 6`, Deaths, 
+         Population) %>% 
+  rename(race = `Single Race 6`) %>% 
+  mutate(crude_rate = Deaths / Population * 1e5)
+
+dat_state<-dat %>% 
+  group_by(State) %>% 
+  summarize(Deaths = sum(Deaths),
+            Population = sum(Population)) %>% 
+  mutate(crude_rate = Deaths / Population)
+
+ggplot(dat_state, aes(x = crude_rate)) + 
+  geom_histogram() 
+```
+

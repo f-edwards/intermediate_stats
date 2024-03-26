@@ -7,18 +7,89 @@ output: html_document
 
 For this homework, you will clean the Fatal Encounters dataset. A recent pull of the data is located in "./HW/data/fe_1_25_19.csv". Feel free to go to the FE website (fatalencounters.org) and download the latest if you want. Just make sure to export it as .csv.
 
+```{r}
+dat <- read_csv("./data/fe_1_25_19.csv",
+                col_names = c("ID", "name", "age", "gender", "race",
+                              "drop_1", "date", "loc_address", "loc_city",
+                              "loc_state", "loc_zip", "loc_county",
+                              "loc_full", "lat", "long",
+                              "agencies", "cause", "drop_2",
+                              "disp", "drop_4"),
+                skip = 1)
+```
+
+
 ## Question 1
 
 1. After reading in the data, give the resulting data frame columns a set of easy-to-use names
+
+
 2. Create a new data frame that contains the age, sex, race/ethnicity, state, date, and cause of death
+
+```{r}
+dat <- dat %>% 
+  select(age, gender, race, loc_state, date, cause)
+```
+
 
 ## Question 2
 
 1. Using the variable originally named `Date of injury resulting in death (month/day/year)` in the FE data, create a new variable for the year of the death. Don't cheat and use the already existing year variable in the data. 
+
+```{r}
+dat <- dat %>% 
+  mutate(date = mdy(date)) %>% 
+  mutate(year_of_death = year(date))
+```
+
 2. Convert the age variable to a numeric variable that is equal to the number of years a person was when they died. You will have to first clean messy values.
+
+
 3. Convert the sex variable into a three category variable with values F, M, T
-4. Recode the race/ethnicity variable into more compact labels: black, white, latinx, a_pi, am_ind, m_e. Recode race unspecified to be equal to NA, not a character. Remeber that NA has special meaning in R.
+
+```{r}
+dat <- dat %>% 
+  mutate(gender = case_when(
+    gender == "Female" ~ "F",
+    gender == "Femalr" ~ "F",
+    gender == "Male" ~ "M",
+    gender == "Transexual" ~ "T",
+    gender == "Transgender" ~ "T",
+    gender == "White" ~ NA))
+```
+
+4. Recode the race/ethnicity variable into more compact labels: black, white, latinx, a_pi, am_ind, m_e. Recode race unspecified to be equal to NA, not a character. Remember that NA has special meaning in R.
+
+```{r}
+dat<-dat%>%
+  mutate(race = case_when(
+  race == "African-American/Black" ~ "black",
+  race == "Asian/Pacific Islander" ~ "asian",
+  race == "European-American/White" ~ "white",
+  race == "Hispanic/Latino" ~ "latinx", 
+  race == "Hispanic/Latinio" ~ "latinx", 
+  race == "Middle Eastern" ~ "m_e", 
+  race == "Native American/Alaskan" ~ "amind",
+  race == "Race unspecified" ~ NA))
+```
+
 5. Recode cause of death into 4 categories of your choosing
+
+```{r}
+fe<-fe%>%
+  mutate(
+    fe_cause_of_death = case_when(
+      cause_of_death %in% c('Asphyxiated/Restrained',
+                            'Beaten/Bludgeoned with instrument',
+                            'Chemical agent/Pepper spray', 'Medical emergency', 
+                            'Tasered') ~ "officer_force",
+    cause_of_death == "Gunshot" ~ "gunshot",
+    cause_of_death == "Vehicle" ~ "vehicle",
+    cause_of_death %in% c("Burned/Smoke inhalation", "Drowned",
+                          "Drug overdose", "Fell from a height",
+                          "Other", "Stabbed", "Undetermined") ~ "other"))
+```
+
 
 ## Question 3
 
@@ -29,5 +100,7 @@ For this homework, you will clean the Fatal Encounters dataset. A recent pull of
 ## Question 4
 
 1. Add a new variable to your cleaned data using the variable "Official disposition of death...". This variable should be called "suicide" and will record whether the death was reported by police to be a suicide. 
+
+
 
 2. Estimate a logistic regression that evaluates the probability that a victim was declared to have committed suicide. You may choose any variables in the cleaned data from Questions 1 or 2, or any other variables of your choosing. Briefly explain your choices and your model results. 
