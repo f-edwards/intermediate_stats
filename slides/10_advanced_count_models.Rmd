@@ -1,0 +1,516 @@
+---
+title: "Advanced models for count data"
+author: "Frank Edwards"
+output: binb::metropolis
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+rm(list=ls())
+library(tidyverse)
+library(MASS)
+library(broom)
+select<-dplyr::select
+set.seed(1)
+
+options(xtable.comment = FALSE)
+theme_set(theme_bw())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+```
+
+## Count data
+
+- Counts are cumulative totals of the number of incidences of some event, generally across time or place \pause
+- Counts are positive integers $\in [0,\infty]$  \pause
+- We can model count variables using the Poisson distribution
+
+## The Poisson distribution (lambda = 1)
+
+```{r, echo = F, fig.height = 3, size = "tiny"}
+pois_1<-rpois(10000, 1)
+table(pois_1)
+qplot(pois_1)
+```
+
+## The Poisson distribution (lambda = 3)
+
+```{r, echo = F, fig.height = 3, size = "tiny"}
+pois_1<-rpois(10000, 3)
+table(pois_1)
+qplot(pois_1)
+```
+
+## The Poisson distribution (lambda = 7)
+
+```{r, echo = F, fig.height = 3, size = "tiny"}
+pois_1<-rpois(10000, 7)
+table(pois_1)
+qplot(pois_1)
+```
+
+## The Poisson distribution (lambda = 30)
+
+```{r, echo = F, size = "tiny"}
+pois_1<-rpois(10000, 30)
+qplot(pois_1)
+```
+
+## The Poisson distribution (lambda = 150)
+
+```{r, echo = F, size = "tiny"}
+pois_1<-rpois(10000, 150)
+qplot(pois_1)
+```
+
+## Special properties of the Poisson
+
+- The variance and mean of a Poisson variable with parameter $\lambda$ are both equal to $\lambda$
+
+\pause
+
+```{r, size = "tiny"}
+### draw a sample of 10,000 from a Poisson with lambda = 2.3
+pois_demo<-rpois(10000, lambda = 2.3)
+table(pois_demo)
+```
+
+\pause
+
+```{r}
+mean(pois_demo)
+var(pois_demo)
+```
+
+## How well does a Poisson distribution fit our soccer data?
+
+- Is the mean / variance assumption of a Poisson reasonable for our NWSL data on goal scoring?
+
+```{r}
+### Load in NWLS data
+library(nwslR)
+data("fieldplayer_overall_season_stats")
+nwsl_stats<-fieldplayer_overall_season_stats 
+### Check if mean == variance
+mean(nwsl_stats$gls)
+var(nwsl_stats$gls)
+```
+
+## Comparing distributions
+
+```{r size = "tiny"}
+### Draws from a Poisson with nrow() observations and lambda = mean(nwls$goals) 
+sim1 <- rpois(nrow(nwsl_stats), lambda = mean(nwsl_stats$gls))
+### simulation 
+table(sim1)
+### observed
+table(nwsl_stats$gls)
+```
+
+## What's going on here?
+
+- Problem 1: Player position is associated with goal scoring, right? Defenders don't score many (or any) goals. \pause
+
+\pause
+
+```{r}
+nwsl_stats %>% 
+  group_by(pos) %>% 
+  summarize(gls_mn = mean(gls))
+```
+
+## So would simulating by position help yield a better fit?
+
+```{r size = "tiny"}
+### compute mean, variance, and N for each position
+positions<-nwsl_stats %>% 
+  group_by(pos) %>% 
+  summarize(obs_mn = mean(gls),
+            obs_var = var(gls),
+            n_obs = n())
+
+positions
+```
+
+## So would simulating by position help yield a better fit?
+
+```{r size = "tiny"}
+### now simulate 10000 player - season totals by position
+positions <- positions %>% 
+  group_by(pos) %>% 
+  mutate(sim_mn = mean(rpois(n_obs, obs_mn)),
+         sim_var = var(rpois(n_obs, obs_mn)))
+
+positions
+```
+
+## What's going on here?
+
+- Problem 1: Scoring is *clustered* by player position \pause
+
+```{r echo = F}
+ggplot(nwsl_stats %>% 
+         filter(pos %in% c("DF", "FW")),
+       aes(x = gls, fill = pos)) +
+  geom_histogram()
+```
+
+## Wait what's a cluster
+
+A cluster is a subset of the population that has similar values to other members of the subset, and  systematically different values from other subsets of the population.
+
+\pause
+
+Clustering can produce differences in both the expected value and variance of variables across subsets.
+
+## Sources of clustering
+
+- A probability distribution assumes that all observations are drawn from the *same* population \pause
+- But in practice, most data come from distinct sub-populations (or sub-sub-populations (or sub-sub-sub populations ok you get the joke)) \pause
+
+## Sources of clustering in the NWLS data?
+
+Spot the measures that may delineate clusters!
+
+```{r size = "tiny"}
+glimpse(nwsl_stats)
+```
+
+## Do we have clusters?
+
+```{r size = "tiny"}
+positions<-nwsl_stats %>% 
+  group_by(pos) %>% 
+  summarize(obs_mn = mean(gls),
+            obs_var = var(gls),
+            n_obs = n())
+
+positions
+```
+
+But we still have a problem. Does $E(goals|position) = var(goals|position)$?
+
+## Overdispersion
+
+Overdispersion is the presence of greater variability than we would expect from a given statistical model
+
+\pause
+
+For a Poisson model, we assume that 
+
+$$var(x) = \bar{x} = \lambda$$
+
+\pause
+
+If $var(x) > \bar{x}$, then the data are *overdispersed* relative to predictions from the Poisson model.
+
+## Clustering and overdispersion
+
+When data come from distinct sub-populations, or clusters, they can have different underlying *data generating processes* (the real world process that produces our observations that we try to approximate using a statistical model). \pause
+
+These differences in data generating processes often result in a) different expected values across sub-groups, and b) different levels of variability across sub-groups
+
+## Poisson expectation
+
+```{r echo = F}
+positions<-nwsl_stats %>% 
+  group_by(pos) %>% 
+  summarize(obs_mn = mean(gls),
+            obs_var = var(gls),
+            n_obs = n())
+
+nwsl_sim<-nwsl_stats %>% 
+  left_join(positions) %>% 
+  mutate(obs_n = 1:n()) %>% 
+  group_by(obs_n) %>% 
+  mutate(sim_gls = rpois(1, obs_mn))
+
+ggplot(nwsl_sim,
+       aes(x = sim_gls)) + 
+  geom_histogram(fill = "blue", alpha = 0.5) + 
+  facet_wrap(~pos, scales = "free") +
+  labs(subtitle = "Blue = simulated from Poisson with lambda = position mean")
+```
+
+## Overdispersion
+
+```{r echo = F}
+ggplot(nwsl_sim,
+       aes(x = sim_gls)) + 
+  geom_histogram(fill = "blue", alpha = 0.5) + 
+  geom_histogram(aes(x = gls), fill = "red", alpha = 0.5) +
+  facet_wrap(~pos, scales = "free") +
+  labs(subtitle = "Blue = simulated from Poisson, Red = observed")
+```
+
+## Overdispersion!
+
+```{r}
+nwsl_sim %>% 
+  group_by(pos) %>% 
+  summarize(obs_var = var(gls),
+            sim_var = var(sim_gls))
+```
+
+# Break
+
+## Modeling overdispersion: adding a shape parameter
+
+We can relax the $var(x) = \bar{x}$ assumption of the Poisson likelihood with a *quasi-Poisson* likelihood that has the following properties:
+
+$$E(x) = \lambda$$
+$$var(x) = \theta \lambda$$
+
+\pause
+
+We call $\theta$ an dispersion or shape parameter. Higher values of $\theta$ result in more variability, lower values of $\theta$ result in more concentration.
+
+## The Negative Binomial model
+
+The negative binomial model is very similar to the quasi-poisson. It includes a mean parameter $\mu$ and a shape parameter $\theta$.
+
+We can define a negative binomial likelihood as
+
+$$x \sim \textrm{Negative Binomial}(\mu, \theta)$$
+
+\pause
+
+With an expected value
+
+$$\bar{x} = \mu$$
+
+and variance
+
+$$var(x) = \mu + \frac{\mu^2}{\theta}$$
+
+## Let's see if these likelihoods generate different results
+
+```{r size = "tiny"}
+goals_poisson<-glm(gls ~ pos,
+                        family = "poisson", data = nwsl_stats)
+
+library(MASS)
+goals_negbin<-glm.nb(gls ~ pos, 
+                     data = nwsl_stats)
+```
+
+## What do we notice about the results?
+
+```{r size = "tiny"}
+tidy(goals_poisson)
+tidy(goals_negbin)
+```
+
+## Beta and SE
+
+```{r size = "tiny"}
+t1<-tidy(goals_poisson)
+t2<-tidy(goals_negbin)
+t1$estimate / t2$estimate
+```
+
+Betas are equal! \pause
+
+```{r size = "tiny"}
+t1$std.error / t2$std.error
+```
+
+Standard errors are smaller under Poisson! 
+
+## Overdispersion and count models
+
+Poisson likelihoods nearly always underestimate standard errors in complex social processes (especially under clustering). 
+
+Our models *must* account for overdispersion if we want reasonable uncertainty estimates (standard errors, t-tests, prediction error, etc).
+
+Negative binomial handles this problem well. Other approaches can work too!
+
+## Generate predictions
+
+```{r size = "tiny"}
+### simulate for each position
+fake_data <- data.frame(pos = unique(nwsl_stats$pos))
+### from the poisson model
+sim_pois <- predict(goals_poisson, 
+                    type = "response",
+                    newdata = fake_data, 
+                    se.fit = T)
+## and the negbin
+sim_negbin <- predict(goals_negbin, type = "response",
+                    newdata = fake_data, 
+                    se.fit = T)
+```
+
+## Format it for plotting
+
+```{r size = "tiny"}
+fake_data_pois<- fake_data %>% 
+  mutate(
+    model = "1.pois",
+    e = sim_pois$fit,
+    se = sim_pois$se.fit) 
+
+fake_data_nb<- fake_data %>% 
+  mutate(
+    model = "2.nb",
+    e = sim_negbin$fit,
+    se = sim_negbin$se.fit) 
+## glue them together with bind_rows
+plot_dat <- bind_rows(fake_data_pois, fake_data_nb)
+```
+
+## Let's visualize the difference in model predictions
+
+```{r echo = F}
+ggplot(plot_dat,
+       aes(x = model, 
+           y = e,
+           ymin = e - 2*se,
+           ymax = e + 2*se)) + 
+  geom_pointrange(size = 0.2) +
+  facet_wrap(~pos, scales = "free") + 
+  labs(title = "e +/- 2se")
+```
+
+## And compare to observed
+
+```{r}
+plot_dat<-plot_dat %>% 
+  bind_rows(nwsl_stats %>% 
+              group_by(pos) %>% 
+              summarize(e = mean(gls),
+                        se = sd(gls) / sqrt(n())) %>% 
+              mutate(model = "3.obs"))
+```
+
+## Visualize
+```{r echo = F}
+ggplot(plot_dat,
+       aes(x = model, 
+           y = e,
+           ymin = e - 2*se,
+           ymax = e + 2*se)) + 
+  geom_pointrange(size = 0.2) +
+  facet_wrap(~pos, scales = "free")+ 
+  labs(title = "e +/- 2se")
+```
+
+# Offsets in event count models 
+
+## Offsets can improve model fit
+
+Goals are a function of position, sure, but also a function of how many games a player appeared in.
+
+\pause
+
+An *offset* term can be added to our model to convert our count into a rate. 
+
+\pause
+
+Here, we can add `mp` as a measure of time
+
+## The model for the mean
+
+Using matches played as our offset variable
+
+$$\textrm{goals} \sim \textrm{NegBin}(\mu, \theta)$$
+
+$$\log(\mu) = \beta \times \textrm{position} + \log(\textrm{mp})$$
+
+## A generic form
+
+$$\log(\mu) = \beta X + \log(\textrm{offset})$$
+\pause
+
+Because $log(x) - log(y) = log(x/y)$ This can be rewritten as
+
+$$\log \left( \frac{\mu}{\textrm{offset}} \right) = \beta X$$
+\pause
+
+That's a rate! With the inverse of the link function ($e$ here), we can write this as 
+
+$$\frac{\mu}{\textrm{offset}} = e^{\beta X}$$
+
+## Let's fit the model again
+
+```{r size = "tiny", tidy = T}
+goals_negbin_offset<-glm.nb(gls ~ pos + 
+                              offset(log(mp)),
+                       data = nwsl_stats)
+
+tidy(goals_negbin_offset)
+```
+
+## Now we can compare model fits
+
+```{r size = "tiny"}
+AIC(goals_negbin, goals_negbin_offset)
+```
+
+The offset dramatically improves our model fit. Let's see how this works.
+
+## The regression parameters
+
+Let's compute the estimated number of goals under each model for a forward
+
+$$\log(\textrm{goals}) = \beta_0 + \beta_1 \times \textrm{position}$$
+
+```{r size = "tiny", tidy = T}
+predict(goals_negbin, 
+        newdata = data.frame(pos = "FW"), 
+        type = "response")
+```
+
+## The regression parameters: offset model
+
+Let's compute the estimated number of goals under each model for a forward
+
+$$\log(\frac{\textrm{goals}}{\textrm{games}}) = \beta_0 + \beta_1 \times \textrm{position}$$
+
+```{r size = "tiny"}
+predict(goals_negbin_offset, 
+        newdata = 
+          data.frame(pos = "FW",
+                     mp = c(1, 10, 20)), type = "response")
+```
+
+## Homework 8 Due in two weeks (4/9)
+
+\scriptsize 
+
+Replicate (kinda) my paper on police violence, race, and place: `https://ajph.aphapublications.org/doi/abs/10.2105/AJPH.2018.304559`
+
+1. Load in data on men killed by police by county (./hw/data/fe_division_rural.csv)
+2. Compute and visualize death rates for each racial / ethnic group in the data (per 100,000 population)
+3. Compute and visualize differences in death rates across Census divisions (`division`) and racial groups
+4. Compute and visualize differences in death rates across county types (`ur.code`) and racial groups
+5. Estimate a negative binomial model for counts of Black men killed by police using an appropriate offset
+6. Estimate a negative binomial model for counts of white men killed by police using an appropriate offset
+7. Compare the posterior intervals for expected deaths for Black and white men
+8. Estimate new models using predictors for county type and census division and briefly describe your findings
+9. Use AIC to compare the models including county and division predictors to the intercept-only models (questions 5 and 6)
+10. Explain your findings in 4-8 sentences. Include visuals if helpful.
+
+## Data structure for fe_division_rural
+ 
+\scriptsize 
+Data derived from Fatal Encounters and US Census
+
+- fips: 5 digit county identifier
+- state: two letter state abbreviation
+- black.men: adult Black male population in county (age >= 18)
+- white.men: adult white male population in county
+- latino.men: adult Latino population in county
+- tot.men: Total adult male population in county
+- ur.code: US Dept of Agriculture rural - urban continuum classification for county
+- division: US Census geographic division
+- d.asian: Asian / PI men killed by police in county (age >= 18)
+- d.black: Black men killed by police
+- d.latino: Latino men killed by police
+- d.other: men with other race/ethnicity identified killed by police
+- d.white: white men killed by police
+- d.na: men with missing race/ethnicity data killed by policy
+- d.total: total men killed by police 
