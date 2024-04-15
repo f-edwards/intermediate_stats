@@ -124,7 +124,6 @@ ggplot(sim_mcar, aes(x = test_score, y = gpa)) +
 lines<-data.frame(intercept = rep(NA, 100), slope = rep(NA,100))
 for(i in 1:100){
   na_vals<-sample(1:nrow(sim), 10)
-  print(na_vals)
   temp<-sim
   temp[na_vals, "test_score"]<-NA
   m_temp<-lm(gpa ~ test_score, data = temp)
@@ -193,7 +192,7 @@ ggplot(sim, aes(y = gpa, x = test_score)) +
 
 ```{r, echo = F}
 lm_temp<-lm(gpa~test_score, data = sim_mar)
-ggplot(sim_mcar, aes(x = test_score, y = gpa)) + 
+ggplot(sim_mar, aes(x = test_score, y = gpa)) + 
   geom_point() + 
   geom_abline(aes(intercept = coef(lm_temp)[1], slope = coef(lm_temp)[2]),
               color = "blue", size = 1) + 
