@@ -26,4 +26,4 @@ OR
 $$\mu =  \mathbf{X} \mathbf{\beta}$$
 $$y \sim Normal(\mu, \sigma^2)$$
 
-## 
+## Let's 

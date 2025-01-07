@@ -92,35 +92,35 @@ All assignments will be posted on the course website. Homeworks should be comple
 
 ## Course topics and schedule
 
-|1/22| Lab: Introduction and software; Reading Ch1-Ch4; HW1 | 
-|1/27| Lecture: Inference and simulation : Reading Ch5; HW2 | 
-|1/29| Lab: 
-|2/3| Lecture: Linear regression review
-|2/5| Lab: 
-|2/10| Lecture: Binary variables and the Bernoulli distribution
-|2/12| Lab: 
-|2/17| Lecture: Logistic regression (1)
-|2/19| Lab: 
-|2/24| Lecture: Logistic regression (2)
-|2/26| Lab: 
-|3/3| Lecture: Models for count data (1)
-|3/5| Lab: 
-|3/10| Lecture: Models for count data (2)
-|3/12| Lab: 
-|3/17| SPRING BREAK
-|3/24| Lecture: Models for categorical outcomes
-|3/26| Lab: 
-|3/31| NO CLASS: Eid
-|4/2| NO CLASS: Conference
-|4/7| Lecture: Advanced topics: Missing data 
-|4/9| Lab: 
-|4/14| Lecture: Advanced topics: Multilevel models (1)
-|4/16| Lab: 
-|4/21| Lecture: Advanced topics: Multilevel models (2)
-|4/23| Lab: 
-|4/28| Lecture: Advanced topics: Time series
-|4/30| Lab: 
-|5/5| NO CLASS: Conference
+|1/22| Lab: Introduction and software: Reading Ch1-Ch4; HW1 | 
+|1/27| Lecture: Inference and simulation: Reading Ch5; HW2 | 
+|1/29| Lab: Simulation practice |
+|2/3| Lecture: Linear regression review: Reading Ch 6, 7, 10; HW3 |
+|2/5| Lab: Linear regression with many predictors and interactions |
+|2/10| Lecture: Bayesian inference: Reading Ch 8, 9; HW4 |
+|2/12| Lab: Regression with stan_glm |
+|2/17| Lecture: Advanced linear regression: Reading Ch 11, 12; HW5|
+|2/19| Lab: Linear regression diagnostics |
+|2/24| Lecture: Logistic regression (1): Reading Ch 13; HW6|
+|2/26| Lab: Fitting logistic GLMs |
+|3/3| Lecture: Logistic regression (2): Reading Ch 14; HW7|
+|3/5| Lab: Interpreting logistic regression models |
+|3/10| Lecture: Models for count data: Reading Ch 15.1-15.3; HW8 |
+|3/12| Lab: Fitting and interpreting Poisson and Negative Binomial models |
+|3/17| SPRING BREAK |
+|3/24| Lecture: Models for categorical outcomes: Reading Ch 15.4 - 15.8; HW 9|
+|3/26| Lab: Fitting multinomial models |
+|3/31| NO CLASS: Eid |
+|4/2| NO CLASS: Conference | 
+|4/7| Lecture: Design, statistical power, and missing data: Reading Ch 16, 17: HW 10| 
+|4/9| Lab: Simulation for design; multiple imputation with mice | 
+|4/14| Lecture: Causal inference with experimental data: Reading Ch 18, 19: HW 11 |
+|4/16| Lab: Analyzing data from an experiment |
+|4/21| Lecture: Causal inference with observational data : Reading Ch 20, 21 | 
+|4/23| Lab: Techniques in R for observational causal inference|
+|4/28| Lecture: Introduction to multilevel models: Reading Ch 22 | 
+|4/30| Lab: Basics of lme4 and rstanarm | 
+|5/5| NO CLASS: Conference |
 
 
 
