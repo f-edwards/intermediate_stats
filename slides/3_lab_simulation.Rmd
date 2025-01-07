@@ -1,0 +1,118 @@
+---
+title: "3. Lab: Simulation"
+author: "Frank Edwards"
+institute: School of Criminal Justice, Rutgers - Newark
+output: binb::metropolis
+---
+
+```{r message = FALSE, warning = FALSE, echo=FALSE}
+library(tidyverse)
+### configure for variable text size with chunk option
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+```
+
+# Simulation in R
+
+## Basic simulation functions: rbinom()
+
+`rbinom()` takes random draws from a binomial distribution with arguments:
+
+- n: number of observations
+- size: number of trials per observation
+- prob: probability of 'success' (1)
+
+E.g. to flip one coin five times: 
+
+```{r}
+rbinom(n = 5, size = 1, prob = 0.5)
+```
+
+Or five coins five times:
+
+```{r}
+rbinom(n = 5, size = 5, prob = 0.5)
+```
+
+## Practice with Binomial simulation
+
+Simulate recidivism after release. Assume that 10\% of subjects are re-arrested within 3 years of release. 
+  - Simulate recidivism for 200 subjects. Compute the mean recidivism rate. 
+  
+Now let's assume that each of three years represents a trial, and we will count the number of years in which each subject had an arrest (size = 3).
+  - Simulate recidivism for 200 subjects. Compute the mean number of years with an arrest
+  
+## Practice with Normal simulation
+
+Simulate income for US households. We will use a logarithmic scale because income inequality is generally multiplicative. 
+
+Assume that income $x$ follows this distribution
+
+$\log(x) \sim N(\mu = 11, \sigma = 3)$
+
+  - Simulate incomes for 100 households. 
+  - Compute a mean and standard deviation of your simulations
+  - Visualize your simulations using a histogram
+  - Visualize your simulations on a dollar scale, rather than a log scale
+
+## More complex simulation
+
+Let's develop a simulation with a mixture of processes. 
+
+- Create a data.frame with 500 rows, with `subject_n` as an integer 
+- Assume a 0.25 probability of arrest, and simulate a new variable `arrest` in your data frame.
+- Assume that log household income is systematically lower for individuals with an arrest as follows: $E[log(income_i)|arrest_i] = 11 - 2 \cdot arrest_i$
+- Simulate household income, with $\mu$ as the expected income, and $\sigma = 3$
+- Visualize
+
+## Functions
+
+Let's replicate our experiments using both loops and function mapping
+
+Return to the recidivism experiment. 
+- Write a custom function to sample recidivism for a single year (size = 1), allow n to be specified by the user
+
+```{r eval = F}
+# a demo function
+waffles<-function(x){
+  temp<-x + 2
+  return(temp)
+}
+waffles(3)
+```
+
+## Looping
+
+- Write a for loop to draw 10 samples of 200 subjects. Store your output in a list
+
+```{r eval = F}
+# a demo loop
+data_out<-list()
+for(i in 1:50){
+  data_out[[i]]<-waffles(i)
+}
+```
+
+## Mapping
+
+- Compute the mean for each of the samples
+
+```{r eval = F}
+# a demo of mapping a function to a list
+map(data_out, is.na)
+```
+
+## Mapping with a custom function
+
+Return to the simple income simulation. 
+
+- Write a custom function to generate samples of incomes 
+- Use map to generate 20 samples of 50 household incomes
+- Use map to compute a mean and standard deviation for each sample
+- Use bind_rows to create a new data.frame with all of the observations. Be sure to include a sample index (i.e. 1-20)
+- Visualize the distribution of incomes for each sample
+

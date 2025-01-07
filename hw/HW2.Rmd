@@ -1,0 +1,29 @@
+---
+title: "Homework 2: simulation"
+author: "YOUR NAME"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Read Gelman et al. Chapter 5
+
+Complete the following exercises and provide all R code used to answer questions.
+
+5.1 *Discrete probability simulation*
+
+5.2 *Continuous probability simulation*
+
+5.3 *Binomial distribution*
+
+5.5 *Distribution of averages and differences*
+
+**Optional challenge problems**
+
+5.8 *Coverage of confidence intervals* 
+
+5.9 *Coverage of confidence intervals after selection on statistical significance*

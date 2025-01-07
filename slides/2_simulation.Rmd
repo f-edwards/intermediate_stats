@@ -1,0 +1,271 @@
+---
+title: "2. Inference and simulation"
+author: "Frank Edwards"
+institute: School of Criminal Justice, Rutgers - Newark
+output: binb::metropolis
+---
+
+```{r message = FALSE, warning = FALSE, echo=FALSE}
+library(tidyverse)
+### configure for variable text size with chunk option
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "tiny")
+```
+
+## What is simulation? 
+
+Statistical simluation is a flexible tool that uses computers to take random draws from probability distributions to learn about features of random variables and their relationships. 
+
+Rather than relying on exact mathematical solutions, we can use computers to *brute force* an approximate solution by repeating an experiment a large number of times. 
+
+## Simulation applications
+
+1) Approximation of the sampling distribution of real-world data through generative models
+
+2) Evaluating impacts of assumptions
+
+3) Prediction and inference
+
+## The sampling model and population inference
+
+Under the **sampling model** we use a subset (or sample) to **infer** characteristics about a population. 
+
+All data (that aren't a full population) represent a sample. Our data represent one possible outcome of many. 
+
+The full set of possibilities and their probabilities is called the *sampling distribution*. We use our data and properties of its sampling distribution to learn about (unknown) population parameters. 
+
+## Simulation basics
+
+Let's assume that undergrads taking a criminology course score an average of 70 points on an exam. What kinds of outcomes could we expect to see for a classes scores? 
+
+We can *simulate* trials of giving the exam by assuming that a student's grade $y$ is randomly distributed, here we'll use the Normal distribution.  
+
+$y_i \sim \textrm{N}(\mu = 70, \sigma = 10)$
+
+## Simulating in R
+
+```{r size = "tiny", fig.height = 2}
+### define a function to draw samples
+give_exam<-function(n){
+  exam_grades<-rnorm(n, mean = 70, sd = 10)
+  # use return() to produce output from a function
+  return(exam_grades)
+}
+
+### Simulate a class of 20 students
+class1<-give_exam(n=20)
+class1
+round(mean(class1),1)
+```
+
+## Statistical inference for a mean
+
+We've observed $\bar{y}$. In this case, we know the 'true' mean $\mu$, but that's almost never the case in the real world. 
+
+```{r}
+mean(class1)
+```
+
+We generally have to use an observed $\bar{y}$ to try to learn something about $\mu$, which is not observed. 
+
+This single simulation draw represents only one possible realization of $\bar{y}$ of many (infinite). 
+
+## Describing uncertainty in our inference
+
+We could have observed many possible samples of distributions of grades
+
+```{r size = "tiny", fig.height = 2}
+## map is a tidyverse version of replicate()
+# this generates 30 classes with 20 student exam grades
+class30<-map(
+  rep(20, 30), 
+  give_exam)
+## here's two of our 9
+class30[[2]]
+class30[[7]]
+```
+
+## Implications of sampling variability
+
+Each classroom could have one of a potentially infinite set of distributions. Here are 30
+
+What do you notice? 
+
+```{r echo = F, fig.height = 5}
+plot_dat<-tibble(
+  grade = unlist(class30),
+  sample_n = rep(1:30, each = 20)) 
+
+ggplot(plot_dat, 
+       aes(x = grade)) + 
+  geom_histogram() +
+  facet_wrap(~sample_n, ncol = 3) + 
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
+
+## The sampling distribution of a parameter
+
+Just as our sample has a theoretical sampling distribution, our estimate of the sample mean $\bar{y}$ has a sampling distribution. 
+
+```{r echo = F, fig.height = 4}
+ggplot(plot_dat %>% 
+         group_by(sample_n) %>%
+         summarize(mean_grade = mean(grade)),
+       aes(x = mean_grade)) + 
+  geom_histogram() + 
+  labs(title = "Simulated distribution of 30 sample means") 
+```
+
+## For a large number of trials
+
+Let's see what the distribution of $\bar{y}$ looks like if we sample 1000 classrooms
+
+```{r echo = F}
+class1000<-map(rep(20, 1000), give_exam)
+
+plot_dat<-tibble(
+  grade = unlist(class1000),
+  sample_n = rep(1:1000, each = 20)) %>% 
+  group_by(sample_n) %>% 
+  mutate(mean_grade = mean(grade))
+
+ggplot(plot_dat %>% 
+         select(sample_n, mean_grade) %>% 
+         distinct(),
+       aes(x = mean_grade)) + 
+  geom_histogram() + 
+  labs(title = "Simulated distribution of 100 sample means") 
+```
+
+## Constructing a parameter estimate from a sampling distribution estimate
+
+The *central limit theorem* tells us that 
+
+$\lim\limits_{n\to\infty}\bar{y}\sim \textrm{Normal}(\mu, \sigma)$ 
+
+## The logic of frequentist inference
+
+Given that we know that the sampling distribution of $\bar{y}$ is Normal with mean $\mu$ for large N, we can use our data to *approximate* this sampling distribution.
+
+We compute the sample mean ($\bar{y}$) and the *standard error* of the sample mean ($sd_y/\sqrt{n}$) to describe this distribution.
+
+```{r}
+class1 # the sample (x)
+mean(class1) # xbar
+sd(class1) / sqrt(length(class1)) # s_x
+```
+
+## Visualizing the sampling distribution of sample means
+
+We can describe our uncertainty in the location of the mean with the approximated sampling distribution estimated from the data. \pause
+
+We use these estimates to describe the approximate range of our uncertainty in the value of the *test statistic* $\bar{y}$. \pause
+
+Under what conditions do we directly learn about $\mu$?
+
+## Question
+
+Using this estimated sampling distribution, compute a 95 percent confidence interval for $\bar{y}$. 
+
+*Hint*: you can use `pnorm(0.025, 0, 1)` and `pnorm(0.975, 0, 1)` to obtain critical values for $z$.
+
+```{r, fig.height = 3, echo = F, message = F}
+ggplot(data.frame(class1=class1),
+       aes(x = class1)) + 
+  #geom_histogram(aes(y = ..density..)) +
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(class1), sd = sd(class1)/sqrt(length(class1)))) +
+  geom_point(aes(x = mean(class1), y = 0)) + 
+  labs(title = "Estimated sampling distribution of y bar",
+       subtitle = paste("Mean = ", eval(round(mean(class1),2)), "SE = ", 
+                        eval(round(sd(class1)/sqrt(length(class1)),2)),
+                        "n = 20"),
+       y = "Density",
+       x = "possible values of y bar") 
+```
+
+## Review
+
+1. What is a parameter? \pause
+1. What is the difference between $\bar{x}$ and $\mu$? \pause
+1. What is the difference between a sample and a sampling distribution? \pause
+1. Briefly explain the logic of a confidence interval through the logic of a sampling distribution
+
+## Confidence intervals and sampling distributions
+
+1. Let's draw 50 classrooms with 20 students each
+
+```{r size = "tiny"}
+# set variables
+classrooms<-50
+students<-20
+# create empty list for storage, they can grow 
+score_out<-list()
+# generate simulated classes with a for loop
+# this could be done with map() or replicate() as well
+for(i in 1:50){
+  scores<-data.frame(
+    sample_n = i,
+    score = rnorm(n = students, 
+                mean = 70,
+                sd = 10))
+  score_out[[i]]<-scores
+}
+# force list with elements of identical structure into data.frame
+samp_dat<-bind_rows(score_out)
+```
+
+## Confidence intervals and sampling distributions
+
+1. Let's draw 50 classrooms with 20 students each
+2. Let's compute 95 percent confidence intervals for $\bar{y}$ for each sample
+
+```{r}
+samp_ci<-samp_dat %>% 
+  group_by(sample_n) %>% 
+  summarise(ybarhat = mean(score),
+            se = sd(score)/sqrt(students)) %>% 
+  mutate(ci_lwr = ybarhat - 1.96 * se,
+         ci_upr = ybarhat + 1.96 * se)
+```
+
+## Confidence intervals and sampling distributions
+
+1. Let's draw 50 samples with 100 households sampled
+2. Let's compute 95 percent confidence intervals for $\bar{y}$ for each sample
+3. Let's add a binary variable indicating whether the interval includes $\mu$ (70)
+
+```{r}
+samp_ci<- samp_ci %>% 
+  mutate(sig_test.95 = ci_lwr<70 & ci_upr>70)
+```
+
+## Confidence intervals and sampling distributions
+
+1. Let's draw 50 samples with 100 households sampled
+2. Let's compute 95 percent confidence intervals for $\bar{x}$ for each sample
+3. Let's add a binary variable indicating whether the interval includes $\mu$ (70)
+4. Plot it!
+
+## Visualizing CI coverage
+
+```{r fig.height = 5, size = "tiny"}
+ggplot(samp_ci,
+       aes(ymin = ci_lwr, ymax = ci_upr, 
+           y = ybarhat, x = sample_n,
+           color = sig_test.95)) + 
+  geom_pointrange() + 
+  geom_hline(yintercept = 70, lty = 2) + 
+  labs(x = "", y = "ybar", color = "Includes mu")
+```
+
+## Summary
+
+Confidence intervals give you a crude sense of the magnitude of variability in the sampling distribution of a parameter. For a critical value of 0.05 (a 95 percent interval), 95 percent of estimated intervals will cover $\mu$. We have no guarantee that our estimated interval covers $\mu$!
+
+Simulation helps us see how our inferences work and evaluate different features of the data generating process.

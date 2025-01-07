@@ -1,0 +1,66 @@
+---
+title: "Intermediate statistics: introduction"
+author: "Frank Edwards"
+institute: School of Criminal Justice, Rutgers - Newark
+output: binb::metropolis
+---
+
+```{r message = FALSE, warning = FALSE, echo=FALSE}
+library(tidyverse)
+### configure for variable text size with chunk option
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+```
+
+# Introductions: What are you planning to do with statistical models?
+
+## Before we begin
+
+Remember: All models are wrong, some are useful.
+
+## Review the syllabus
+
+https://f-edwards.github.io/intermediate_stats/
+
+## Set up and workflow basics
+
+1. Install R
+
+cran.r-project.org
+
+2. Install RStudio
+
+posit.co/download/rstudio-desktop/
+
+3. Install git and clone course repo (optional)
+
+## Getting started 
+
+0. Create a new folder on your HDD called `intermediate_stats`. Create an RProject located in that folder
+
+1. Create a new script called `1_intro_demo.r`
+
+2. Install packages tidyverse and gapminder using `install.packages`
+
+# Lab 1
+
+## Exploring the gapminder data
+
+1. Compute the life expectancy for the average country for each year available in gapminder. Plot your findings.
+
+2. Compute the global average life expectancy for each year. Plot your findings. Compare with 1)
+
+3. Repeat 3; but compute this measure at the year-continent level. Plot your findings.
+
+4. Scatterplot lifeExp and gdpPercap.
+
+5. Scatterplot lifeExp and the logarithm of gdpPercap. Compare with 4.
+
+6. Estimate a linear regression for lifeExp as a function of log GDP. Interpret your findings. 
+
+
+

@@ -1,0 +1,29 @@
+---
+title: "4. The linear regression model"
+author: "Frank Edwards"
+institute: School of Criminal Justice, Rutgers - Newark
+output: binb::metropolis
+---
+
+```{r message = FALSE, warning = FALSE, echo=FALSE}
+library(tidyverse)
+### configure for variable text size with chunk option
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+```
+
+## Our old friend
+
+$$ y =  \mathbf{X} \mathbf{\beta} + \varepsilon $$
+$$\varepsilon \sim Normal(0, \sigma^2)$$
+
+OR
+
+$$\mu =  \mathbf{X} \mathbf{\beta}$$
+$$y \sim Normal(\mu, \sigma^2)$$
+
+## 
