@@ -13,7 +13,7 @@ knitr::knit_hooks$set(chunk = function(x, options) {
   x <- def.chunk.hook(x, options)
   ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
 })
-knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "tiny")
 ```
 
 ## Our old friend
@@ -26,4 +26,264 @@ OR
 $$\mu =  \mathbf{X} \mathbf{\beta}$$
 $$y \sim Normal(\mu, \sigma^2)$$
 
-## Let's 
+## Basics of the linear model
+
+- We assume a *linear* functional relationship between an outcome $y$ and set of predictors $X$
+
+- We assume that residual errors follow a Normal distribution with constant variance, centered around the regression line $E(y) = a + bx$
+
+- Regression does not *automatically* produce estimates of 'effects'. It compares group means, conditional on predictor values
+
+## Read in election data
+
+```{r}
+# read in GHV election data
+hibbs<-read_delim("./data/hibbs.dat")
+
+glimpse(hibbs)
+
+m0<-lm(vote ~ growth, data = hibbs)
+```
+
+## Fit a simple model
+
+For an election in year $i$, let's assume
+
+$$vote_i = \beta_0 + \beta_1 growth_i + \varepsilon_i$$
+
+```{r}
+## Fit a model with lm
+m0<-lm(vote ~ growth, data = hibbs)
+coef(m0)
+```
+
+\pause
+
+Practice: 
+
+- What is the expected value of `vote` when growth = 3?
+- When growth = 0?
+
+## Visualizing the fit
+
+```{r fig.height = 5}
+ggplot(hibbs,
+       aes(x = growth, y = vote)) + 
+  geom_point() + 
+  geom_abline(intercept = coef(m0)[1], slope = coef(m0)[2])
+```
+
+## Continuous predictors in regression
+
+- Parameters for continuous predictors act as *slopes*.
+
+- Parameters for categorical predictors act as *intercepts*.
+
+## Adding a categorical predictor
+
+For an election in year $i$, let's assume
+
+$$vote_i = \beta_0 +  \beta_1 war_i + \varepsilon_i$$
+
+```{r}
+# add a predictor for major wars
+hibbs<-hibbs %>% 
+  mutate(war = case_when(
+    year >=1950 & year <= 1953 ~ T,
+    year >= 1964 & year <= 1975 ~ T,
+    year >= 2003 & year <= 2011 ~ T,
+    T ~ F # otherwise FALSE
+  ))
+
+m1<-lm(vote ~ war, data = hibbs)
+```
+
+\pause
+
+Practice: 
+
+- What is the expected value of `vote` when war = 1 
+- When war = 0 
+
+## Visualizing a categorical predictor: black is observed, red is expected
+
+```{r echo = F}
+ggplot(hibbs,
+       aes(x = war,
+           y = vote)) + 
+  geom_point() + 
+  geom_point(x = FALSE, y = coef(m0)[1], color = "red") + 
+  geom_point(x = TRUE, y = coef(m0)[1] + coef(m0)[2], color = "red")
+```
+
+## Regression predictors
+
+- Coefficients are not 'effects'
+
+- Coefficients are differences in means of the outcome for different levels of the predictors
+
+## Regression with two predictors
+
+$$vote_i = \beta_0 + \beta_1 growth_i + \beta_2 war_i + \varepsilon_i$$
+
+```{r}
+m2<-lm(vote ~ growth + war, data = hibbs)
+coef(m2)
+```
+
+\pause
+
+Practice: 
+
+- What is the expected value of `vote` when war = 1 and growth = 2? 
+- When war = 0 and growth = 4? 
+
+## Visualizing: two intercepts, one slope
+
+```{r echo = F}
+ggplot(hibbs, 
+       aes(x = growth, y = vote, color = war)) + 
+  geom_point() + 
+  geom_abline(intercept = coef(m2)[1], slope = coef(m2)[2], lty = 1) + 
+  geom_abline(intercept = coef(m2)[1] + coef(m2)[3], slope = coef(m2)[2], lty = 2) + 
+  labs(subtitle = "Solid line indicates no active war, dashed indicates active war")
+```
+
+## Interactions
+
+We can specify that the relationship between growth and vote share may depend on whether there is a war. This model will have *two* slopes and two intercepts
+
+$$vote_i = \beta_0 + \beta_1 growth_i + \beta_2 war_i + \beta_3 war_i \times growth_i+ \varepsilon_i$$
+
+```{r}
+m3<-lm(vote ~ growth + war + growth * war, data = hibbs)
+```
+
+## Continuous interactions
+
+Things get slightly more difficult when we interact continuous measures. Maybe the relationship between growth and vote share changes over time? 
+
+$$vote_i = \beta_0 + \beta_1 growth_i + \beta_2 war_i + \beta_3 growth_i \times year_i+ \varepsilon_i$$
+```{r}
+m4<-lm(vote ~ growth + war + growth * year, data = hibbs)
+```
+
+\pause
+
+Practice: 
+
+- What is the expected value of `vote` when war = 1, growth = 2, and year = 1964? 
+- When war = 0, growth = 4, and year = 2012?
+
+## Interpretation when our specification is complicated
+
+As our models get more complex, the parameters themselves start to become less meaningful on their own. 
+
+Rather than directly discussing parameter estimates, It can be helpful to discuss *expected values*
+
+```{r}
+# let's simulate some data and generate predictions to better understand the model
+year<-seq(1950, 2018, by = 4)
+growth<-seq(-0.5, 5, by = 0.1)
+war<-c(T, F)
+# use expand_grid to make a data.frame with all unique combinations of these vectors
+sim_dat<-expand_grid(year, growth, war)
+# add expected values with predict
+sim_dat<-sim_dat %>% 
+  mutate(e_y = predict(m4, sim_dat))
+```
+
+## Visualization
+
+```{r}
+ggplot(sim_dat,
+       aes(x = growth, y = e_y, color = year, group = year)) + 
+  geom_line() + 
+  facet_wrap(~war) + 
+  geom_point(data = hibbs, aes(x = growth, y = vote))
+```
+
+## Interpreting parameter estimate precision
+
+```{r}
+summary(m2)
+```
+
+- What does the standard error tell us? 
+- What about the t value?
+- And the p value? 
+- Compute a 95% confidence interval for `growth`. What does this interval mean? 
+
+## Null hypothesis testing
+
+We use $t$ tests to compare what we observe in the data against a null hypothesis that there is no difference in the outcome $y$ at different levels of $x$
+
+- $H_0: \beta_1 = 0$ 
+
+## Null hypothesis testing and the sampling distribution
+
+Assume the null hypothesis is true. We model the *sampling distribution* of $\beta_1$ under this scenario, using the standard error we've estimated from the data
+
+```{r}
+library(broom)
+tidy(m2)
+```
+
+- $H_0: \beta_1 \sim N(0, 0.73)$
+
+\pause
+
+How likely are we to observe $\beta_1 = 3.4$ if $H_0$ is true?
+
+## Using the Normal PDF
+
+We can use the *probability density* of the Normal distribution to evaluate the probability of observing a value greater than or equal to 3.4 under the null hypothesis for the sampling distribution
+
+```{r}
+1 - pnorm(3.4, 0, 0.73)
+```
+
+## The Normal PDF for the Null and our data
+
+```{r}
+plot_dat<-data.frame(x = seq(-5, 5, by = 0.1)) %>% 
+  mutate(y = dnorm(x, 0, 0.73))
+
+ggplot(plot_dat, aes(x = x, y = y)) + 
+  geom_line() + 
+  geom_vline(xintercept = 3.4, lty = 2)
+```
+
+## Interpretation
+
+```{r}
+summary(m2)
+```
+
+We conclude that it is very unlikely that we would observe a value like 3.4 if the null hypothesis were true, thus we say our estimate for $\beta_1$ is statistically significant
+
+\pause
+
+Practice
+
+- Interpret and explain the statistical significance of our estimate for $\beta_2$
+- What about the intercept $\beta_0$?
+
+## Parameter confidence intervals
+
+We can construct confidence intervals for our parameters by using our point estimates and standard errors.
+
+$CI_{95}(\beta_1) = \beta_1 \pm 1.96 \times SE_{\beta_1}$
+
+```{r}
+tidy(m2)
+## CI 
+3.4 + 1.96 * 0.73
+3.4 - 1.96 * 0.73
+```
+
+\pause
+
+If we were to repeat this experiment many times, 95 percent of our intervals would include the 'true' value of $\beta_1$. We have no guarantee of coverage for this interval.
+
+

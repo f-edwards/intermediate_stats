@@ -52,15 +52,22 @@ posit.co/download/rstudio-desktop/
 
 1. Compute the life expectancy for the average country for each year available in gapminder. Plot your findings.
 
+\pause
+
 2. Compute the global average life expectancy for each year. Plot your findings. Compare with 1)
+
+\pause
 
 3. Repeat 3; but compute this measure at the year-continent level. Plot your findings.
 
+\pause
+
 4. Scatterplot lifeExp and gdpPercap.
+
+\pause
 
 5. Scatterplot lifeExp and the logarithm of gdpPercap. Compare with 4.
 
+\pause
+
 6. Estimate a linear regression for lifeExp as a function of log GDP. Interpret your findings. 
-
-
-

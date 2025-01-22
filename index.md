@@ -13,7 +13,7 @@ layout: default
 
 [Homework](https://github.com/f-edwards/intermediate_stats/tree/master/hw)
 
-[Slack]()
+[Slack](https://join.slack.com/t/rutgersstats25/shared_invite/zt-2xuenbcog-hh4QyPY_qLZCiHCxm6p5XA)
 
 ## Course description
 
@@ -96,7 +96,7 @@ All assignments will be posted on the course website. Homeworks should be comple
 |1/27| Lecture: Inference and simulation: Reading Ch5; HW2 | 
 |1/29| Lab: Simulation practice |
 |2/3| Lecture: Linear regression review: Reading Ch 6, 7, 10; HW3 |
-|2/5| Lab: Linear regression with many predictors and interactions |
+|2/5| Lab: Linear regression practice |
 |2/10| Lecture: Bayesian inference: Reading Ch 8, 9; HW4 |
 |2/12| Lab: Regression with stan_glm |
 |2/17| Lecture: Advanced linear regression: Reading Ch 11, 12; HW5|
