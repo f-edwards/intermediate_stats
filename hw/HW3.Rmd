@@ -1,0 +1,26 @@
+---
+title: "Homework 3: linear regression"
+author: "YOUR NAME"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Read Gelman et al. Chapter 6, 7 and 10
+
+Complete the following exercises and provide all R code used to answer questions.
+
+6.5 *Regression prediction and averages*
+
+7.2 *Fake-data simulation and regression* part a) and b)
+
+10.3 *Checking statistical significance*
+
+10.4 *Simulation study of statistical significance*
+
+10.6 *Regression models with interactions*
+
