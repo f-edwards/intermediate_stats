@@ -161,11 +161,12 @@ m3<-lm(vote ~ growth + war + growth * war, data = hibbs)
 
 ## Continuous interactions
 
-Things get slightly more difficult when we interact continuous measures. Maybe the relationship between growth and vote share changes over time? 
+Maybe the relationship between growth and vote share changes over time? 
 
 $$vote_i = \beta_0 + \beta_1 growth_i + \beta_2 war_i + \beta_3 growth_i \times year_i+ \varepsilon_i$$
 ```{r}
 m4<-lm(vote ~ growth + war + growth * year, data = hibbs)
+m4
 ```
 
 \pause
@@ -264,7 +265,7 @@ We conclude that it is very unlikely that we would observe a value like 3.4 if t
 
 \pause
 
-Practice
+## Practice
 
 - Interpret and explain the statistical significance of our estimate for $\beta_2$
 - What about the intercept $\beta_0$?

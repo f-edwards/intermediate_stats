@@ -27,3 +27,5 @@ Complete the following exercises and provide all R code used to answer questions
 5.8 *Coverage of confidence intervals* 
 
 5.9 *Coverage of confidence intervals after selection on statistical significance*
+
+
