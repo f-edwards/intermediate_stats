@@ -1,0 +1,51 @@
+---
+title: "5. Fun with regression"
+author: "Frank Edwards"
+institute: School of Criminal Justice, Rutgers - Newark
+output: binb::metropolis
+---
+
+```{r message = FALSE, warning = FALSE, echo=FALSE}
+library(tidyverse)
+### configure for variable text size with chunk option
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "tiny")
+```
+
+## Our old friend
+
+Let's complete exercise 10.5 from GHV
+
+1. Load the file kidiq.csv
+2. Listen to a short rant from Frank about why IQ scores are BS
+
+## (a) Basics
+
+Fit a regression of child test score's on mother's age. 
+
+- Display the data and fitted model
+- Check assumptions
+- Interpret the slope coefficient
+- What assumptions are you making? 
+
+## (b) Adding another predictor
+
+- Add mother's education
+- Interpret both slope coefficients
+- Have your conclusions about age changed?
+
+## (c) Interactions 
+
+- Create a binary (indicator) for mother's HS completion
+- Estimate interactions between HS completion and mother's age
+- Plot each regression line for both HS completion groups
+
+## (d) Out-of-sample prediction for validation
+
+- Fit a model on ONLY the first 200 observations 
+- Use your model to predict scores for the NEXT 200. 
+- Plot your predictions against the observed test scores
