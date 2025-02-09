@@ -27,18 +27,9 @@ c. Repeat the two steps above, but try to create conditions for your simulation 
 stan_glm give much different results. (OPTIONAL)
 
 9.3 Uncertainty in the predicted expectation and the forecast: Consider the economy and voting example from Section 7.1. Fit the linear regression model to the data through 2012; these are available in the folder ElectionsEconomy. Make a forecast for the incumbent party’s share of the two-party vote in a future election where economic growth is 2%.
-a. Compute the point forecast, the standard deviation of the predicted expectation from (9.1),
-and the standard deviation of the predicted value from (9.2).
-b. Now compute these using the relevant prediction functions discussed in Section 9.2. Check
-that you get the same values as in part (a) of this problem
+a. Compute the point forecast, the standard deviation of the predicted expectation from (9.1), and the standard deviation of the predicted value from (9.2).
+b. Now compute these using the relevant prediction functions discussed in Section 9.2. Check that you get the same values as in part (a) of this problem
 
-9.5 Combining prior information and data: A new job training program is being tested. Based on
-the successes and failures of previously proposed innovations, your prior distribution on the
-effect size on log(income) is normal with a mean of −0.02 and a standard deviation of 0.05. You
-then conduct an experiment which gives an unbiased estimate of the treatment effect of 0.16 with
-a standard deviation of 0.08. What is the posterior mean and standard deviation of the treatment
-effect?
+9.5 Combining prior information and data: A new job training program is being tested. Based on the successes and failures of previously proposed innovations, your prior distribution on the effect size on log(income) is normal with a mean of −0.02 and a standard deviation of 0.05. You then conduct an experiment which gives an unbiased estimate of the treatment effect of 0.16 with a standard deviation of 0.08. What is the posterior mean and standard deviation of the treatment effect?
 
-9.7 Uniform, weakly informative, and informative priors: Follow the steps of Section 9.5 for a
-different example, a regression of earnings on height using the data from the folder Earnings.
-You will need to think what could be an informative prior distribution in this setting.
+9.7 Uniform, weakly informative, and informative priors: Follow the steps of Section 9.5 for a different example, a regression of earnings on height using the data from the folder Earnings. You will need to think what could be an informative prior distribution in this setting. Hint: You will need to manually choose a 1) uniform, 2) weakly informative, and 3) informative prior. Explain your choices. 
