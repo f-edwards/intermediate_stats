@@ -1,0 +1,356 @@
+---
+title: "8. Assumptions and checks: linear regression"
+author: "Frank Edwards"
+institute: School of Criminal Justice, Rutgers - Newark
+output: binb::metropolis
+---
+
+```{r message = FALSE, warning = FALSE, echo=FALSE}
+library(tidyverse)
+library(rstanarm)
+### configure for variable text size with chunk option
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "tiny")
+```
+
+## Today's example
+
+Do tall people make more money than short people?
+
+```{r size = "tiny"}
+# earnings and height data
+dat<-read_csv("./data/earnings.csv")
+
+# regression for the day
+m0<-lm(earn ~ height, data = dat)
+
+## output
+summary(m0)
+```
+
+## Regression assumptions: 1. Validity
+
+Your domain expertise is key here! 
+
+- Does your theoretical construct map onto your measures?
+- Have you included important covariates / predictors?
+
+\pause
+
+Tough to comment on validity for this example...
+
+## Regression assumptions: 2 Representativeness
+
+Your domain expertise is key here!
+
+- Does your sample generalize to the population of interest?
+- Carefully consider the structure of your inference
+
+\pause
+
+What would we need to have this analysis generalize?
+
+## Regression assumptions: 3 Correct functional form
+
+In linear regression, we assume that $x$ predicts $y$ through an additive linear functional form. 
+
+\pause
+
+What does this mean in our example?
+
+$$earn_i = -85000 + 1595 height_i + \varepsilon_i $$
+
+## Checking linearity assumptions: visual inspection
+
+```{r size = "tiny", fig.height = 5}
+betas<-coef(m0)
+ggplot(dat,
+       aes(x = height, y = earn)) + 
+  geom_point() + 
+  geom_abline(intercept = betas[1], slope = betas[2])
+```
+
+##  Regression assumptions: 4 - 6 iid Normal errors
+
+We assume that the error terms are *iid*, *independent* and *identically distributed*. 
+
+We also assume that they are Normally distributed: $\varepsilon \sim N(0, \sigma^2)$
+
+## Independence of errors
+
+We assume that error terms are uncorrelated with each other. 
+
+This is nearly always violated when:
+
+1. Individuals are measured multiple times (longitudinal data)
+2. Individuals are clustered in groups (multilevel data)
+3. Measurements are grouped by place (spatial data)
+
+## Identically distributed errors
+
+We assume that all errors follow the same distribution, which means constant location and constant variance. Also known as homoskedasticity. 
+
+We assume that $\varepsilon \sim N(0, \sigma^2)$
+
+\pause
+
+This assumption about the *stochastic* component of the model impacts the posterior predictive distribution, but has little impact on the *deterministic* component of our model.
+
+## Checking for heteroskedasticity and Normality
+
+Here, a residuals vs fitted plot is a perfect test 
+
+```{r size = "tiny", fig.height = 3}
+plot_dat<-data.frame(resid = residuals(m0),
+                     fitted = fitted(m0))
+
+ggplot(plot_dat, 
+       aes(x = fitted, y = resid)) + 
+  geom_point() + 
+  geom_abline(intercept = 0, slope = 0)
+```
+
+## Let's evaluate model fit
+
+$R^2 = 1 - (\sigma^2 / s^2_y)$
+
+```{r size = "tiny"}
+sigma<-summary(m0)$sigma
+s_y<-sd(dat$earn)
+
+1 - sigma^2/s_y^2
+```
+
+\pause
+
+Or we could just use `summary()`
+
+## Another route: Posterior predictive checks
+
+Now that we are using Bayesian models, we can directly simulate model predictions. 
+
+We use the observed data, then simulate predictions using the observed data. This helps us evaluate if the model produces predictions that look similar to the observed data.
+
+```{r}
+# Use refresh=0 to suppress the sampling messages
+m0_b<-stan_glm(earn ~ height, data = dat, refresh = 0)
+m0_preds<-posterior_predict(m0_b)
+```
+
+## Evaluating the data against the simulations
+
+What do you think?
+
+```{r size = "tiny", fig.height = 5}
+library(bayesplot)
+# ppc_dens_overlay from bayesplot is nice! 
+# the first 100 sims will be adequate here
+ppc_dens_overlay(dat$earn, m0_preds[1:100,])
+```
+
+## Problems
+
+1. Our model predicts negative incomes. This never occurs in the data
+2. Our model doesn't predict very high incomes nearly as often as they occur in the data
+
+## Exponentials 
+
+```{r size = "tiny", fig.height = 5}
+plot_dat<-data.frame(x = seq(-5, 5, by = 0.01), 
+                     exp_x = exp(seq(-5, 5, by = 0.01)))
+ggplot(plot_dat,
+       aes(x = x, y = exp_x)) + 
+  geom_point()
+```
+
+## Logarithms
+
+```{r size = "tiny", fig.height = 5}
+plot_dat<-data.frame(x = seq(0, 100, by = 0.1), 
+                     log_x = log(seq(0, 100, by = 0.1)))
+ggplot(plot_dat,
+       aes(x = x, y = log_x)) + 
+  geom_point()
+```
+
+## Log transformations for regression
+
+- Do you have strictly postive data?
+- Do you have a distribution with some very extreme values?
+- Do you suspect linearity is not reasonable?
+
+\pause
+
+Consider a transformation!
+
+## Log transforming the outcome in a regression
+
+We take the log of the left-hand side
+
+$$log(earn_i) = \beta_0 + \beta_1 height_i + \varepsilon_i$$
+\pause
+
+To interpret on the original scale, we exponentiate both sides
+
+$$earn_i = e^{\beta_0 + \beta_1 height_i + \varepsilon_i}$$
+\pause
+
+Which transforms our additive equation into a multiplicative equation
+
+$$earn_i = e^{\beta_0}e^{\beta_1x_i}e^{\varepsilon_i} $$
+
+## Estimating the model
+
+R can handle transformations within the formula, but we've got some zeroes that need to go. (try `log(0)` and see what happens)
+
+```{r message = F}
+m1_b<-stan_glm(log(earn) ~ height, 
+               data = dat %>% filter(earn>0), 
+               refresh = 0)
+m1_b
+```
+
+## So what impacts did it have?
+
+```{r fig.height = 5, size = "tiny"}
+earn_nozeroes<-dat %>% filter(earn>0)
+m1_preds<-posterior_predict(m1_b)
+ppc_dens_overlay(log(earn_nozeroes$earn), m1_preds[1:100,])
+```
+
+## Linear transformations
+
+What does the intercept mean? 
+
+```{r}
+m1_b
+```
+
+Expected log earnings when height is zero. That's not helpful...
+
+## Centering
+
+We can *center* a variable to improve interpretation
+
+\pause
+
+Let's center height at the mean
+
+```{r message = F}
+# I() forces R to evaluate a math expression in a formula
+m2_b<-stan_glm(log(earn) ~ I(height - mean(dat$height)),
+               data = dat %>% filter(earn>0), 
+               refresh = 0)
+m2_b
+```
+
+Now what does the intercept mean?
+
+## Scaling
+
+We can *scale* a variable to improve interpretation when units aren't easy to interpret. A z-score transformation is convenient.
+
+$Z(x) = x / s_x$
+
+The $z$ distribution of a variable has the same shape as the untransformed variable
+
+## A linear transformation
+
+```{r echo = F}
+library(patchwork)
+p1<-ggplot(dat,
+       aes(x = height)) + 
+  geom_density()
+p2<-ggplot(dat,
+       aes(x = height/sd(height))) + 
+  geom_density()
+
+p1+p2
+```
+
+## In a regression
+
+The `scale()` function will by default mean center and $z$ transform a variable.
+
+```{r}
+m3_b<-stan_glm(log(earn) ~ scale(height), 
+               data = dat %>% filter(earn>0), 
+               refresh = 0)
+m3_b
+```
+
+## Guidance on scale()
+
+Use `scale()` when a standard deviation unit is helpful, or when we've got predictors on very different measurement scales
+
+## Back to the fit
+
+We've got multiple modes in the observed that aren't being reflected in the simulations
+
+```{r fig.height = 5}
+ppc_dens_overlay(log(earn_nozeroes$earn), m1_preds[1:100,])
+```
+
+## Revise the model
+
+```{r}
+m3_b<-stan_glm(log(earn) ~ scale(height) + male, 
+               data = dat %>% filter(earn>0),
+               refresh = 0)
+m3_b
+```
+
+## Let's check the ppd (posterior predictive distribution) again
+
+```{r size = "tiny", fig.height = 5}
+ppc_dens_overlay_grouped(log(earn_nozeroes$earn), 
+                    posterior_predict(m3_b, draws = 50), 
+                    group = earn_nozeroes$male)
+```
+
+## Range looks ok, maybe an interaction will help?
+
+```{r}
+m4_b<-stan_glm(log(earn) ~ scale(height) * male, 
+               data = dat %>% filter(earn>0),
+               refresh = 0)
+m4_b
+```
+
+## ppd check
+
+```{r size = "tiny", fig.height = 5}
+ppc_dens_overlay(log(earn_nozeroes$earn), 
+                    posterior_predict(m4_b, draws = 50))
+```
+
+## Looking better there
+
+Let's check what posterior predictions look like relative to the predictors
+
+```{r size = 'tiny', fig.height = 5}
+ppc_intervals(y = log(earn_nozeroes$earn),
+              yrep = posterior_predict(m4_b),
+              x = earn_nozeroes$height) 
+```
+
+## And compare this to the untransformed model
+
+```{r size = 'tiny', fig.height = 5}
+ppc_intervals(y = dat$earn,
+              yrep = posterior_predict(m0_b),
+              x = dat$height) 
+```
+
+## One last visual: Model 4 on the original scale
+
+```{r size = 'tiny', fig.height = 5}
+ppc_intervals(y = earn_nozeroes$earn,
+              yrep = exp(posterior_predict(m4_b)),
+              x = earn_nozeroes$height) 
+```
+
