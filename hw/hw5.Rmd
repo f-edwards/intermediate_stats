@@ -1,0 +1,39 @@
+---
+title: "Untitled"
+author: "Frank Edwards"
+date: "3/8/2021"
+output: html_document
+---
+
+## Homework 5
+
+Who was most (and least) likely to die on the Titanic? Use `./data/titanic.csv` for this one.
+
+```{r setup, warning = FALSE, message = FALSE, echo = FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+library(tidyverse)
+library(rstan)
+library(rstanarm)
+options(mc.cores = parallel::detectCores())
+rstan_options(auto_write = TRUE)
+
+titanic<-read_csv("./data/titanic.csv")
+```
+
+## 1. Suggest a model 
+
+We are modeling survival as the outcome.
+
+- Explain a theory: what do we think affected risk of death
+
+- Write out a logistic regression to evaluate your theory
+
+2. Fit and evaluate the model
+
+3. Think about revising the model
+
+4. Compare model fits using posterior predictive checks and leave one out cross validation
+
+5. Interpret the model, include simulations of probability of death in your interpretations
+
+
