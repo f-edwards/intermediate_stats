@@ -1,0 +1,276 @@
+---
+title: "Interpreting logistic models"
+author: "Frank Edwards"
+output: binb::metropolis
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+library(tidyverse)
+library(broom)
+library(rstanarm)
+library(tidybayes)
+library(bayesplot)
+theme_set(theme_bw())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+```
+
+## Quick review
+
+- Remember that logistic regression is a GLM with a logit link function \pause
+- A GLM takes the form: $g(y) = \textrm{X}\beta$ \pause
+- For logistic regression, g is the logit function: $\textrm{logit}(y) = \textrm{X}\beta$ \pause
+
+## Let's return to the grad school admission example
+
+```{r size = "tiny"}
+admits<-read_csv("./data/binary.csv")
+summary(admits)
+```
+
+## Let's look at this as the distribution of the probability of admissions across the data
+
+- First, fit an intercept-only logistic regression model
+
+```{r size = "tiny"}
+m0<-stan_glm(admit ~ 1, data = admits, 
+             family = "binomial",
+             refresh = 0)
+m0
+```
+
+- What does this model tell us? 
+
+## What does this model tell us?
+
+```{r size = "tiny"}
+coef(m0) ## log odds
+exp(coef(m0)) ## odds
+exp(coef(m0)) / (1 + exp(coef(m0))) ## probability
+mean(admits$admit) ## mean proportion admitted
+```
+
+## Let's add a predictor
+
+```{r size = "tiny"}
+m1<-stan_glm(admit ~ gre, data = admits, 
+             family = "binomial",
+             refresh = 0)
+m1
+```
+
+Hmmmm. why is $\beta_1$ so small?
+
+## Posterior distribution of beta_1: What does this tell us about GRE scores and admission?
+
+```{r size = "tiny", fig.height = 5}
+mcmc_dens(m1, pars = "gre")
+```
+
+## To ease interpretation, let's scale GRE
+
+Scale mean-centers and SD scales variables: $\textrm{scale}(x_i) = \frac{x_i - \bar{x}}{sd(x)}$
+
+```{r size = "tiny"}
+m2<-stan_glm(admit ~ scale(gre),
+             data = admits,
+             family = "binomial",
+             refresh = 0)
+
+```
+
+## Interpret the model
+
+```{r size = "tiny"}
+coef(m2)
+sd(admits$gre)
+```
+
+Remember: $\textrm{logit}(p) = \textrm{log}\left(\frac{p}{1-p}\right) =  \textrm{X}\beta$
+
+And: $\textrm{logit}^{-1}(\textrm{X}\beta) = \frac{\textrm{exp}(\textrm{X}\beta)}{\textrm{exp}(\textrm{X}\beta) + 1}$ \pause
+
+- What does $\beta_0$ mean? \pause
+- What does $\beta_1$ mean?
+
+## Refresher on exponentials
+
+$$e^{y_1 + y_2} = e^{y_1} e^{y_2}$$ \pause
+
+and 
+
+$$e^{y_1 - y_2} = \frac{e^{y_1}}{e^y_2}$$ \pause
+
+
+## Transforming the model
+
+We can take our logistic regression: 
+
+$$\textrm{log}\left(\frac{p}{1-p}\right) = \beta_0 + \beta_1x_1 $$
+
+\pause
+
+Exponentiate both sides and we obtain
+
+$$\left(\frac{p}{1-p}\right) = e^{\beta_0 + \beta_1x_1}$$
+
+## Nonlinear relationships
+
+A funny thing happens with our linear predictor when exponentiated
+
+$$\left(\frac{p}{1-p}\right) = e^{\beta_0 + \beta_1x_1} = e^{\beta_0} e^{\beta_1x_1}$$
+\pause
+
+The odds of $p$ are related to our predictors through a multiplicative, rather than additive relationship
+
+## Odds 
+
+Odds are defined as the probability of the event occurring divided by the probability of probability of the event not occurring. To obtain odds in a logistic regression, we exponentiate both sides: 
+
+$$\frac{p}{1-p} = e^{\beta_0 + \beta_1x_1}$$ \pause
+
+## Odds ratios
+
+The odds ratio is the ratio of two odds - or the proportional change in odds. We can obtain an isolated estimate for the relationship between $\beta_1x_{1i}$ and $y$ this way:
+
+$$\frac{Odds(p |x_1 = 1)}{Odds(p|x_1 = 0)} =  \frac{e^{\beta_0 + \beta_1}} {e^{\beta_0}} = \frac{e^{\beta_0} \times e^{\beta_1}} {e^{\beta_0}} =  e^{\beta_1}$$
+
+The odds ratio can be interpreted as the change in odds of $p$ for a one-unit change in $x_1$. 
+
+## Interpreting odds ratios
+
+- Odds ratios appear convenient - $e^{\beta_1}$ is a percent change in $p/(1-p)$ for a one-unit change in $x_1$ \pause
+
+How do they work?
+
+## In our example
+
+```{r size = "scriptsize"}
+coef(m2)
+
+exp(coef(m2))
+```
+
+What does $\beta_1$ mean? What does $e^{\beta_1}$ mean?
+
+## Interpreting the odds ratio
+
+The odds of admission are `r round(exp(coef(m2)[2]), 2)` times higher for a student with a GRE score one standard deviation above the mean than they are for a student with a mean GRE score. \pause
+
+Any trouble you can anticipate here? 
+
+## Expected changes for a 1 SD increase in GRE scores 
+
+```{r size = "tiny"}
+mean(admits$gre)
+sd(admits$gre)
+# log odds increase for +1 SD GRE
+coef(m2)[2]
+# odds proportional change for +1 SD GRE
+exp(coef(m2)[2])
+```
+
+## On the probability scale
+
+```{r size = "tiny"}
+# change in probability for a low GRE + 1
+p_low<-predict(m2, 
+               newdata = data.frame(gre = 200), 
+               type = "response")
+p_lowP1<-predict(m2, 
+               newdata = data.frame(gre = 200 + sd(admits$gre)), 
+               type = "response")
+
+p_lowP1 - p_low
+```
+
+## On the probability scale
+
+```{r size = "tiny"}
+# change in probability for a mid GRE + 1
+p_mid<-predict(m2, 
+               newdata = data.frame(gre = 500), 
+               type = "response")
+p_midP1<-predict(m2, 
+               newdata = data.frame(gre = 500 + sd(admits$gre)), 
+               type = "response")
+
+p_midP1 - p_mid
+```
+
+## On the probability scale
+
+```{r size = "tiny"}
+# change in probability for a mid GRE + 1
+p_hi<-predict(m2, 
+               newdata = data.frame(gre = 650), 
+               type = "response")
+p_hiP1<-predict(m2, 
+               newdata = data.frame(gre = 650 + sd(admits$gre)), 
+               type = "response")
+
+p_hiP1 - p_hi
+```
+
+# Bayesian inference with logistic regression
+
+## Posterior distributions of Beta parameters
+
+```{r size = "tiny", fig.height = 5}
+library(bayesplot)
+mcmc_hist(m2)
+```
+
+## To interpret, let's use the linear predictor
+
+Rather than interpret $\beta_1$, let's look at the linear relationship directly
+
+```{r size = "tiny"}
+library(tidybayes)
+m2_lp<-linpred_draws(m2, 
+                     newdata = admits, 
+                     ndraws = 1000) 
+
+head(m2_lp)
+```
+
+## To interpret, let's use the linear predictor
+
+```{r size = "tiny", fig.height = 4}
+ggplot(m2_lp,
+       aes(x = gre, y = .linpred)) + 
+  stat_lineribbon() + 
+  scale_fill_brewer()
+```
+
+## How about on the odds scale
+
+```{r size = "tiny", fig.height = 5}
+ggplot(m2_lp,
+       aes(x = gre, y = exp(.linpred))) + 
+  stat_lineribbon() + 
+  scale_fill_brewer()
+```
+
+## We can also estimate expected probability
+
+```{r size = "tiny", fig.height = 5}
+m2_ep<-epred_draws(m2, 
+                     newdata = admits, 
+                     ndraws = 1000) 
+
+head(m2_ep)
+```
+
+## And visualized
+
+```{r size = "tiny", fig.height = 5}
+ggplot(m2_ep,
+       aes(x = gre, y = .epred)) + 
+  stat_lineribbon() + 
+  scale_fill_brewer()
+```

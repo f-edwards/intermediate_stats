@@ -1,0 +1,33 @@
+---
+title: "Untitled"
+author: "Frank Edwards"
+date: "3/8/2021"
+output: html_document
+---
+
+## Homework 6
+
+Who was most (and least) likely to die on the Titanic? Use `./data/titanic.csv` for this one.
+
+```{r setup, warning = FALSE, message = FALSE, echo = FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+library(tidyverse)
+library(rstan)
+library(rstanarm)
+options(mc.cores = parallel::detectCores())
+rstan_options(auto_write = TRUE)
+
+titanic<-read_csv("./data/titanic.csv")
+```
+
+1. Describe in both plain English and mathematically your preferred model for who died on the titanic.
+
+2. Estimate this model using `stan_glm()`
+
+3. Interpret all coefficients of this model on the log odds scale and as odds ratios
+
+4. Provide a detailed exploratory analysis of all predictors you include in your model, providing appropriate visualizations as helpful.
+
+5. Based on your exploratory analysis, describe several groups of theoretical interest and create fake data frames that describe these groups. 
+
+6. Use tools from the tidybayes() package including `epred_draws()` and `stat_lineribbon()` to visualize the findings of your models applied to your fake data. Describe your findings. 

@@ -142,6 +142,8 @@ $$Var(y) = p(1-p)$$
 admissions <- read.csv("https://stats.idre.ucla.edu/stat/data/binary.csv")
 head(admissions)
 nrow(admissions)
+
+knitr::kable(table(admissions$admit))
 ```
 
 ## Evaluate distribution of binary admission variable
@@ -286,6 +288,10 @@ Logistic regression may have more accurate uncertainty estimates than a linear p
 ```{r}
 m1<-glm(admit ~ gpa, data = admissions, family = "binomial")
 tidy(m1)
+
+inverse_logit<-function(x){
+  return(exp(x)/(exp(x) + 1))
+}
 ```
 
 How do we interpret the coefficients?
