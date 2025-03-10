@@ -1,0 +1,26 @@
+---
+title: "HW7"
+author: "Frank Edwards"
+output: html_document
+---
+
+## Homework 7
+
+**Use data from the nwslR package for this homework**
+
+```{r}
+## data from https://github.com/adror1/nwslR
+# to insall, run devtools::install_github("adror1/nwslR")
+library(nwslR)
+data("fieldplayer_overall_season_stats")
+```
+
+
+1. Visualize the distribution of assists (`ast`) across players for the 2019 season (your choice on geom)
+2. Write a regression equation where position, and matches played (`mp`) are predictors.
+3. Estimate this model with a Normal likelihood (OLS)
+4. Estimate this model with a Poisson likelihood (family = "poisson")
+5. Generate expected values for each position for both models
+6. Visualize and interpret your results. Note differences in the OLS and Poisson model results. 
+7. Now generate *predicted* values for each position for both models
+8. Visualize and interpret your results. Note differences in the OLS and Poisson model results. 
