@@ -1,0 +1,159 @@
+---
+title: "Homework 3: linear regression"
+author: "YOUR NAME"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(rstanarm)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Read Gelman et al. Chapter 6, 7 and 10
+
+Complete the following exercises and provide all R code used to answer questions.
+
+6.5 *Regression prediction and averages*
+
+6.5 Regression prediction and averages: The heights and earnings data in Section 6.3 are in the folder Earnings. Download the data and compute the average height for men and women in the sample.
+(a) Use these averages and fitted regression model displayed on page 84 to get a model-based estimate of the average earnings of men and of women in the population.
+
+```{r}
+earnings<-read_csv("https://raw.githubusercontent.com/avehtari/ROS-Examples/refs/heads/master/Earnings/data/earnings.csv")
+
+earnings %>% 
+  group_by(male) %>% 
+  summarize(height_mn = mean(height))
+
+earnings$earnk <- earnings$earn/1000
+fit_2 <- stan_glm(earnk ~ height + male, data=earnings)
+
+# expected m earnings
+coef(fit_2)[1] + coef(fit_2)[2] * 70.1 + coef(fit_2)[3] * 1
+# expected f earnings 
+coef(fit_2)[1] + coef(fit_2)[2] * 64.5 + coef(fit_2)[3] * 0
+
+```
+
+(b) Assuming 52% of adults are women, estimate the average earnings of adults in the population.
+
+```{r}
+f_avg<-0.52 *  (coef(fit_2)[1] + coef(fit_2)[2] * 64.5 + coef(fit_2)[3] * 0 )
+m_avg<-0.48 * (coef(fit_2)[1] + coef(fit_2)[2] * 70.1 + coef(fit_2)[3] * 1)
+#pop_avg
+f_avg + m_avg
+```
+
+(c) Directly from the sample data compute the average earnings of men, women, and everyone. Compare these to the values calculated in parts (a) and (b).
+
+```{r}
+## empirical earnings by gender
+earnings %>% 
+  group_by(male) %>% 
+  summarize(earnings_mn = mean(earnk))
+## empirical earnings for full pop
+earnings %>% 
+  summarize(earnings_mn = mean(earnk))
+
+```
+
+looks different! projecting everyone at the mean isn't quite right!
+
+7.2 *Fake-data simulation and regression* part a) and b)
+
+7.2 Fake-data simulation and regression: Simulate 100 data points from the linear model, y = a + bx + error, with a = 5, b = 7, the values of x being sampled at random from a uniform distribution on the range [0, 50], and errors that are normally distributed with mean 0 and standard deviation 3.
+
+```{r}
+a<-5
+b<-7
+x<-runif(100, 0, 50)
+error<-rnorm(100, 0, 3)
+y <- a + b * x + error
+```
+
+(a) Fit a regression line to these data and display the output.
+
+```{r}
+m1<-stan_glm(y ~ x)
+print(m1)
+```
+
+(b) Graph a scatterplot of the data and the regression line.
+
+```{r}
+plot_dat<-data.frame(x = x, y = y)
+ggplot(plot_dat,
+       aes(x = x, y = y)) + 
+  geom_point() + 
+  geom_abline(slope = coef(m1)[2], intercept = coef(m1)[1]) + 
+  labs(subtitle = "simulation of y ~ 5 + 7 * x + error")
+```
+
+10.3 *Checking statistical significance*
+
+In this exercise and the next, you will simulate two variables that are statistically independent of each other to see what happens when we run a regression to predict one from the other. Generate 1000 data points from a normal distribution with mean 0 and standard deviation 1 by typing var1 <- rnorm(1000,0,1) in R. Generate another variable in the same way (call it var2). Run a regression of one variable on the other. Is the slope coefficient “statistically significant”? We do not recommend summarizing regressions in this way, but it can be useful to understand how this works, given that others will do so
+
+```{r}
+dat10.3<-data.frame(var1 = rnorm(1000,0,1),
+                    var2 = rnorm(1000,0,1))
+
+mod10.3<-stan_glm(var1 ~ var2, data = dat10.3)
+print(mod10.3)
+```
+
+10.4 *Simulation study of statistical significance*
+
+```{r}
+z_scores <- rep(NA, 100)
+for (k in 1:100) {
+  var1 <- rnorm(1000, 0, 1)
+  var2 <- rnorm(1000, 0, 1)
+  fake <- data.frame(var1, var2)
+  fit <- lm(var2 ~ var1, data=fake, refresh = 0)
+  fit_out<-broom::tidy(fit)
+  z_scores[k] <- as.numeric(fit_out[2,2] / fit_out[2, 3])
+}
+
+table(abs(z_scores)>2)
+```
+
+10.6 *Regression models with interactions*
+
+The folder Beauty contains data (use file beauty.csv)
+Beauty and teaching evaluations from Hamermesh and Parker (2005) on student evaluations of instructors’ beauty and teaching quality for several courses at the University of Texas. The teaching evaluations were conducted at the end of the semester, and the beauty judgments were made later, by six students who had not attended the classes and were not aware of the course evaluations.
+
+
+(a) Run a regression using beauty (the variable beauty) to predict course evaluations (eval), adjusting for various other predictors. Graph the data and fitted model, and explain the meaning of each of the coefficients along with the residual standard deviation. Plot the residuals versus fitted values.
+
+```{r}
+beauty<-read_csv("https://raw.githubusercontent.com/avehtari/ROS-Examples/refs/heads/master/Beauty/data/beauty.csv")
+
+ggplot(beauty,
+       aes(x = beauty, 
+           y = eval,
+           color = female)) + 
+  geom_point() 
+
+fit1<-lm(eval~beauty + female , 
+         data = beauty)
+
+fit2<-lm(eval ~ beauty + female + beauty * female,
+         data = beauty)
+
+
+
+fit3<-glm(female ~ eval, data = beauty, 
+          family = "binomial")
+```
+
+
+(b) Fit some other models, including beauty and also other predictors. Consider at least one model with interactions. For each model, explain the meaning of each of its estimated coefficients.
+
+```{r}
+fit2<-lm(eval~beauty * female * age * minority + nonenglish, 
+         data = beauty)
+
+```
+

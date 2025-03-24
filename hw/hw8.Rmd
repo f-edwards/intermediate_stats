@@ -1,0 +1,57 @@
+---
+title: "HW7"
+author: "Frank Edwards"
+output: html_document
+---
+
+# Homework 8: Due April 7th
+
+Note that there are two options for this homework. Choose one. 
+
+## Option 1
+
+Replicate (kinda) my paper on police violence, race, and place: `https://ajph.aphapublications.org/doi/abs/10.2105/AJPH.2018.304559`
+
+1. Load in data on men killed by police by county (./hw/data/fe_division_rural.csv)
+2. Compute and visualize death rates for each racial / ethnic group in the data (per 100,000 population)
+3. Compute and visualize death rates across Census divisions (`division`) and racial groups
+4. Compute and visualize death rates across county types (`ur.code`) and racial groups
+5. Estimate a negative binomial model for counts of Black men killed by police using an appropriate offset
+6. Estimate a negative binomial model for counts of white men killed by police using an appropriate offset
+7. Compare the posterior intervals for expected deaths for Black and white men
+8. Estimate new models using predictors for county type and census division and briefly describe your findings
+9. Use leave-one-out cross validation to compare the models including county and division predictors to the intercept-only models (questions 5 and 6)
+10. Explain your findings in 4-8 sentences. Include visuals if helpful.
+
+**codebook for fe_division_rural.csv**
+
+\scriptsize 
+Data derived from Fatal Encounters and US Census
+
+- fips: 5 digit county identifier
+- state: two letter state abbreviation
+- black.men: adult Black male population in county (age >= 18)
+- white.men: adult white male population in county
+- latino.men: adult Latino population in county
+- tot.men: Total adult male population in county
+- ur.code: US Dept of Agriculture rural - urban continuum classification for county
+- division: US Census geographic division
+- d.asian: Asian / PI men killed by police in county (age >= 18)
+- d.black: Black men killed by police
+- d.latino: Latino men killed by police
+- d.other: men with other race/ethnicity identified killed by police
+- d.white: white men killed by police
+- d.na: men with missing race/ethnicity data killed by policy
+- d.total: total men killed by police 
+
+## Option 2
+
+Estimate a GLM using your data of choice. 
+
+1) Identify your outcome variable. Provide appropriate visuals to describe the distribution of this variable.
+
+2) Identify focal predictors of your outcome. Describe theoretically how they may be related to the outcome. Provide appropriate visuals to describe their distributions.
+
+3) Estimate an appropriate regression model for your outcome given your theory. Describe the model estimates appropriately (posterior distributions, posterior expected values, or posterior predictions as appropriate).
+
+4) Critique the model and propose an alternative. Compare model fits and inferences. Choose a preferred model and defend your choice. 
