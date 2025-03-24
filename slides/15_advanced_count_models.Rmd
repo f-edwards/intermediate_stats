@@ -261,6 +261,11 @@ goals_negbin<-stan_glm(gls ~ pos,
 
 ```{r size = "tiny"}
 goals_poisson
+```
+
+## What do we notice about the results?
+
+```{r size = "tiny"}
 goals_negbin
 ```
 
@@ -441,7 +446,7 @@ coef(goals_negbin2)
 
 ## Compare fits
 
-```{r}
+```{r size = "tiny"}
 loo_compare(loo(goals_negbin2), 
             loo(goals_negbin_offset),
             loo(goals_negbin))
