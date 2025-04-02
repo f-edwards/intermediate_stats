@@ -1,0 +1,236 @@
+---
+title: "Categorical data and regression"
+author: "Frank Edwards"
+output: binb::metropolis
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+rm(list=ls())
+library(tidyverse)
+library(rstanarm)
+library(tidybayes)
+select<-dplyr::select
+set.seed(1)
+
+options(xtable.comment = FALSE)
+theme_set(theme_bw())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+```
+
+## Categorical data
+
+Categorical data falls into a fixed set of categories. It may be \textit{unordered}, meaning that there is no inherent ranking of categories, or it may be \textit{ordered}. Ordered categorical data has an explicit hierarchical ranking of values. 
+
+## Categorical data, examples
+
+Are these variables ordered or unordered? \pause
+
+- Candidate choice in a primary election \pause
+- Zip code for people choosing a place to move \pause
+- Cause of death \pause
+- Opinions on a political issue on a thermometer / Likert scale (e.g. Strongly oppose, oppose, neutral, support, strongly support) \pause
+- Ranking of academic progrms 
+
+## Categorical data
+
+```{r size = "tiny"}
+library(foreign)
+dat <- read.dta("https://stats.idre.ucla.edu/stat/data/hsbdemo.dta")
+head(dat)
+```
+
+## Visualizing categorical data
+
+Crosstabs are often the best
+
+```{r}
+table(dat$prog)
+```
+
+## Visualzing categorical data (cont.)
+
+```{r size = "tiny"}
+dat %>% 
+  group_by(prog, ses) %>% 
+  summarize(n = n()) %>% 
+  mutate(prop = n/sum(n))
+```
+
+## Visualizing categorical data - frequency barplots
+
+```{r size = "tiny", fig.height = 5}
+ggplot(dat,
+       aes(x = prog)) + 
+  geom_bar()
+```
+
+## Visualizing categorical data - frequency barplots
+
+```{r size = "tiny", fig.height = 5}
+ggplot(dat,
+       aes(x = prog,
+           fill = ses)) + 
+  geom_bar(position = position_dodge())
+```
+
+## Visualizing categorical data, facets
+
+```{r size = "tiny", fig.height = 5}
+ggplot(dat, aes(x = write)) + 
+  geom_density() + 
+  facet_wrap(prog~ses)
+```
+
+## Multinomial logistic regression
+
+Multinomial logistic regression is a GLM that models the log odds of a categorical outcome as a function of a linear combination of a set of predictors. \pause
+
+## Multinomial logistic regression: basics
+
+For a categorical outcome with $K$ categories, estimate $K - 1$ models where 1,2,3 stand in for membership in group 1, 2, 3, ... K:
+
+$$log \frac{Pr(y_i =1)}{Pr(y_i=K)} =  \beta_{k=1} X_i$$
+$$log \frac{Pr(y_i =2)}{Pr(y_i=K)} =  \beta_{k=2} X_i$$
+$$ \cdots$$
+$$log \frac{Pr(y_i =K-1)}{Pr(y_i=K)} =  \beta_{k=3} X_i$$
+
+Key assumtion: Independence of irrelevant alternatives. Odds of choice do not depend on the presence or absence of other alternatives (i.e. car vs bus or car vs red bus vs blue bus)
+
+## Implementation
+
+1. Choose a reference category. This is arbitrary, but changes the interpretation. Remember that we're modeling the log odds of membership in one group relative to another.
+
+2. Estimate a model
+
+3. Interpret results
+
+## Implementation 
+
+Multinomial logistic regression is easy to estimate using `brms`, an package for estimating Bayesian models using Stan, very similar to `rstanarm`. Simply use `family = categorical` with a call to `brm`. 
+
+## Estimation
+
+Let's predict high school program choice as a function of socio-economic status and math standardized test score 
+
+```{r size = "tiny"}
+library(brms)
+m0<-brm(prog ~ ses + math,
+        data = dat,
+        family = categorical,
+        refresh = 0)
+```
+
+## Interpretation
+
+Remember how to interpret logit coefficients? It just got harder!
+
+```{r size = "tiny"}
+m0
+```
+
+## Options
+
+Change in log odds of option $k$ versus the reference category for a one unit change in $x$
+
+```{r size = "tiny"}
+fixef(m0)[,1]
+```
+
+Change in odds ratio of option $k$ versus the reference category for a one unit change in $x$
+
+```{r size = "tiny"}
+exp(fixef(m0)[,1])
+```
+
+## Or - we could simulate!
+
+```{r fig.height = 5, size = "tiny"}
+plot_dat<-expand_grid(ses = unique(dat$ses),
+            math = mean(dat$math)) %>% 
+  add_epred_draws(m0)
+
+head(plot_dat)
+```
+
+## Visualize
+
+```{r size = "tiny", fig.height = 5}
+ggplot(plot_dat,
+       aes(y = .epred,
+           x = ses)) + 
+  stat_pointinterval() + 
+  facet_wrap(~.category)
+```
+
+# Ordinal regression
+
+## The data
+
+```{r size = "tiny"}
+dat <- read.dta("https://stats.idre.ucla.edu/stat/data/ologit.dta")
+head(dat)
+```
+
+## Ordinal logistic regression
+
+Ordinal logistic regression is a GLM that models the log odds of a rank-ordered categorical outcome as a function of a linear combination of a set of predictors. \pause
+
+## Multinomial logistic regression: basics
+
+For an ordinal outcome with $K$ categories, estimate $K - 1$ models where 1,2,3 stand in for membership in group 1, 2, 3, ... K:
+
+$$log \frac{Pr(y_i > 1)}{Pr(y_i=K)} =  \beta X_i$$
+$$log \frac{Pr(y_i > 2)}{Pr(y_i=K)} =  \beta X_i - c_2$$
+$$ \cdots$$
+$$log \frac{Pr(y_i =K-1)}{Pr(y_i=K)} =  \beta X_i - c_{k-1}$$
+
+## Estimation
+
+We can use `rstanarm` for this with a new function
+
+```{r size = "tiny"}
+m_ord<-stan_polr(apply ~ pared + gpa,
+                 data = dat,
+                 prior=NULL,
+                 refresh = 0)
+```
+
+## Model output
+
+```{r size = "tiny"}
+m_ord
+```
+
+## Interpretation
+
+Log odds again!
+
+```{r size = "tiny"}
+coef(m_ord)
+```
+
+Or odds ratios
+
+```{r size = "tiny"}
+exp(coef(m_ord))
+```
+
+## But why not just simulate!
+
+```{r size = "tiny", fig.height = 5}
+expand_grid(gpa = unique(dat$gpa),
+            pared = unique(dat$pared)) %>% 
+  add_epred_draws(m_ord, ndraws = 500) %>% 
+  ggplot(aes(x = gpa,
+             y = .epred)) + 
+  stat_lineribbon(.width = c(0.5, 0.8, 0.9)) + 
+  facet_wrap(~pared) + 
+  scale_fill_brewer()
+```
+
+
