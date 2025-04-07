@@ -1,0 +1,428 @@
+---
+title: "Understanding and addressing missing data"
+author: Frank Edwards
+output: binb::metropolis
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+rm(list=ls())
+library(MASS)
+library(tidyverse)
+library(rstanarm)
+library(broom)
+library(mice)
+library(lubridate)
+library(knitr)
+select<-dplyr::select
+set.seed(1)
+
+options(xtable.comment = FALSE)
+theme_set(theme_bw())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = TRUE, size = "small")
+```
+
+## Why should we care?
+
+* Most statistical software will conduct "complete-case analysis" by default 
+* This may result in throwing away a lot of perfectly good information! 
+* Listwise deletion understates uncertainty, may result in bias
+
+## A hypothetical with missing data: predicting student GPA from a math test
+
+```{r echo = FALSE, message = FALSE}
+sim<-data.frame(test_score = seq(50,100, length.out = 50), 
+                gpa= rnorm(50,0, 20) + seq(50,100, length.out = 50)) %>% 
+  mutate(gpa = gpa / 25,
+         gpa = ifelse(gpa>4, 4, gpa))
+na_vals<-sample(1:nrow(sim), 10)
+sim_mcar<-sim
+sim_mcar[na_vals, "test_score"]<-NA
+ggplot(sim, aes(x = test_score, y = gpa)) + 
+  geom_point() 
+```
+
+## Missing observations
+
+```{r, echo = FALSE}
+ggplot(sim_mcar, aes(x = test_score, y = gpa)) + geom_point() 
+```
+
+## Best fit line under complete data
+
+```{r, echo = F}
+ggplot(sim, aes(y = gpa, x = test_score)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) 
+```
+
+## Best fit line under missing data
+
+```{r, echo = F}
+ggplot(sim_mcar, aes(x = test_score, y = gpa)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) 
+```
+
+## 100 hypothetical lines with different sets of 10 cases missing completely at random
+
+```{r, echo = F}
+lines<-data.frame(intercept = rep(NA, 100), slope = rep(NA,100))
+for(i in 1:100){
+  na_vals<-sample(1:nrow(sim), 10)
+  temp<-sim
+  temp[na_vals, "test_score"]<-NA
+  m_temp<-lm(gpa ~ test_score, data = temp)
+  lines[i,]<-coef(m_temp)
+}
+
+ggplot(sim,
+       aes(x = test_score, y = gpa)) + 
+  geom_point() + 
+  geom_abline(data = lines, aes(intercept = intercept, slope = slope), alpha = 0.1) + 
+  geom_smooth(method = "lm", se = F, color = "red")
+
+```
+
+## Three general causes of missing data: MCAR
+
+* **Missing completely at random (MCAR)**: The probability of a value being missing is the same for all observations in the data. 
+
+* Potential MCAR mechanisms: survey non-response due to exogenous factors: e.g. lost mail, bad weather, software errors. 
+
+* Can be verified by comparing group means of missing and non-missing data on observables: for large N, values are equal
+
+## MCAR results in unbiased Beta estimates, but increases standard errors and uncertainty
+
+```{r, size = "tiny"}
+### true values
+tidy(lm(gpa~test_score, data = sim))
+### with missing data
+tidy(lm(gpa~test_score, data = sim_mcar))
+```
+
+## Three general causes of missing data: Missing at random
+
+* **Missing at random (MAR)**: The probability of a value being missing is *not* completely at random (I know) 
+* The probability of a value being missing is determined by other variables in the data 
+* After controlling for other values in the data, missingess is random 
+* Potential MAR mechanisms: people with high income less likely to report total wealth; places with high poverty less likely to submit voluntary administrative data; news reports unlikely to identify other characteristics of child victims of crime / violence 
+
+## What if students with low GPAs were more likely to miss school on test day?
+
+```{r echo = FALSE, message = FALSE}
+na_vals<-sample(1:nrow(sim), 20,
+                prob = c(seq(0.99, 0, length.out = 25), rep(0, 25)))
+sim_mar<-sim
+sim_mar[na_vals, "test_score"]<-NA
+ggplot(sim, aes(x = test_score, y = gpa)) + 
+  geom_point(color = "red") + 
+  geom_point(data = sim_mar, aes(x = test_score, y = gpa)) 
+```
+
+## Best fit line under complete data
+
+```{r, echo = F}
+lm_temp<-lm(gpa~test_score, data = sim)
+ggplot(sim, aes(y = gpa, x = test_score)) + 
+  geom_point() + 
+  geom_abline(aes(intercept = coef(lm_temp)[1], slope = coef(lm_temp)[2]),
+              color = "blue", size = 1) + 
+  coord_cartesian(xlim = c(50,100))
+```
+
+## Best fit line under missing data
+
+```{r, echo = F}
+lm_temp<-lm(gpa~test_score, data = sim_mar)
+ggplot(sim_mar, aes(x = test_score, y = gpa)) + 
+  geom_point() + 
+  geom_abline(aes(intercept = coef(lm_temp)[1], slope = coef(lm_temp)[2]),
+              color = "blue", size = 1) + 
+  coord_cartesian(xlim = c(50,100))
+```
+
+## 100 hypothetical lines with different sets of 10 cases missing at random, conditional on GPA
+
+```{r, echo = F}
+lm_temp<-lm(gpa~test_score, data = sim)
+lines<-data.frame(intercept = rep(NA, 100), slope = rep(NA,100))
+for(i in 1:100){
+  na_vals<-sample(1:nrow(sim), 20,
+                prob = c(seq(0.99, 0, length.out = 25), rep(0, 25)))
+  temp<-sim
+  temp[na_vals, "test_score"]<-NA
+  m_temp<-lm(gpa ~ test_score, data = temp)
+  lines[i,]<-coef(m_temp)
+}
+
+ggplot(sim,
+       aes(x = test_score, y = gpa)) + 
+  geom_point() + 
+  geom_abline(data = lines, aes(intercept = intercept, slope = slope), alpha = 0.1) 
+
+```
+
+## And with the true regression line
+
+```{r size = "tiny", echo = F}
+ggplot(sim,
+       aes(x = test_score, y = gpa)) + 
+  geom_point() + 
+  geom_abline(data = lines, aes(intercept = intercept, slope = slope), alpha = 0.1) + 
+    geom_abline(aes(intercept = coef(lm_temp)[1], slope = coef(lm_temp)[2]),
+              color = "blue", size = 1) 
+```
+
+## What's going on?
+
+The probability of data being missing is conditional on GPA. If we ignore the missing data, then we will systematically understate the relationship between test score and GPA. 
+
+\[P(missing) \neq P(missing|GPA)\]
+
+## Results of regression models (spot the bias!)
+
+```{r size = "tiny"}
+### true values
+tidy(lm(gpa~test_score, data = sim))
+### average parameter estimates for 100 simulations with missing data
+tidy(lm(gpa~test_score, data = sim_mar))
+```
+
+## Three general causes of missing data: non-random missingness
+
+* **Missing not at random (MNAR)**: The probability of a value being missing depends on either *A)* some unobserved variable or *B)* the value itself (censorship)
+* Examples: police departments with high crime may opt-out of reporting their data to the federal government; police departments with high levels of use-of-force opt-out of reporting to federal arrest-related-deaths programs; people who do not vaccinate their children opt-out of answering a survey question about vaccination
+* We cannot distinguish between MAR and MNAR: you must think carefully about missing data mechanisms
+
+## Mechanisms of missing data
+
+* Missing completely at random: missingness determined by a coin flip
+* Missing (conditionally) at random: missingness on variable x determined by some other variable y
+* Missing not at random: missingness on variable x depends only on variable x (or some unobserved variable z)
+
+# So what can we do?
+
+## Basic approaches to missing data
+
+* Listwise deletion (complete case analysis)
+     + Appropriate for data with very few missing observations, and when missingness is completely at random 
+* Using alternative information on known or stable variables (e.g. imputing age based on information from prior survey wave)
+* Imputation of missing values (deterministic, stochastic)
+
+## Basic approaches to missing data, deterministic
+
++ Missing value is generated by a fixed (non-random) procedure
++ Many examples: linear interpolation, last observed, regression imputation
++ This is generally a bad idea. 
+
+## Basic approaches to missing data, stochastic
+
+* Missing value is generated through random sampling
+* Many approaches, but multiple imputation has become widely used
+
+## Multiple imputation
+
++ Iterative modeling of all missing outcomes/predictors in model
++ Produces series of fake datasets where missing values are predicted with from regression model (with error)
++ Allows you to estimate uncertainty generated by missing data
++ Does not recover "true" values
++ Under missing at random assumption, generates unbiased parameter and variance estimates
+
+## What muliple imputation does:
+
+* Has two effects on model uncertainty
+     * Increases your N because we aren't deleting data (pushes standard errors downward)
+     * Adds in appropriate noise due to uncertainty around where missing values are (pushes standard errors upward)
+* If missingess is associated with observables and we have enough data, MI can correct bias in parameter estimates
+
+## My preferred approach
+
+* Understand your data!
+     + Read the documentation
+     + Do plenty of exploratory data analysis (cross tabs, data visuals, descriptives, look at the raw data)
+     + Develop an understanding of the mechanisms of missing data in each dataset you use
+     + Test your ideas for mechanisms of missing data when feasible
+
+## My preferred approach
+
+* Use available information
+     + Borrow data from other observations when possible
+     + Some variables are time-stable (age) and can be borrowed from prior observations - but remember cautions against deterministic imputation and inducing bias
+
+## My preferred approach
+
+* If MAR is a reasonable assumption (it often is), conduct multiple imputation
+     + Because MAR is conditional on observables, including many variables in imputation models is often a good idea
+* Apply preferred final model / analysis over each imputed dataset, combine with Rubin's rules (mice::pool), report revised estimates.
+
+## With simple data
+
+```{r size = "tiny"}
+summary(airquality)
+```
+
+## Visualize missingness
+
+```{r size = "tiny", fig.height = 5}
+md.pattern(airquality)
+```
+
+## Evaluating the distributions of means across missing and non-missing values
+
+```{r size = "tiny"}
+airquality %>% 
+  group_by(is.na(Ozone), is.na(Solar.R)) %>% 
+  summarize(across(everything(), mean)) 
+```
+
+## Let's get set up
+
+```{r}
+library(mice)
+# initiate an empty object, maxit = 0 prevents it from running
+airquality_impTemp<-mice(airquality,
+                         maxit = 0) 
+```
+
+## Key components: Predictor matrix
+
+```{r size = "tiny"}
+airquality_impTemp$predictorMatrix
+```
+
+## Predictor matrices
+
+- Columns indicate variables to be imputed
+- Rows indicate predictors to include in imputation model
+- Typically, we want to include as many predictors as is possible 
+- Let's disable `Day`
+
+```{r size = "tiny"}
+predMat<-airquality_impTemp$predictorMatrix
+predMat[,"Day"]<-0
+predMat
+```
+
+## Key components: Imputation method
+
+```{r}
+meth<-airquality_impTemp$method
+meth
+```
+
+- Partial mean matching (pmm) is the general default for mice. It uses a bootstrap-like algorithm to impute missing values based on similarity to other cases in the data 
+- Other methods are available, but pmm is often best
+- We can swap methods easily; see https://www.gerkovink.com/miceVignettes/Convergence_pooling/Convergence_and_pooling.html
+
+## Running the imputation
+
+M controls the number of imputations, maxit controls the number of iterations of the sampler run per imputation.
+
+```{r size = "tiny"}
+airquality_imp<-mice(airquality,
+                    predictorMatrix = predMat,
+                    method = meth,
+                    m = 5, 
+                    maxit = 5)
+```
+
+## Diagnostics: trace plots
+
+First, we want to check for convergence. We are looking for the absence of patterns here
+
+```{r size = "tiny", fig.height = 5}
+plot(airquality_imp)
+```
+
+This looks fine
+
+## Diagnostics: posterior distributions
+
+Blue line = observed; red line = imputed. Look for generally similar patterns. This looks fine.
+
+```{r size = "tiny", fig.height = 5}
+densityplot(airquality_imp)
+```
+
+## Post processing: creating an imputed data frame
+
+```{r size = "tiny"}
+airquality_imputed<-mice::complete(airquality_imp, action = "long")
+nrow(airquality)
+nrow(airquality_imputed)
+```
+
+## What it looks like
+
+```{r size = "tiny"}
+head(airquality_imputed)
+```
+
+## Visualize
+
+```{r}
+ggplot(airquality_imputed,
+       aes(x = Ozone)) + 
+  geom_histogram() + 
+  facet_wrap(~.imp)
+```
+
+## Visualize
+
+```{r}
+ggplot(airquality_imputed,
+       aes(x = Solar.R)) + 
+  geom_histogram() + 
+  facet_wrap(~.imp)
+```
+
+## Model estimation
+
+Estimate a regression model over *each* imputed dataset
+
+```{r size = "tiny"}
+m1<-stan_glm(Ozone ~ Solar.R + Temp,
+            data = airquality_imputed %>% 
+              filter(.imp==1), refresh=0)
+m2<-stan_glm(Ozone ~ Solar.R + Temp,
+            data = airquality_imputed %>% 
+              filter(.imp==2), refresh=0)
+m3<-stan_glm(Ozone ~ Solar.R + Temp,
+            data = airquality_imputed %>% 
+              filter(.imp==3), refresh=0)
+m4<-stan_glm(Ozone ~ Solar.R + Temp,
+            data = airquality_imputed %>% 
+              filter(.imp==4), refresh=0)
+m5<-stan_glm(Ozone ~ Solar.R + Temp,
+            data = airquality_imputed %>% 
+              filter(.imp==5), refresh=0)
+```
+
+## With Bayesian models, we can just pool the posterior distributions
+
+```{r size = "tiny", fig.height = 3}
+posteriors<-bind_rows(
+  data.frame(m1),
+  data.frame(m2),
+  data.frame(m3),
+  data.frame(m4),
+  data.frame(m5))
+
+ggplot(posteriors, 
+       aes(x = Solar.R)) + 
+  geom_density()
+```
+
+## With frequentist models, we can pool using Rubin's Rules for combination
+
+```{r size = "tiny"}
+m_out<-with(airquality_imp, lm(Ozone ~ Solar.R + Temp))
+summary(pool(m_out))
+```
+
+# We'll practice in lab on Wednesday
