@@ -1,0 +1,39 @@
+---
+title: 'Final Project: Original Data Analysis'
+author: "YOUR NAME HERE"
+date: "`r Sys.Date()`"
+output: html_document
+abstract: "Add your abstract here"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+```
+
+GUIDELINES: For those completing an original data analysis for their final project, please follow this basic template. Your paper should be between 2000 - 4000 words long, and should provide the reader with a complete understanding of why you pursued the analysis, the choices you made along the way, your findings, and their real-world meaning. 
+
+I've provided a suggested format below. Feel free to deviate from this format if appropriate, but make sure to check all the suggested boxes if you do so.
+
+## Introduction 
+
+Provide the reader with a clear sense of your research question and its theoretical importance. This section should be at least three paragraphs long. 
+
+## Data
+
+Provide a detailed description of your data including all information on design and measure construction necessary to understand the anlaysis, 
+
+## Exploratory data analysis
+
+Provide a detailed exploratory analysis of your data with appropriate visuals, 
+
+## Statistical methods
+
+Provide a detailed description of your chosen method including 1) why you selected this method, 2) equations describing the statistical model you will estimate, 3) whether you are pursuing descriptive or causal inference, and 4) assumptions required for your inferences to be valid
+ 
+ ## Findings
+ 
+Provide relevant tables and visuals for readers to understand your results. Remember to provide at least one paragraph for each table or figure. Explain all findings in detail. Visuals do not speak for themselves!
+
+## Discussion
+
+In two to three paragraphs, explain the scientific and real-world meaning of your findings. Identify any important limitations of your analysis, and suggest avenues for future research.
