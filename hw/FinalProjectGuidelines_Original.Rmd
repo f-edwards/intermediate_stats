@@ -2,7 +2,7 @@
 title: 'Final Project: Original Data Analysis'
 author: "YOUR NAME HERE"
 date: "`r Sys.Date()`"
-output: html_document
+output: pdf_document
 abstract: "Add your abstract here"
 ---
 

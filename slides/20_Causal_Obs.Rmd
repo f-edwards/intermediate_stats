@@ -1,0 +1,264 @@
+---
+title: "Causal inference for observational data"
+author: Frank Edwards
+output: binb::metropolis
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+rm(list=ls())
+library(MASS)
+library(tidyverse)
+library(rstanarm)
+library(tidybayes)
+library(broom)
+library(mice)
+library(lubridate)
+library(knitr)
+library(ggdag)
+library(dagitty)
+select<-dplyr::select
+set.seed(1)
+
+options(xtable.comment = FALSE)
+theme_set(theme_bw())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, echo = F, tidy = TRUE, size = "tiny")
+theme_set(theme_dag())
+```
+
+## The fundamental problem of causal inference and logic of counterfactual inference
+
+Assume student $i$ received tutoring, and had a test score of 82. We'd like to know what this student's score would have been under the *counterfactual* scenario of not receiving tutoring (but we lack a time machine).
+
+For unit $i$, we only observe $y_i(z=1)$ *OR* $y_i(z=0)$, never both. The unobserved value of $y$ is a *potential outcome*, or *counterfactual*. 
+
+## A counterfactual with observational data?
+
+How can we craft a plausible counterfactual for inference about the effect of a treatment without randomization into treatment?
+
+## Assumptions for causal identification
+
+- Clearly defined intervention
+- Stable treatment (and counterfactual)
+- Temporal ordering
+- Ignorability 
+
+## Some detail on ignorability
+
+The distribution of potential outcomes: $y(z=1), y(z=0)$ must be identical across the treatment and control groups
+
+$$y \perp z $$
+Randomization, in theory, guarantees this
+
+## Ignorability in observational studies
+
+We can satisfy the ignorability assumption by conditioning on *confounding* variables $x$ that may drive variation in $y$
+
+$$y \perp z | x$$
+
+For causal inference with observational data, we must assume similar distributions of *potential outcomes* across levels of predictors.
+
+Treatment must be as-if random, after conditioning on confounders.
+
+## Considerations for ignorability
+
+- Develop a clear understanding of the assignment mechanism
+- Balance on observed confounders
+- Overlap (empirical support for counterfactual)
+
+## Confounding
+
+We say that a relationship between $z$ and $y$ is *confounded* if there is a third variable $x$ that is associated with both $z$ and $y$. 
+
+In observational contexts, certain kinds of confounding relationships can *bias* our results if we don't address them properly. 
+
+*Omitted variable bias* is one form of bias, but including the wrong predictors can bias our results too!
+
+## Causal graphs
+
+We can use *directed acyclic graphs* (DAGs) to a) explicitly define our causal theory graphically and b) identify appropriate sets of controls to identify a causal effect
+
+DAGs are common in medicine, computer science, increasingly common in social science. Graphical approaches to causality can be contrasted with the *potential outcomes* framework common in economics.
+
+```{r echo = F, fig.height = 4}
+library(ggdag)
+dagify(y ~ z, coords = time_ordered_coords()) |>
+  ggdag() +
+  theme_dag() 
+```
+
+## Three common types of confounding: the fork
+
+For the treatment $z$, outcome $y$, and confounder $x$. There is no causal relationship between $z$ and $x$, but they are associated through their relationship with $x$. 
+
+```{r echo = F, fig.height = 4}
+coords <- list(x = c(z = 0, y = 2, x = 1), y = c(z = 0, y = 0, x = 1))
+
+fork <- dagify(
+  z ~ x,
+  y ~ x,
+  exposure = "z",
+  outcome = "y",
+  coords = coords
+)
+
+ggdag(fork)
+```
+
+
+## Three common types of confounding: fork
+
+For the treatment $z$, outcome $y$, and confounder $x$. There is no causal relationship between $z$ and $x$, but they are associated through their relationship with $x$. If we fail to condition on $x$, we will obtain a biased estimate of the treatment effect. If we condition on $x$, we will obtain a valid estimate (no relationship).
+
+```{r echo = F, fig.height = 4}
+coords <- list(x = c(z = 0, y = 2, x = 1), y = c(z = 0, y = 0, x = 1))
+
+fork <- dagify(
+  z ~ x,
+  y ~ x,
+  exposure = "z",
+  outcome = "y",
+  coords = coords
+)
+
+ggdag(fork)
+```
+
+## Three common types of confounding: pipe
+
+The causal effect of $z$ on $y$ is entirely caused by the effect of $z$ on a third variable $x$. If we condition on $x$, we won't estimate a relationship between $z$ and $y$. This is often called *mediation*, or an *indirect effect* of $z$ on $y$.
+
+```{r echo = F, fig.height = 4}
+chain <- dagify(
+  x ~ z,
+  y ~ x,
+  exposure = "z",
+  outcome = "y",
+  coords = coords
+)
+
+ggdag(chain)
+```
+
+## Three common types of confounding: colliders
+
+There is no causal relationship between $z$ and $y$, but both $z$ and $y$ cause $x$. Conditioning on $x$ opens a pathway between $z$ and $y$, will result in a statistical association between $y$ and $z$. This is often called *selection bias*, and can result in very misleading estimates. 
+
+```{r echo = F, fig.height = 4}
+collider <- dagify(
+  x ~ z + y,
+  exposure = "z",
+  outcome = "y"
+)
+ggdag(collider)
+```
+
+## Adjustment sets
+
+We can use DAGs to identify a sufficient set of controls to estimate the effect of $z$ on $y$. An *adjustment set* closes all *backdoor paths* between confounding variables $x$ and the outcome $y$. 
+
+Causal paths with a fork or pipe are *open*. Causal paths with a collider are *closed*. Conditioning on an open path *blocks* a relationship. Conditioning on a closed path *opens* a relationship. 
+
+## An example from my research
+
+```{r, echo = F}
+g5<-dagitty("dag {
+            D->M->Y
+            R->Y
+            R->D
+            D->Y
+            R->M
+            H->R
+            H->D
+            H->M
+            H->Y
+            Y [outcome]
+            R [exposure]
+            M 
+            }")
+
+coordinates(g5)<-list(
+  x = c(D = 1, R = 1, M = 2, Y = 3, H = 0),
+  y = c(D = 1, R = 3, M = 2, Y = 2, H = 3)
+)
+
+ggdag(g5)
+```
+
+## Adjustment sets and back-door paths
+
+```{r echo = T, size = "tiny", fig.height = 4}
+adjustmentSets(g5, effect = "direct")
+adjustmentSets(g5, effect = "total")
+ggdag(g5)
+```
+
+## How to proceed when we can measure all confounders
+
+1. Consider what an ideal experiment might look like to clarify your question
+1. Draw a DAG
+2. Identify adjustment sets to obtain a valid estimate of $z$ on $y$
+3. Identify which causal effect you are interested in (ATE, ATT, ATU, PATE)
+3. Decide on a method to produce *ignorability*, like propensity score matching or g-computation
+4. Estimate your model(s)
+
+Be very cautious of 'kitchen sink' approaches to regression!
+
+## Unmeasured confounding
+
+What if we have a DAG like this, where $u$ is some unmeasured or unmeasurable confounder?
+
+```{r echo = F, fig.height = 4}
+
+u1<-dagitty("dag{
+            x -> y
+            z -> y
+            u -> y
+            u -> x
+            u -> z
+            y [outcome]
+            z [exposure]
+            u [unobserved]
+            }")
+
+ggdag(u1)
+```
+
+## Econonmetric alternatives: Instrumental variables
+
+```{r echo = F}
+i1<-dagitty("dag{
+            z -> y
+            i -> z
+            x -> y
+            u -> y
+            u -> x
+            u -> z
+            y [outcome]
+            z [exposure]
+            u [unobserved]
+            }")
+
+ggdag(i1)
+```
+
+## Econonmetric alternatives: Instrumental variables
+
+An *instrumental variable* is associated with exposure to treatment, but not with the outcome. We can use an instrumental variable to emulate randomization on the treatment if we can meet the following assumptions:
+
+- Ignorability of instrument $y(z=1), y(z=0) \perp i$
+- Monotonicity (one direction of effect)
+- Association of instrument with treatment 
+- Exclusion restriction: no effect of $i$ on $y$ except through $z$
+
+We can then estimate a *two-stage* regression to estimate the *Local average treatment effect*, the effect of the treatment for those units affected by $i$
+
+## Other econometric approaches to address unmeasured confounding
+
+- Regression discontinuity
+- Difference in differences
+- Fixed effects
