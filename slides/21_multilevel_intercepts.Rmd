@@ -1,0 +1,405 @@
+---
+title: "Multilevel models, part 1"
+author: "Frank Edwards"
+output: binb::metropolis
+---
+
+```{r setup, include=FALSE}
+library(gridExtra)
+library(tidyverse)
+library(lme4)
+
+set.seed(1)
+select<-dplyr::select
+
+knitr::opts_chunk$set(tidy = FALSE)
+theme_set(theme_bw())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = F, size = "small")
+```
+
+# Multilevel data 
+
+## When your data has structure
+
+**Many natural and social processes have inherent groupings**
+
+- People live in neighborhoods (within cities) 
+- Students learn in classrooms (within schools, within districts, ...) 
+- Cities are subject to state laws 
+
+## Structured data are often clustered
+
+These groups often lead to patterns in our data called *clustering*
+
+- Variables are often correlated within clusters
+- These correlations can be due to observed variables
+- But they can also be due to unobserved (or unobservable) features of each cluster
+- If we don't account for clustering, our inferences will be misleading
+
+## Arrests and poverty
+
+Data for today (available at https://github.com/f-edwards/intermediate_stats/tree/master/data)
+
+```{r}
+dat<-read_csv("./data/violent_arrest_data.csv")
+```
+
+## The Distribution of poverty and crime across counties
+
+```{r, echo = F}
+p1<-ggplot(dat,
+           aes(x = violent_arrest_per1000)) + 
+  geom_histogram()
+
+p2<-ggplot(dat,
+           aes(x = pop_pct_pov)) + 
+  geom_histogram()
+
+p3<-ggplot(dat,
+       aes(x = pop_pct_pov, y = violent_arrest_per1000)) + 
+  geom_point()
+
+grid.arrange(p1, p2, p3, nrow = 1)
+```
+
+## A simple model
+
+\[y_c = \beta_0 + \beta_1x_c + \varepsilon_{c}\]
+\[\varepsilon \sim N(0, \sigma^2)\]
+
+This model, with no included parameters for group differences, is called a *complete pooling* model. Data from all groups is pooled to estimate a single intercept and single slope.
+
+Where violent crime rates are *y*, poverty rates are *x*, counties are *c*, states are *s*
+
+## Estimating the complete-pooling model
+
+```{r size = "tiny"}
+m_complete_pooling <- lm(violent_arrest_per1000 ~ pop_pct_pov,
+                         data = dat)
+
+summary(m_complete_pooling)
+```
+
+## Visualizing the model
+
+```{r size = "tiny", echo = F, fig.height = 4}
+ggplot(dat,
+       aes(x = pop_pct_pov,
+           y = violent_arrest_per1000)) + 
+  geom_point() + 
+  geom_abline(aes(intercept = coef(m_complete_pooling)[1],
+                  slope = coef(m_complete_pooling)[2]),
+              color = "blue",
+              size = 2)
+```
+
+## When to avoid complete pooling (Clustering!!)
+
+Sometimes units in the data have features that make them similar to other units. 
+
+- Repeated observations of counties over time (panel data)
+- Observations of many counties from the same time-period (cross-sectional data)
+- Counties nested within larger geographies (states, regions)
+- We can adjust our models to learn from these features and improve inference
+
+## One source of clustering: geography (state)
+
+```{r echo = F}
+ggplot(dat, aes(x = violent_arrest_per1000,
+                y = reorder(stusps, violent_arrest_per1000))) + 
+  geom_boxplot() + 
+  labs(y = "State")
+```
+
+# Intercepts as regression parameters
+
+## Intercepts as group means
+
+Let's say that we think that states may have different characteristics that may be associated with variation in violent crime arrest rates. 
+
+- This could include things like law, economics, politics, history, or population features.
+
+## The state fixed effects model
+
+Let's estimate a model where NO information across states is included in our estimation of intercepts. 
+
+- Every state gets their own intercept (computed as the exact within-state violent crime rate mean).
+
+## Comparing complete pooling and fixed effects models
+
+Where violent crime rates $y$ are a function of poverty rates $x$ in state $s$, and county $c$
+
+*Complete pooling* shares information across states for all parameters, but makes no distinctions across states
+
+\[E(y_c) = \beta_0 + \beta_1 x_{c}\]
+
+*No pooling* does shares no information across states for computing intercepts. There is one (pooled) slope for all counties in this model
+
+\[E(y_c) = \beta_s + \beta_1 x_c\]
+
+## Estimating the state fixed effects model
+
+```{r, size = "tiny"}
+m_state_fe<-lm(violent_arrest_per1000 ~ 
+                 pop_pct_pov +
+                 factor(stusps),
+               data = dat)
+broom::tidy(m_state_fe)
+```
+
+## What an intercept means in practice
+
+Intercepts are computed as the average violent arrest rate in each state, when poverty is fixed at zero
+- Fixed effects adjust for differences in mean violent arrest rates *across states*
+
+## Visualizing the fixed effects (state intercepts) model
+
+```{r, echo = F}
+m_state_fe<-lm(violent_arrest_per1000 ~ -1 +
+                 pop_pct_pov +
+                 factor(stusps),
+               data = dat)
+
+fake_dat<-expand_grid(stusps = unique(dat$stusps),
+                      pop_pct_pov = 0:50)
+
+fake_dat<- fake_dat %>%
+  mutate(yhat = predict(m_state_fe, newdata = fake_dat))
+
+ggplot(dat,
+       aes(x = pop_pct_pov,
+           y = violent_arrest_per1000)) +
+  geom_point() +
+  geom_line(data = fake_dat,
+            aes(x = pop_pct_pov, y = yhat, group = stusps),
+            alpha = 0.25, color = "blue")
+```
+
+## Evaluating goodness-of-fit
+
+A *big* improvement!
+
+```{r}
+BIC(m_complete_pooling, m_state_fe)
+```
+
+## Let's look at the distribution of intercepts. What do they mean?
+
+```{r, echo = F}
+intercepts <- broom::tidy(m_state_fe) %>%
+  slice(2:52) %>%
+  mutate(stusps = str_sub(term, -2, -1)) %>%
+  arrange()
+
+ggplot(intercepts,
+       aes(x = estimate,
+           xmin = estimate + 2 * std.error,
+           xmax = estimate - 2 * std.error,
+           y = reorder(stusps, estimate)))+
+  geom_pointrange(size = 0.25) +
+  labs(y = "State",
+       x = "Intercept + / - 2se")
+```
+
+## Interpreting a fixed effect
+
+After adjusting for all unmeasured (time-stable) confounding, we expect a county with zero poverty in state *s* to have $\beta_s$ average arrests for violent crime per 1,000 persons per year when poverty is zero.
+
+## Problems with a fixed effects approach
+
+- We *only* use information on counties within a state to compute intercepts
+- States with few counties have *much* more error than states with many counties. This may cause too much certainty in some states, too little in others.
+- To make a prediction, we *must* specify which state the prediction comes from
+
+# Introducing the multilevel model
+
+## The basic approach
+
+- Let's assume that violent crime rates in counties *across* states differ from each other.
+- We will estimate a *distribution* of intercepts that lets us think about differences both across and within states
+
+## Three approaches to pooling data
+
+- Under a complete-pooling model, we estimate a single intercept for the full data based on the average violent crime rate *across all counties*
+- Under a no-pooling model, we estimate an intercept for every state based *only* on the data from that state
+- Under a partial-pooling model, we estimate an intercept for every state based based on a model that *assumes that state intercepts are generated from an underlying probability distribution*, using data from all states
+
+## A basic multilevel model
+
+Where violent crime rates $y$ are a function of poverty rates $x$ in state $s$, and county $c$
+
+\[y_c = \alpha_s + \beta_1x_{c} + \varepsilon_c\]
+\[\varepsilon \sim N(0, \sigma^2)\]
+\[\alpha \sim N(\bar{x}, \sigma^2_\alpha)\]
+
+## Let's compare the fixed effects and multilevel specifications
+
+*Fixed effects*
+
+\[y_c = \beta_s + \beta_1x_{c} + \varepsilon_c\]
+\[\varepsilon \sim N(0, \sigma^2)\]
+
+*Multilevel*
+
+\[y_c = \alpha_s + \beta_1x_{c} + \varepsilon_c\]
+\[\varepsilon \sim N(0, \sigma^2)\]
+\[\alpha \sim N(\bar{x}, \sigma^2_\alpha)\]
+
+## The distribution of fixed effects and 'random' effects
+
+```{r echo = F}
+p1<-ggplot(intercepts) + 
+  geom_histogram(aes(x = estimate))+ 
+  xlim(-10, 15) + 
+  labs(subtitle = "fixed effects beta_s")
+
+m_state_ml<-lmer(violent_arrest_per1000 ~ 
+                 pop_pct_pov +
+                 (1|stusps),
+               data = dat) 
+
+sims<-tibble(alpha = rnorm(1e5, mean = 1.75, sd = 2))
+
+p2<-ggplot(sims)+ 
+  geom_density(aes(x = alpha))+ 
+  xlim(-10, 15) + 
+  labs(subtitle = "multilevel distribution of alpha_s")
+
+grid.arrange(p1, p2)
+```
+
+## Benefits of the multilevel approach: regularization
+
+Our model *regularizes* (or shrinks) intercept estimates by nudging them toward the global mean
+
+This shift is larger when:
+
+- The group mean (state here) is far away from the global (national) mean
+- We have few observations for a unit (small N of counties here)
+
+This shift is smaller when:
+
+- The group mean is close to the global mean
+- We have many observations for a unit (large N of counties)
+
+## Using lme4 to estimate a multilevel model
+
+We use the `lmer` function from the `lme4` package for multilevel modeling in R, `stan_glmer()` and `brm()` follow the same syntax. 
+
+```{r}
+library(lme4)
+
+m_state_ml<-lmer(violent_arrest_per1000 ~ 
+                   pop_pct_pov + 
+                   (1|stusps),
+                 data = dat)
+```
+
+The `(1|Variable)` notation is used to specify the categorical variables that will have intercepts estimated.
+
+## Model output (some familiar, some new!)
+
+```{r size = "tiny"}
+summary(m_state_ml)
+```
+
+## Random effects components of the model
+
+We now have *two* variance components of our model. The residual $\varepsilon$ and the intercept $\alpha$. 
+
+Our model results tell us that $\sigma = 3.8$ and $\sigma_\alpha = 2.4$
+
+What does that mean?
+
+We have effectively divided our residual into a *state* component ($\alpha$), and a *county-year* component $\varepsilon$
+
+## Variance within groups and between groups
+
+Residual variance is the unexplained difference between observed violent crime and the regression line based on poverty.
+
+So how much variation is between states, and how much is between counties after we adjust for state differences?
+
+## The intraclass correlation (ICC)
+
+ICC measures the proportion of total unexplained variation captured by your random effects
+
+For our model, we can compute ICC as $\frac{\sigma^2_\alpha}{\sigma^2_\alpha + \sigma^2} = \frac{2.4^2}{2.4^2 + 3.8^2} = 0.40$
+
+This tells us that, after accounting for poverty in the county, 40 percent of the residual variation in violent crime rates across counties is explained by time-stable features of the state that they are in.
+
+## Fixed effects components of the model
+
+Let's compare results on the console between these two models
+
+```{r}
+m_state_fe<-lm(violent_arrest_per1000 ~ pop_pct_pov +
+                 factor(stusps),
+               data = dat)
+
+m_state_re<-lmer(violent_arrest_per1000 ~ pop_pct_pov +
+                 (1|stusps),
+               data = dat)
+```
+
+## Let's check out the regularization we obtained from the multilevel model
+
+```{r, echo = F}
+m_state_re<-lmer(violent_arrest_per1000 ~ -1 + pop_pct_pov +
+                 (1|stusps),
+               data = dat)
+
+t<-ranef(m_state_re)
+
+re_estimates<-tibble("multilevel" = t$stusps$`(Intercept)`, "stusps" = row.names(ranef(m_state_re)$stusps))
+
+plot_dat<-intercepts %>% 
+  select(estimate, stusps) %>% 
+  rename(fixed_effect = estimate) %>% 
+  left_join(re_estimates) %>% 
+  pivot_longer(cols = c(fixed_effect, multilevel), names_to = "model_type", values_to = "estimate")
+
+ggplot(plot_dat,
+       aes(x = estimate, 
+           y = reorder(stusps, estimate),
+           color = model_type)) + 
+  geom_point() + 
+  labs(x = "estimated intercept",
+       y = "state")
+  
+```
+
+# Summary
+
+## What goes into a no-pooling (fixed effects) model
+
+- Estimated intercepts are equal to empirical group means
+- This approach typically *overfits* the data, and makes for poor prediction, unless we have a lot of data on each unit
+
+## The partial pooling alternative
+
+- The complete pooling approach assumes all units are the same
+- The no-pooling approach assumes all units are different
+- The *partial pooling* approach assumes that all units are different, but come from the same underlying distribution
+
+## Multilevel models are a good default
+
+Multilevel models are very flexible and useful for modeling:
+
+- Repeat observations of units over time
+- Data with clusters
+
+Multilevel models
+
+- Shrink estimates toward group means
+- Provide variance estimates across and within clusters
+- Allow for flexible inference (especially for new units)
+
+## Next time
+
+- Using multilevel models to estimate both varying intercepts and varying slopes across units
+- Inference using multilevel models
