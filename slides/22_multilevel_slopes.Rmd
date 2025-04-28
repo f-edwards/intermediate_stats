@@ -1,0 +1,369 @@
+---
+title: "Multilevel models, part 2"
+author: "Frank Edwards"
+output: binb::metropolis
+---
+
+```{r setup, include=FALSE}
+library(gridExtra)
+library(tidyverse)
+library(lme4)
+
+set.seed(1)
+select<-dplyr::select
+
+knitr::opts_chunk$set(tidy = FALSE)
+theme_set(theme_bw())
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, tidy = F, size = "small")
+```
+
+## Arrests and poverty
+
+Data for today (available at https://github.com/f-edwards/intermediate_stats/tree/master/data)
+
+```{r}
+dat<-read_csv("./data/violent_arrest_data.csv")
+```
+
+## The Distribution of poverty and crime across counties
+
+```{r, echo = F}
+ggplot(dat,
+       aes(x = pop_pct_pov, y = violent_arrest_per1000)) + 
+  geom_point()
+```
+
+## A simple model
+
+This model, with no included parameters for group differences, is called a *complete pooling* model. Data from all groups is used to estimate a single intercept and single slope.
+
+Where violent crime rates are *y*, poverty rates are *x*, counties are *c*, states are *s*
+
+\[y_c = \beta_0 + \beta_1x_c + \varepsilon_{c}\]
+\[\varepsilon \sim N(0, \sigma^2)\]
+
+## Estimating the complete-pooling model
+
+```{r}
+m_complete_pooling <- lm(violent_arrest_per1000 ~ pop_pct_pov,
+                         data = dat)
+broom::tidy(m_complete_pooling)
+```
+
+## Visualizing the model
+
+```{r size = "tiny", echo = F, fig.height = 4}
+ggplot(dat,
+       aes(x = pop_pct_pov,
+           y = violent_arrest_per1000)) + 
+  geom_point() + 
+  geom_abline(aes(intercept = coef(m_complete_pooling)[1],
+                  slope = coef(m_complete_pooling)[2]),
+              color = "blue",
+              linewidth = 2)
+```
+
+## The state fixed effects model
+
+Let's estimate a model where NO information across states is included in our estimation of intercepts. 
+
+- Every state gets their own intercept (computed as the exact within-state violent crime rate mean).
+
+## Estimating the state fixed effects model
+
+```{r, size = "tiny"}
+m_state_fe<-lm(violent_arrest_per1000 ~ 
+                 pop_pct_pov +
+                 factor(stusps),
+               data = dat)
+broom::tidy(m_state_fe)
+```
+
+## What an intercept means in practice
+
+Intercepts are computed as the average violent arrest rate in each state, when poverty is fixed at zero
+- State intercepts adjust for differences in average violent arrests rates at the county-level *across states*
+
+## Visualizing the fixed effects (state intercepts) model
+
+```{r, echo = F}
+m_state_fe<-lm(violent_arrest_per1000 ~ -1 +
+                 pop_pct_pov +
+                 factor(stusps),
+               data = dat)
+
+fake_dat<-expand_grid(stusps = unique(dat$stusps),
+                      pop_pct_pov = 0:50)
+
+fake_dat<- fake_dat %>%
+  mutate(yhat = predict(m_state_fe, newdata = fake_dat))
+
+ggplot(dat,
+       aes(x = pop_pct_pov,
+           y = violent_arrest_per1000)) +
+  geom_point() +
+  geom_line(data = fake_dat,
+            aes(x = pop_pct_pov, y = yhat, group = stusps),
+            alpha = 0.25, color = "blue")
+```
+
+## Another visualization
+
+```{r echo = F}
+ggplot(dat,
+       aes(x = pop_pct_pov,
+           y = violent_arrest_per1000)) +
+  geom_point() +
+  geom_line(data = fake_dat,
+            aes(x = pop_pct_pov, y = yhat, group = stusps), 
+            color = "blue") + 
+  facet_wrap(~stusps)
+```
+
+## Do we think that the relationship between poverty and arrest rates is identical across states?
+
+- Intercepts capture *average* arrest levels within the state. They adjust for variation in arrest rates for both high and low poverty counties
+
+- Slopes capture *differences* in arrest rates between high and low poverty counties both within and across states. 
+
+- What processes could account for variation in *intercepts* and/or *slopes* in our study?
+
+# Varying slopes 
+
+## Returning to the fixed effects (intercepts) model
+
+Where *y* is a violent arrest rate, *x* is a poverty rate, *c* indicates a county, and *s* indicates a state
+
+\[y_c = \beta{_0}_s + \beta_1 x_c + \varepsilon_c \]
+
+What does this model do?
+
+## Modifying the model to allow for varying slopes
+
+Where *y* is a violent arrest rate, *x* is a poverty rate, *c* indicates a county, and *s* indicates a state
+
+*Fixed effects intercepts*
+
+\[y_c = \beta{_0}_s + \beta_1 x_c + \varepsilon_c \]
+
+*Fixed effects intercepts AND slopes*
+
+\[y_c = \beta{_0}_s + \beta{_1}_s x_c + \varepsilon_c \]
+
+## Breaking down how the fixed effects interaction model works
+
+We are now effectively adding an *interaction* for the poverty variable and the state variable. 
+
+We can rewrite the regression model like this, where $\beta_s$ is the adjustment we add to each state's slope from the reference category ($\beta_2$).
+
+\[y_c = (\beta_0 + \beta{_1}_s) + (\beta_2 + \beta{_3}_s) x_c + \varepsilon_c\]
+
+Now our relationship between poverty ($x$) and arrest rates $y$ depends both on poverty levels AND on the state a county is in. That's an interaction.
+
+\pause
+
+We've redefined our slope parameter to $\beta_2 + \beta{_3}_s$
+
+## Estimating the fixed effects interaction model in R
+
+```{r size = "tiny"}
+m_state_fe_int<-lm(violent_arrest_per1000 ~ 
+                 pop_pct_pov *
+                 factor(stusps),
+               data = dat)
+broom::tidy(m_state_fe_int)
+```
+
+How many betas do we have (so many betas...)????
+
+## What the model is doing
+
+```{r echo = F}
+fake_data<-expand_grid(stusps = unique(dat$stusps),
+                       pop_pct_pov = 0:50)
+
+fake_data<-fake_data %>% 
+  mutate(violent_arrest_per1000_hat = predict(m_state_fe_int, newdata = fake_data))
+
+ggplot(fake_data,
+       aes(x = pop_pct_pov,
+           y = violent_arrest_per1000_hat,
+           group = stusps)) + 
+  geom_line(alpha = 0.25, color = "blue")
+```
+
+## What the model is doing
+
+```{r echo = F}
+ggplot(fake_data,
+       aes(x = pop_pct_pov,
+           y = violent_arrest_per1000_hat,
+           group = stusps)) + 
+  geom_point(data = dat, 
+             aes(x = pop_pct_pov, y = violent_arrest_per1000),
+             alpha = 0.25) + 
+  geom_line(color = "blue") + 
+  facet_wrap(~stusps) + 
+  ylim(c(0, 60))
+```
+
+## Three approaches to pooling data
+
+- Under a complete-pooling model, we estimate a single intercept *and slope* for the full data based on the average violent crime rate *across all counties*
+- Under a no-pooling model (the fixed effects interaction model), we estimate an intercept AND slope for every state based *only* on the data from that state
+- Under a partial-pooling model, we estimate an intercept AND slope for every state based based on a model that *assumes that state intercepts AND slopes are generated from an underlying probability distribution*
+
+## A basic multilevel model (intercepts only)
+
+Where violent crime rates $y$ are a function of poverty rates $x$ in state $s$, and county $c$
+
+\[y_c = (\beta_0 + \alpha_s) + \beta_1x_{c} + \varepsilon_c\]
+\[\varepsilon \sim N(0, \sigma^2)\]
+\[\alpha \sim N(0, \sigma^2_\alpha)\]
+
+## A A basic multilevel model (intercepts and slopes)
+
+\[y_c = (\beta_0 + \alpha_s) + (\beta_1 + \delta_s)x_c + \varepsilon_c\]
+\[\varepsilon \sim N(0, \sigma^2)\]
+\[\alpha \sim N(0, \sigma^2_\alpha)\]
+\[\delta \sim N(0, \sigma^2_\delta)\]
+
+## Estimating the random intercepts and slopes model
+
+```{r size = "tiny"}
+library(lme4)
+# RE specification gets complex
+# google lmer cheat sheet for support
+m_state_ml<-lmer(violent_arrest_per1000 ~ 
+                   pop_pct_pov +
+                   (1|stusps) + #intercepts for each state
+                   (0 + pop_pct_pov|stusps), #slopes for each state, uncorrelated
+                 data = dat) 
+```
+
+## Model output
+
+```{r size = "tiny"}
+summary(m_state_ml)
+```
+
+## What the model does
+
+```{r echo = F}
+fake_data<-expand_grid(stusps = unique(dat$stusps),
+                       pop_pct_pov = 0:50)
+
+fake_data<-fake_data %>% 
+  mutate(violent_arrest_per1000_hat = 
+           predict(m_state_ml, newdata = fake_data))
+
+ggplot(fake_data,
+       aes(x = pop_pct_pov,
+           y = violent_arrest_per1000_hat,
+           group = stusps)) + 
+  geom_line(alpha = 0.5)
+```
+
+## What the model does
+
+```{r echo = F}
+ggplot(fake_data,
+       aes(x = pop_pct_pov,
+           y = violent_arrest_per1000_hat,
+           group = stusps)) + 
+  geom_line(alpha = 0.5) + 
+  geom_point(data = dat, 
+             aes(x = pop_pct_pov, y = violent_arrest_per1000),
+             alpha = 0.25) + 
+  geom_line(color = "blue") + 
+  facet_wrap(~stusps) + 
+  ylim(c(0, 60))
+```
+
+## Let's compare multilevel and fixed effects model fits
+
+```{r message = F, size = "tiny"}
+fake_data<-expand_grid(stusps = unique(dat$stusps),
+                       pop_pct_pov = 0:50)
+# generate yhat for both fe and ml models
+fake_data<-fake_data %>% 
+  mutate(fe = predict(m_state_fe_int, newdata = fake_data),
+         ml = predict(m_state_ml, newdata = fake_data))
+# format for plotting
+fake_data<- fake_data %>% 
+  pivot_longer(cols = fe:ml, 
+               names_to = "model_type",
+               values_to = "yhat")
+
+head(fake_data)
+```
+
+## Let's compare multilevel and fixed effects model fits
+
+```{r echo = F}
+ggplot(fake_data, 
+       aes(x = pop_pct_pov, y = yhat, group = stusps)) + 
+  geom_line() + 
+  facet_wrap(~model_type)
+```
+
+## Let's compare multilevel and fixed effects model fits
+
+```{r echo = F}
+ggplot(fake_data, 
+       aes(x = pop_pct_pov, y = yhat, 
+           color = model_type)) + 
+  geom_line() + 
+  geom_point(data = dat, 
+             aes(x = pop_pct_pov, y = violent_arrest_per1000),
+             color = "black",
+             alpha = 0.25) +
+  facet_wrap(~stusps) + 
+  ylim(c(0, 50))
+```
+
+## Benefits of the multilevel approach: regularization
+
+Our model *regularizes* (or shrinks) intercept and slope estimates by nudging them toward the global mean
+
+This shift is larger when:
+
+- The group mean (state here) is far away from the global (national) mean
+- We have few observations for a unit (small N of counties here)
+
+This shift is smaller when:
+
+- The group mean is close to the global mean
+- We have many observations for a unit (large N of counties)
+
+# Summary
+
+## What goes into a no-pooling (fixed effects) model
+
+- Estimated intercepts are equal to empirical group means
+- This approach typically *overfits* the data, and makes for poor prediction, unless we have a lot of data on each unit
+
+## The partial pooling alternative
+
+- The complete pooling approach assumes all units are the same
+- The no-pooling approach assumes all units are different
+- The *partial pooling* approach assumes that all units are different, but come from the same larger population
+
+## Multilevel models are a good default
+
+Multilevel models are very flexible and useful for modeling:
+
+- Repeat observations of units over time
+- Data with clusters
+
+Multilevel models
+
+- Shrink estimates toward group means
+- Provide variance estimates across and within clusters
+- Allow for flexible inference without overfitting
+
